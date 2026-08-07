@@ -15,6 +15,10 @@
       min-height: 100vh;
       font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', Arial, sans-serif;
       overflow: hidden;
+    }
+
+    /* 게임 플레이 중에만 커서 숨김 */
+    body.game-playing {
       cursor: none;
     }
 
@@ -303,6 +307,7 @@
   }
 
   function startGame() {
+    document.body.classList.add('game-playing');
     fish = makeDefaultFish();
     foods = []; particles = [];
     foodSpawnTimer = 0;
@@ -467,6 +472,7 @@
 
   function showComplete() {
     gameOver = true;
+    document.body.classList.remove('game-playing');
     for (let i = 0; i < 5; i++) {
       setTimeout(() => spawnParticles(
         BCX + (Math.random()-0.5)*200, BCY + (Math.random()-0.5)*200
