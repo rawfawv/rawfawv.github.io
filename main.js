@@ -13,14 +13,26 @@
 document.addEventListener('DOMContentLoaded', () => {
 
     /* ── 4.png 클릭 → fish-game 이동 ── */
+    let pointerDownX = 0;
+    let pointerDownY = 0;
+
     document.querySelectorAll('img[src="assets/4.png"]').forEach(img => {
         const item = img.closest('.gallery-item, .grid-item');
         if (item) {
             item.style.cursor = 'pointer';
-            item.addEventListener('click', () => {
-                // 드래그 중에는 무시
-                if (document.body.hasAttribute('data-dragging')) return;
-                window.location.href = 'fish-game/index.html';
+
+            item.addEventListener('pointerdown', (e) => {
+                pointerDownX = e.clientX;
+                pointerDownY = e.clientY;
+            });
+
+            item.addEventListener('pointerup', (e) => {
+                const dx = Math.abs(e.clientX - pointerDownX);
+                const dy = Math.abs(e.clientY - pointerDownY);
+                // 5px 이하 이동이면 클릭으로 판정
+                if (dx < 5 && dy < 5) {
+                    window.location.href = 'fish-game/index.html';
+                }
             });
         }
     });
