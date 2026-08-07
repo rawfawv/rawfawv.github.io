@@ -63,6 +63,7 @@ html, body {
     justify-content: center;
     /* give the rotated text room to breathe */
     overflow: visible;
+    pointer-events: none; /* 갤러리 클릭 방해 방지 */
 }
 
 .sidebar-brand h1 {
