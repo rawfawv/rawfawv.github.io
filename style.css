@@ -68,7 +68,7 @@ html, body {
 .sidebar-brand h1 {
     font-family: var(--font-display);
     font-weight: 800;
-    font-size: 3rem;
+    font-size: 6rem;
     line-height: 1;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -223,18 +223,18 @@ html, body {
 
 .item-visual {
     width: 100%;
-    height: 60vh;
+    height: auto;           /* 고정 높이 제거 — 이미지 크기에 맞춤 */
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-end;
     position: relative;
     z-index: 6;
-    overflow: hidden;
 }
 
 .item-visual img {
     width: 100%;
-    height: 100%;
+    height: auto;
+    max-height: 60vh;
     object-fit: contain;
     display: block;
     pointer-events: none;
