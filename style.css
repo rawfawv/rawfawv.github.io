@@ -250,16 +250,11 @@ html, body {
     object-fit: contain;
     display: block;
     pointer-events: none;
-    /* mix-blend-mode: multiply removes white/light backgrounds (knockout effect) */
     mix-blend-mode: multiply;
-    filter:
-        drop-shadow(0 18px 40px rgba(0,0,0,0.06))
-        drop-shadow(0  4px 10px rgba(0,0,0,0.04));
     transform: translateY(0) scale(1);
     transition:
-        transform 0.65s cubic-bezier(0.16, 1, 0.3, 1),
-        filter   0.65s cubic-bezier(0.16, 1, 0.3, 1);
-    will-change: transform, filter;
+        transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform;
 }
 
 /* suppress hover while dragging */
@@ -267,39 +262,14 @@ html, body {
 [data-dragging] .gallery-item:hover .item-info {
     transform: none !important;
     opacity: 0 !important;
-    filter:
-        drop-shadow(0 18px 40px rgba(0,0,0,0.06))
-        drop-shadow(0  4px 10px rgba(0,0,0,0.04)) !important;
 }
 
 .gallery-item:hover .item-visual img {
     transform: translateY(-28px) scale(1.025);
-    filter:
-        drop-shadow(0 40px 60px rgba(0,0,0,0.14))
-        drop-shadow(0 12px 22px rgba(0,0,0,0.07));
 }
 
-/* oval cast shadow */
-.item-visual::after {
-    content: '';
-    position: absolute;
-    bottom: -1px;
-    left: 50%;
-    transform: translateX(-50%) scaleY(0.35);
-    width: 60%;
-    height: 30px;
-    border-radius: 50%;
-    background: radial-gradient(ellipse, rgba(0,0,0,0.18) 0%, transparent 70%);
-    pointer-events: none;
-    transition: width 0.65s cubic-bezier(0.16, 1, 0.3, 1),
-                opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1);
-    z-index: 4;
-}
-
-.gallery-item:hover .item-visual::after {
-    width: 80%;
-    opacity: 0.5;
-}
+/* oval cast shadow — removed */
+.item-visual::after { display: none; }
 
 /* item info */
 .item-info {
