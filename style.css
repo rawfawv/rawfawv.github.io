@@ -1,6 +1,6 @@
 /* ============================================================
    "the play ground" — Design System
-   Base: #f5f4ef  /  NYT Magazine editorial + Swiss minimalism
+   NYT Magazine editorial + Swiss minimalism
    ============================================================ */
 
 :root {
@@ -8,19 +8,16 @@
     --ink:            #121212;
     --ink-muted:      #66645e;
     --border:         #c9c7bd;
-    --accent-green:   #2f5c47;
     --accent-orange:  #e06d48;
 
     --font-display:   'Syne', sans-serif;
     --font-sans:      'Inter', sans-serif;
-    --font-serif:     'Playfair Display', serif;
     --font-mono:      'DM Mono', monospace;
 
-    --sidebar-w:      clamp(260px, 22vw, 380px);
-    --shelf-from-btm: 36vh;   /* shelf line height from bottom */
+    --sidebar-w:      72px;
+    --shelf-from-btm: 36vh;
 }
 
-/* ── Reset ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
@@ -42,135 +39,131 @@ html, body {
 }
 
 /* ============================================================
-   SIDEBAR — NYT Magazine cover strip
+   SIDEBAR — thin vertical strip
    ============================================================ */
 .sidebar {
     width: var(--sidebar-w);
     flex-shrink: 0;
     height: 100vh;
     border-right: 1px solid var(--border);
-    padding: 2.6rem 2.4rem;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    align-items: center;
+    padding: 2.4rem 0;
     background: var(--bg);
     z-index: 20;
 }
 
-/* header row */
-.sidebar-header {
+/* Rotated logotype — reads bottom to top */
+.sidebar-brand {
+    flex: 1;
     display: flex;
-    justify-content: space-between;
-    font-family: var(--font-mono);
-    font-size: 0.65rem;
-    color: var(--ink-muted);
-    letter-spacing: 0.06em;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 1rem;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 0.4rem;
 }
 
-/* brand logotype */
 .sidebar-brand h1 {
     font-family: var(--font-display);
     font-weight: 800;
-    font-size: clamp(2.4rem, 3.6vw, 3.6rem);
-    line-height: 0.87;
+    font-size: 1.05rem;
+    line-height: 1;
     text-transform: uppercase;
-    letter-spacing: -0.04em;
+    letter-spacing: 0.12em;
     color: var(--ink);
-    margin: 2rem 0;
-    /* Thin blue rule — NYT Magazine signature */
-    border-left: 5px solid #3a7bd5;
-    padding-left: 1rem;
+    white-space: nowrap;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);   /* flip so it reads bottom → top */
 }
 
-/* nav */
-.sidebar-nav { margin: auto 0; }
-
-.nav-menu {
-    display: flex;
-    flex-direction: column;
-    gap: 1.1rem;
-}
-
-.nav-item {
-    font-family: var(--font-display);
-    font-size: 1rem;
-    font-weight: 700;
-    text-decoration: none;
-    color: var(--ink-muted);
-    letter-spacing: 0.06em;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.6rem;
-    transition: color 0.25s, gap 0.25s;
-}
-
-.nav-item::before {
-    content: '';
-    display: block;
-    width: 5px; height: 5px;
-    border-radius: 50%;
-    background: var(--accent-orange);
-    opacity: 0;
-    transition: opacity 0.25s;
+/* Author name */
+.sidebar-footer {
     flex-shrink: 0;
 }
 
-.nav-item:hover,
-.nav-item.active {
-    color: var(--ink);
-}
-
-.nav-item.active::before,
-.nav-item:hover::before {
-    opacity: 1;
-}
-
-/* footer meta */
-.sidebar-footer {
-    display: flex;
-    flex-direction: column;
-    gap: 1.2rem;
-    border-top: 1px solid var(--border);
-    padding-top: 1.8rem;
-}
-
-.meta-block { display: flex; flex-direction: column; gap: 0.25rem; }
-
-.meta-label {
+.author-name {
     font-family: var(--font-mono);
-    font-size: 0.62rem;
+    font-size: 0.6rem;
     color: var(--ink-muted);
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-}
-
-.meta-value {
-    font-family: var(--font-sans);
-    font-size: 0.78rem;
-    font-weight: 600;
-    letter-spacing: 0.02em;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
 }
 
 /* ============================================================
-   GALLERY CONTAINER
+   GALLERY WRAPPER (holds toggle + both views)
    ============================================================ */
-.gallery-container {
+.gallery-wrapper {
     flex: 1;
     height: 100vh;
+    position: relative;
+    overflow: hidden;
+}
+
+/* ── View toggle — top center ── */
+.view-toggle {
+    position: absolute;
+    top: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+    display: flex;
+    gap: 2px;
+    background: rgba(18,18,18,0.06);
+    border-radius: 8px;
+    padding: 3px;
+}
+
+.toggle-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--ink-muted);
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.toggle-btn:hover {
+    color: var(--ink);
+}
+
+.toggle-btn.active {
+    background: var(--bg);
+    color: var(--ink);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+}
+
+/* ============================================================
+   SHELF VIEW
+   ============================================================ */
+.gallery-container {
+    position: absolute;
+    inset: 0;
     overflow-x: scroll;
     overflow-y: hidden;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    position: relative;
     cursor: grab;
+    opacity: 1;
+    transition: opacity 0.35s ease;
+}
+
+.gallery-container.hidden {
+    opacity: 0;
+    pointer-events: none;
 }
 
 .gallery-container:active { cursor: grabbing; }
 .gallery-container::-webkit-scrollbar { display: none; }
 
-/* ── drag hint ── */
+/* drag hint */
 .gallery-instruction {
     position: absolute;
     bottom: 2rem;
@@ -199,11 +192,9 @@ html, body {
     50%       { transform: translateX(5px); }
 }
 
-/* ============================================================
-   SHELF TRACK
-   ============================================================ */
+/* shelf track */
 .gallery-track {
-    display: inline-flex;          /* shrink-wraps to content width */
+    display: inline-flex;
     align-items: flex-end;
     height: 100%;
     padding-bottom: var(--shelf-from-btm);
@@ -217,7 +208,7 @@ html, body {
 
 /* shelf line */
 .shelf-line {
-    position: fixed;               /* stays in view while scrolling */
+    position: fixed;
     left: var(--sidebar-w);
     right: 0;
     bottom: var(--shelf-from-btm);
@@ -227,7 +218,6 @@ html, body {
     z-index: 5;
 }
 
-/* thin shadow strip just below shelf line — depth cue */
 .shelf-line::after {
     content: '';
     position: absolute;
@@ -237,9 +227,7 @@ html, body {
     background: linear-gradient(to bottom, rgba(0,0,0,0.04), transparent);
 }
 
-/* ============================================================
-   PORTFOLIO ITEM
-   ============================================================ */
+/* ── Portfolio item ── */
 .gallery-item {
     position: relative;
     display: flex;
@@ -249,7 +237,6 @@ html, body {
     flex-shrink: 0;
 }
 
-/* ── image wrapper ── */
 .item-visual {
     width: 100%;
     height: 44vh;
@@ -268,7 +255,6 @@ html, body {
     object-fit: contain;
     display: block;
     pointer-events: none;
-    /* resting shadow */
     filter:
         drop-shadow(0 18px 40px rgba(0,0,0,0.06))
         drop-shadow(0  4px 10px rgba(0,0,0,0.04));
@@ -279,7 +265,7 @@ html, body {
     will-change: transform, filter;
 }
 
-/* suppress hover effects while dragging to prevent flicker */
+/* suppress hover while dragging */
 [data-dragging] .gallery-item:hover .item-visual img,
 [data-dragging] .gallery-item:hover .item-info {
     transform: none !important;
@@ -289,7 +275,6 @@ html, body {
         drop-shadow(0  4px 10px rgba(0,0,0,0.04)) !important;
 }
 
-/* ── floating effect on hover ── */
 .gallery-item:hover .item-visual img {
     transform: translateY(-28px) scale(1.025);
     filter:
@@ -297,7 +282,7 @@ html, body {
         drop-shadow(0 12px 22px rgba(0,0,0,0.07));
 }
 
-/* ── cast shadow on shelf (oval under object) ── */
+/* oval cast shadow */
 .item-visual::after {
     content: '';
     position: absolute;
@@ -319,13 +304,9 @@ html, body {
     opacity: 0.5;
 }
 
-/* ============================================================
-   ITEM INFO — revealed below shelf on hover
-   ============================================================ */
+/* item info */
 .item-info {
     position: absolute;
-    /* shelf line is at bottom: 36vh; item-visual is 44vh tall
-       info sits 36vh from bottom minus a little padding         */
     bottom: calc(var(--shelf-from-btm) * -1 - 2rem);
     left: 0;
     width: 100%;
@@ -386,57 +367,123 @@ html, body {
 }
 
 /* ============================================================
-   MOBILE  (≤ 900px)
+   GRID VIEW
    ============================================================ */
-@media (max-width: 900px) {
-    :root { --shelf-from-btm: 28vh; }
+.grid-container {
+    position: absolute;
+    inset: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s ease;
+    padding: 5.5rem 5vw 4rem;
+}
 
-    .app-container { flex-direction: column; }
+.grid-container.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
 
-    .sidebar {
-        width: 100vw;
-        height: auto;
-        max-width: none;
-        border-right: none;
-        border-bottom: 1px solid var(--border);
-        padding: 1.6rem 1.8rem;
-        flex-direction: row;
-        align-items: center;
-        gap: 2rem;
+.grid-container::-webkit-scrollbar { width: 4px; }
+.grid-container::-webkit-scrollbar-track { background: transparent; }
+.grid-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+.grid-track {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 3vw 3vw;
+}
+
+.grid-item {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    cursor: default;
+}
+
+.grid-visual {
+    width: 100%;
+    aspect-ratio: 4 / 5;
+    background: #efefec;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.grid-visual img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 1.5rem;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.grid-item:hover .grid-visual img {
+    transform: scale(1.04);
+}
+
+.grid-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    border-top: 1px solid var(--border);
+    padding-top: 0.8rem;
+}
+
+.grid-number {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    color: var(--accent-orange);
+    letter-spacing: 0.08em;
+}
+
+.grid-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1rem, 1.4vw, 1.3rem);
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    color: var(--ink);
+    line-height: 1.1;
+}
+
+.grid-cat {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+/* ============================================================
+   MOBILE (≤ 768px)
+   ============================================================ */
+@media (max-width: 768px) {
+    :root {
+        --sidebar-w: 48px;
+        --shelf-from-btm: 28vh;
     }
 
-    .sidebar-header  { display: none; }
-    .sidebar-footer  { display: none; }
-
-    .sidebar-brand h1 {
-        font-size: 1.8rem;
-        margin: 0;
-        white-space: nowrap;
-    }
-
-    .sidebar-nav { margin: 0; }
-
-    .nav-menu {
-        flex-direction: row;
-        gap: 1.4rem;
-    }
-
-    .nav-item { font-size: 0.85rem; }
-
-    .gallery-container {
-        height: calc(100vh - 80px);
-    }
-
-    .shelf-line {
-        left: 0;
-        bottom: var(--shelf-from-btm);
-    }
+    .sidebar-brand h1 { font-size: 0.8rem; }
+    .author-name      { font-size: 0.52rem; }
 
     .gallery-item {
-        width: clamp(220px, 55vw, 320px);
+        width: clamp(200px, 55vw, 300px);
     }
 
     .item-visual { height: 32vh; }
+    .item-title  { font-size: 1.1rem; }
 
-    .item-title { font-size: 1.2rem; }
+    .shelf-line { left: var(--sidebar-w); }
+
+    .grid-track {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 4vw;
+    }
+
+    .grid-container { padding: 5rem 4vw 3rem; }
 }

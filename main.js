@@ -2,60 +2,79 @@
  * "the play ground" — Gallery Engine
  *
  * Features:
- *  - Mouse drag + touch swipe with momentum / inertia
- *  - Vertical wheel → horizontal scroll
- *  - Hover suppression while dragging (prevents flicker)
- *  - Instruction hint auto-fade on first interaction
+ *  - Shelf view: mouse drag + touch swipe with momentum / inertia
+ *  - Grid view: all items visible at once
+ *  - View toggle with smooth crossfade
+ *  - Vertical wheel → horizontal scroll (shelf mode)
+ *  - Hover suppression while dragging
+ *  - Instruction hint auto-fade
  */
 
 document.addEventListener('DOMContentLoaded', () => {
 
+    /* ── Elements ── */
     const container   = document.getElementById('gallery-container');
+    const gridContainer = document.getElementById('grid-container');
+    const btnShelf    = document.getElementById('btn-shelf');
+    const btnGrid     = document.getElementById('btn-grid');
     const instruction = document.querySelector('.gallery-instruction');
-    const navItems    = document.querySelectorAll('.nav-item');
-    const items       = document.querySelectorAll('.gallery-item');
 
     if (!container) return;
 
-    /* ── State ── */
+    /* ── Drag state ── */
     let isDragging   = false;
     let startX       = 0;
-    let scrollOrigin = 0;   // scrollLeft at drag start
+    let scrollOrigin = 0;
+    let velX         = 0;
+    let lastX        = 0;
+    let lastTime     = 0;
+    let rafId        = null;
 
-    let velX      = 0;      // px / frame (~16 ms)
-    let lastX     = 0;
-    let lastTime  = 0;
-    let rafId     = null;
-
-    const FRICTION       = 0.92;   // deceleration (0 = instant stop, 1 = no stop)
-    const STOP_THRESHOLD = 0.4;    // px/frame — below this, stop momentum
-    const DRAG_CLASS     = 'is-dragging';
+    const FRICTION       = 0.92;
+    const STOP_THRESHOLD = 0.4;
 
     /* ── Helpers ── */
-    const cancelMomentum = () => {
-        cancelAnimationFrame(rafId);
-        rafId = null;
+    const cancelMomentum = () => { cancelAnimationFrame(rafId); rafId = null; };
+    const hideInstruction = () => instruction?.classList.add('fade-out');
+    const getPageX = (e) => e.touches ? e.touches[0].pageX : e.pageX;
+
+    /* ── View toggle ── */
+    let currentView = 'shelf'; // 'shelf' | 'grid'
+
+    const switchToShelf = () => {
+        currentView = 'shelf';
+        container.classList.remove('hidden');
+        gridContainer.classList.remove('visible');
+        gridContainer.setAttribute('aria-hidden', 'true');
+        btnShelf.classList.add('active');
+        btnGrid.classList.remove('active');
     };
 
-    const hideInstruction = () => {
-        instruction?.classList.add('fade-out');
+    const switchToGrid = () => {
+        currentView = 'grid';
+        container.classList.add('hidden');
+        gridContainer.classList.add('visible');
+        gridContainer.removeAttribute('aria-hidden');
+        btnGrid.classList.add('active');
+        btnShelf.classList.remove('active');
+        cancelMomentum();
+        hideInstruction();
     };
 
-    const pageX = (e) =>
-        e.touches ? e.touches[0].pageX : e.pageX;
+    btnShelf.addEventListener('click', switchToShelf);
+    btnGrid.addEventListener('click',  switchToGrid);
 
     /* ── Drag start ── */
     const onDragStart = (e) => {
+        if (currentView !== 'shelf') return;
         cancelMomentum();
         isDragging   = true;
-        startX       = pageX(e) - container.offsetLeft;
+        startX       = getPageX(e) - container.offsetLeft;
         scrollOrigin = container.scrollLeft;
-        lastX        = pageX(e);
+        lastX        = getPageX(e);
         lastTime     = performance.now();
         velX         = 0;
 
-        container.classList.add(DRAG_CLASS);
-        /* suppress CSS hover while dragging */
         document.body.setAttribute('data-dragging', '');
         hideInstruction();
     };
@@ -65,16 +84,13 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!isDragging) return;
         if (e.cancelable) e.preventDefault();
 
-        const cx   = pageX(e);
+        const cx   = getPageX(e);
         const walk = cx - container.offsetLeft - startX;
         container.scrollLeft = scrollOrigin - walk;
 
-        /* velocity (px per ~16ms frame) */
         const now = performance.now();
         const dt  = now - lastTime;
-        if (dt > 0) {
-            velX = ((cx - lastX) / dt) * 16;
-        }
+        if (dt > 0) velX = ((cx - lastX) / dt) * 16;
         lastX    = cx;
         lastTime = now;
     };
@@ -83,20 +99,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const onDragEnd = () => {
         if (!isDragging) return;
         isDragging = false;
-
-        container.classList.remove(DRAG_CLASS);
         document.body.removeAttribute('data-dragging');
-
-        if (Math.abs(velX) > STOP_THRESHOLD) {
-            applyMomentum();
-        }
+        if (Math.abs(velX) > STOP_THRESHOLD) applyMomentum();
     };
 
     /* ── Momentum loop ── */
     const applyMomentum = () => {
-        velX              *= FRICTION;
+        velX *= FRICTION;
         container.scrollLeft -= velX;
-
         if (Math.abs(velX) > STOP_THRESHOLD) {
             rafId = requestAnimationFrame(applyMomentum);
         } else {
@@ -104,13 +114,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    /* ── Wheel → horizontal ── */
+    /* ── Wheel → horizontal (shelf only) ── */
     container.addEventListener('wheel', (e) => {
+        if (currentView !== 'shelf') return;
         e.preventDefault();
         cancelMomentum();
         hideInstruction();
-
-        /* prefer deltaX (trackpad horizontal), fall back to deltaY (scroll wheel) */
         const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
         container.scrollLeft += delta * 0.9;
     }, { passive: false });
@@ -126,15 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
     container.addEventListener('touchmove',  onDragMove,  { passive: false });
     window.addEventListener   ('touchend',   onDragEnd);
 
-    /* ── Nav active state ── */
-    navItems.forEach(item => {
-        item.addEventListener('click', () => {
-            navItems.forEach(i => i.classList.remove('active'));
-            item.classList.add('active');
-        });
-    });
-
-    /* ── Auto-fade instruction after 3 s ── */
+    /* ── Auto-fade instruction after 3s ── */
     setTimeout(hideInstruction, 3000);
 
 });

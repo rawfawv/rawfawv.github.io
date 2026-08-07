@@ -6,7 +6,6 @@
     <meta name="description" content="the play ground — rawfawv portfolio">
     <title>the play ground — rawfawv</title>
 
-    <!-- Web Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -19,133 +18,145 @@
     <!-- ── Sidebar ── -->
     <aside class="sidebar" aria-label="Site navigation">
 
-        <header class="sidebar-header">
-            <span class="meta-tag">THE PLAYGROUND</span>
-            <span class="meta-tag">ISSUE NO. 01</span>
-        </header>
-
+        <!-- Rotated logotype -->
         <div class="sidebar-brand">
-            <h1 aria-label="the play ground">the<br>play<br>ground</h1>
+            <h1 aria-label="the play ground">the play ground</h1>
         </div>
 
-        <nav class="sidebar-nav" aria-label="Primary">
-            <ul class="nav-menu" role="list">
-                <li><a href="#projects" class="nav-item active">PROJECTS</a></li>
-                <li><a href="#about"    class="nav-item">ABOUT</a></li>
-                <li><a href="#contact"  class="nav-item">CONTACT</a></li>
-            </ul>
-        </nav>
-
+        <!-- Author name bottom -->
         <footer class="sidebar-footer">
-            <div class="meta-block">
-                <span class="meta-label">BY</span>
-                <span class="meta-value">JIWOON KIM</span>
-            </div>
-            <div class="meta-block">
-                <span class="meta-label">ROLE</span>
-                <span class="meta-value">DESIGNER &amp; DEVELOPER</span>
-            </div>
-            <div class="meta-block">
-                <span class="meta-label">BASED</span>
-                <span class="meta-value">SEOUL, KR — EST. 2026</span>
-            </div>
+            <span class="author-name">Jiwoon Chung</span>
         </footer>
 
     </aside>
 
     <!-- ── Gallery ── -->
-    <main class="gallery-container" id="gallery-container" aria-label="Portfolio gallery — drag to explore">
+    <main class="gallery-wrapper" aria-label="Portfolio gallery">
 
-        <!-- shelf line (decorative) -->
-        <div class="shelf-line" aria-hidden="true"></div>
-
-        <!-- drag hint -->
-        <div class="gallery-instruction" aria-hidden="true">
-            <span class="drag-arrow">◀</span>
-            <span class="drag-text">DRAG TO EXPLORE</span>
-            <span class="drag-arrow">▶</span>
+        <!-- View toggle — top center -->
+        <div class="view-toggle" aria-label="View mode">
+            <button class="toggle-btn active" id="btn-shelf" aria-label="Shelf view" title="Shelf view">
+                <!-- horizontal shelf icon -->
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <rect x="2" y="11" width="14" height="1.5" rx="0.75" fill="currentColor"/>
+                    <rect x="4"  y="4" width="3" height="6" rx="0.5" fill="currentColor"/>
+                    <rect x="8"  y="6" width="3" height="4" rx="0.5" fill="currentColor"/>
+                    <rect x="12" y="5" width="3" height="5" rx="0.5" fill="currentColor"/>
+                </svg>
+            </button>
+            <button class="toggle-btn" id="btn-grid" aria-label="Grid view" title="Grid view">
+                <!-- 2×2 grid icon -->
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <rect x="2"  y="2"  width="6" height="6" rx="0.75" fill="currentColor"/>
+                    <rect x="10" y="2"  width="6" height="6" rx="0.75" fill="currentColor"/>
+                    <rect x="2"  y="10" width="6" height="6" rx="0.75" fill="currentColor"/>
+                    <rect x="10" y="10" width="6" height="6" rx="0.75" fill="currentColor"/>
+                </svg>
+            </button>
         </div>
 
-        <!-- horizontal track -->
-        <div class="gallery-track" role="list">
+        <!-- ── SHELF VIEW ── -->
+        <div class="gallery-container" id="gallery-container">
+            <div class="shelf-line" aria-hidden="true"></div>
+            <div class="gallery-instruction" aria-hidden="true">
+                <span class="drag-arrow">◀</span>
+                <span class="drag-text">DRAG TO EXPLORE</span>
+                <span class="drag-arrow">▶</span>
+            </div>
 
-            <!-- ── Item 01 ── -->
-            <article class="gallery-item" role="listitem" data-index="01">
-                <div class="item-visual">
-                    <img
-                        src="assets/sculpture.jpg"
-                        alt="Chthonic Vase — cobalt and terracotta ceramic sculpture"
-                        draggable="false"
-                        loading="eager"
-                    >
-                </div>
-                <div class="item-info" aria-hidden="true">
-                    <span class="item-number">01 / ART OBJECT</span>
-                    <h2 class="item-title">CHTHONIC<br>VASE</h2>
-                    <p class="item-description">
-                        Cobalt and terracotta textured ceramic sculpture
-                        exploring organic, hollowed form.
-                    </p>
-                    <div class="item-meta">
-                        <span>CLAY &amp; PIGMENT</span>
-                        <span>2026</span>
+            <div class="gallery-track" role="list">
+
+                <article class="gallery-item" role="listitem" data-index="01">
+                    <div class="item-visual">
+                        <img src="assets/sculpture.jpg" alt="Chthonic Vase — ceramic sculpture" draggable="false" loading="eager">
                     </div>
-                </div>
-            </article>
-
-            <!-- ── Item 02 ── -->
-            <article class="gallery-item" role="listitem" data-index="02">
-                <div class="item-visual">
-                    <img
-                        src="assets/chair.jpg"
-                        alt="Orange Monoblock — translucent acrylic chair with chrome frame"
-                        draggable="false"
-                        loading="eager"
-                    >
-                </div>
-                <div class="item-info" aria-hidden="true">
-                    <span class="item-number">02 / FURNITURE</span>
-                    <h2 class="item-title">ORANGE<br>MONOBLOCK</h2>
-                    <p class="item-description">
-                        Avant-garde seating in orange translucent acrylic
-                        held by a structural chrome tube frame.
-                    </p>
-                    <div class="item-meta">
-                        <span>ACRYLIC &amp; STEEL</span>
-                        <span>2026</span>
+                    <div class="item-info" aria-hidden="true">
+                        <span class="item-number">01 / ART OBJECT</span>
+                        <h2 class="item-title">CHTHONIC<br>VASE</h2>
+                        <p class="item-description">Cobalt and terracotta textured ceramic sculpture exploring organic, hollowed form.</p>
+                        <div class="item-meta">
+                            <span>CLAY &amp; PIGMENT</span>
+                            <span>2026</span>
+                        </div>
                     </div>
-                </div>
-            </article>
+                </article>
 
-            <!-- ── Item 03 ── -->
-            <article class="gallery-item" role="listitem" data-index="03">
-                <div class="item-visual">
-                    <img
-                        src="assets/poster.jpg"
-                        alt="Form &amp; Unterschied — Swiss typographic poster"
-                        draggable="false"
-                        loading="eager"
-                    >
-                </div>
-                <div class="item-info" aria-hidden="true">
-                    <span class="item-number">03 / GRAPHIC DESIGN</span>
-                    <h2 class="item-title">FORM &amp;<br>UNTERSCHIED</h2>
-                    <p class="item-description">
-                        Editorial Swiss-style poster layout focusing on
-                        structural grid dynamics and organic shapes.
-                    </p>
-                    <div class="item-meta">
-                        <span>SERIGRAPH PRINT</span>
-                        <span>2026</span>
+                <article class="gallery-item" role="listitem" data-index="02">
+                    <div class="item-visual">
+                        <img src="assets/chair.jpg" alt="Orange Monoblock — acrylic chair" draggable="false" loading="eager">
                     </div>
-                </div>
-            </article>
+                    <div class="item-info" aria-hidden="true">
+                        <span class="item-number">02 / FURNITURE</span>
+                        <h2 class="item-title">ORANGE<br>MONOBLOCK</h2>
+                        <p class="item-description">Avant-garde seating in orange translucent acrylic held by a structural chrome tube frame.</p>
+                        <div class="item-meta">
+                            <span>ACRYLIC &amp; STEEL</span>
+                            <span>2026</span>
+                        </div>
+                    </div>
+                </article>
 
-        </div><!-- /gallery-track -->
+                <article class="gallery-item" role="listitem" data-index="03">
+                    <div class="item-visual">
+                        <img src="assets/poster.jpg" alt="Form &amp; Unterschied — Swiss typographic poster" draggable="false" loading="eager">
+                    </div>
+                    <div class="item-info" aria-hidden="true">
+                        <span class="item-number">03 / GRAPHIC DESIGN</span>
+                        <h2 class="item-title">FORM &amp;<br>UNTERSCHIED</h2>
+                        <p class="item-description">Editorial Swiss-style poster layout focusing on structural grid dynamics and organic shapes.</p>
+                        <div class="item-meta">
+                            <span>SERIGRAPH PRINT</span>
+                            <span>2026</span>
+                        </div>
+                    </div>
+                </article>
+
+            </div>
+        </div>
+
+        <!-- ── GRID VIEW ── -->
+        <div class="grid-container" id="grid-container" aria-hidden="true">
+            <div class="grid-track">
+
+                <article class="grid-item">
+                    <div class="grid-visual">
+                        <img src="assets/sculpture.jpg" alt="Chthonic Vase" draggable="false">
+                    </div>
+                    <div class="grid-info">
+                        <span class="grid-number">01</span>
+                        <h2 class="grid-title">CHTHONIC VASE</h2>
+                        <span class="grid-cat">ART OBJECT · 2026</span>
+                    </div>
+                </article>
+
+                <article class="grid-item">
+                    <div class="grid-visual">
+                        <img src="assets/chair.jpg" alt="Orange Monoblock" draggable="false">
+                    </div>
+                    <div class="grid-info">
+                        <span class="grid-number">02</span>
+                        <h2 class="grid-title">ORANGE MONOBLOCK</h2>
+                        <span class="grid-cat">FURNITURE · 2026</span>
+                    </div>
+                </article>
+
+                <article class="grid-item">
+                    <div class="grid-visual">
+                        <img src="assets/poster.jpg" alt="Form &amp; Unterschied" draggable="false">
+                    </div>
+                    <div class="grid-info">
+                        <span class="grid-number">03</span>
+                        <h2 class="grid-title">FORM &amp; UNTERSCHIED</h2>
+                        <span class="grid-cat">GRAPHIC DESIGN · 2026</span>
+                    </div>
+                </article>
+
+            </div>
+        </div>
 
     </main>
 
-</div><!-- /app-container -->
+</div>
 
 <script src="main.js"></script>
 </body>
