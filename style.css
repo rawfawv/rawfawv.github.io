@@ -45,7 +45,7 @@ html, body {
     width: var(--sidebar-w);
     flex-shrink: 0;
     height: 100vh;
-    border-right: 1px solid var(--border);
+    border-right: 1px solid var(--ink);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -68,16 +68,16 @@ html, body {
 .sidebar-brand h1 {
     font-family: var(--font-display);
     font-weight: 800;
-    /* tall enough to nearly fill the sidebar height */
     font-size: clamp(1.6rem, 4.2vh, 3rem);
     line-height: 1;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--ink);
     white-space: nowrap;
-    /* rotate CCW so text reads bottom → top */
     transform: rotate(-90deg);
     transform-origin: center center;
+    /* 세로로 길쭉하게 — scaleX 축소로 폰트 압축 */
+    transform: rotate(-90deg) scaleX(0.62);
 }
 
 /* Author name */
@@ -91,8 +91,8 @@ html, body {
     color: var(--ink-muted);
     letter-spacing: 0.06em;
     white-space: nowrap;
-    writing-mode: vertical-rl;
-    transform: rotate(0deg);
+    /* 가로로 읽히도록: writing-mode 제거, -90도 회전 */
+    transform: rotate(-90deg);
 }
 
 /* ============================================================
