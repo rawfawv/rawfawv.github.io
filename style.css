@@ -68,7 +68,7 @@ html, body {
 .sidebar-brand h1 {
     font-family: var(--font-display);
     font-weight: 800;
-    font-size: 1rem;
+    font-size: 3rem;
     line-height: 1;
     text-transform: uppercase;
     letter-spacing: 0.08em;
