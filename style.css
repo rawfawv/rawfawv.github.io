@@ -4,7 +4,7 @@
    ============================================================ */
 
 :root {
-    --bg:             #f2f2f2;
+    --bg:             #F5F7F8;
     --ink:            #121212;
     --ink-muted:      #66645e;
     --border:         #c9c7bd;
@@ -134,12 +134,18 @@ html, body {
     height: 20px;
     object-fit: contain;
     display: block;
-    opacity: 0.3;
-    transition: opacity 0.2s;
+    /* 비활성: 회색 */
+    filter: brightness(0) saturate(0) opacity(0.35);
+    transition: filter 0.2s;
+}
+
+.toggle-btn:hover .toggle-icon {
+    filter: brightness(0) saturate(0) opacity(0.7);
 }
 
 .toggle-btn.active .toggle-icon {
-    opacity: 1;
+    /* 활성: 검정 */
+    filter: brightness(0) saturate(0) opacity(1);
 }
 
 /* ============================================================
@@ -245,10 +251,8 @@ html, body {
     object-fit: contain;
     display: block;
     pointer-events: none;
-    mix-blend-mode: multiply;
     transform: translateY(0) scale(1);
-    transition:
-        transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
     will-change: transform;
 }
 
@@ -381,7 +385,6 @@ html, body {
     height: 100%;
     object-fit: contain;
     padding: 1.5rem;
-    mix-blend-mode: multiply;
     transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
