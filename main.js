@@ -1,13 +1,5 @@
 /**
  * "the play ground" — Gallery Engine
- *
- * Features:
- *  - Shelf view: mouse drag + touch swipe with momentum / inertia
- *  - Grid view: all items visible at once
- *  - View toggle with smooth crossfade
- *  - Vertical wheel → horizontal scroll (shelf mode)
- *  - Drag vs click 구분 (5px 이하 이동 = 클릭으로 판정, 링크 허용)
- *  - Instruction hint auto-fade
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -22,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* ── Drag state ── */
     let isDragging   = false;
-    let didDrag      = false;   // 실제로 움직였는지 (클릭 판정용)
+    let didDrag      = false;
     let startX       = 0;
     let scrollOrigin = 0;
     let velX         = 0;
@@ -32,7 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const FRICTION       = 0.92;
     const STOP_THRESHOLD = 0.4;
-    const DRAG_THRESHOLD = 5;   // px — 이 이상 움직여야 드래그로 판정
+    const DRAG_THRESHOLD = 5;
 
     const cancelMomentum  = () => { cancelAnimationFrame(rafId); rafId = null; };
     const hideInstruction = () => instruction?.classList.add('fade-out');
@@ -67,6 +59,9 @@ document.addEventListener('DOMContentLoaded', () => {
     /* ── Drag start ── */
     const onDragStart = (e) => {
         if (currentView !== 'shelf') return;
+        // <a> 태그나 그 안 요소에서 시작한 경우 드래그 시작하지 않음
+        if (e.target.closest('a')) return;
+
         cancelMomentum();
         isDragging   = true;
         didDrag      = false;
@@ -86,12 +81,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const cx   = getPageX(e);
         const walk = cx - container.offsetLeft - startX;
 
-        // 드래그 임계값 넘으면 data-dragging 활성화 (hover/링크 억제)
-        if (Math.abs(cx - (startX + container.offsetLeft)) > DRAG_THRESHOLD) {
-            if (!didDrag) {
-                didDrag = true;
-                document.body.setAttribute('data-dragging', '');
-            }
+        if (!didDrag && Math.abs(cx - (startX + container.offsetLeft)) > DRAG_THRESHOLD) {
+            didDrag = true;
+            document.body.setAttribute('data-dragging', '');
         }
 
         container.scrollLeft = scrollOrigin - walk;

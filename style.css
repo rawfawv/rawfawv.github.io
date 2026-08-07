@@ -219,6 +219,7 @@ html, body {
     align-items: stretch;
     width: clamp(260px, 22vw, 400px);
     flex-shrink: 0;
+    overflow: visible;  /* hover 감지 + item-info 노출 위해 */
 }
 
 .item-visual {
