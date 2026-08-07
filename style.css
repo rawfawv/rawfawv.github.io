@@ -76,8 +76,6 @@ html, body {
     white-space: nowrap;
     transform: rotate(-90deg);
     transform-origin: center center;
-    /* 세로로 길쭉하게 — scaleX 축소로 폰트 압축 */
-    transform: rotate(-90deg) scaleX(0.62);
 }
 
 /* Author name */
@@ -91,8 +89,7 @@ html, body {
     color: var(--ink-muted);
     letter-spacing: 0.06em;
     white-space: nowrap;
-    /* 가로로 읽히도록: writing-mode 제거, -90도 회전 */
-    transform: rotate(-90deg);
+    writing-mode: vertical-lr;
 }
 
 /* ============================================================
