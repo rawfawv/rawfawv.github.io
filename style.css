@@ -1,0 +1,442 @@
+/* ============================================================
+   "the play ground" — Design System
+   Base: #f5f4ef  /  NYT Magazine editorial + Swiss minimalism
+   ============================================================ */
+
+:root {
+    --bg:             #f7f7f5;
+    --ink:            #121212;
+    --ink-muted:      #66645e;
+    --border:         #c9c7bd;
+    --accent-green:   #2f5c47;
+    --accent-orange:  #e06d48;
+
+    --font-display:   'Syne', sans-serif;
+    --font-sans:      'Inter', sans-serif;
+    --font-serif:     'Playfair Display', serif;
+    --font-mono:      'DM Mono', monospace;
+
+    --sidebar-w:      clamp(260px, 22vw, 380px);
+    --shelf-from-btm: 36vh;   /* shelf line height from bottom */
+}
+
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   LAYOUT
+   ============================================================ */
+.app-container {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+}
+
+/* ============================================================
+   SIDEBAR — NYT Magazine cover strip
+   ============================================================ */
+.sidebar {
+    width: var(--sidebar-w);
+    flex-shrink: 0;
+    height: 100vh;
+    border-right: 1px solid var(--border);
+    padding: 2.6rem 2.4rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: var(--bg);
+    z-index: 20;
+}
+
+/* header row */
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--ink-muted);
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 1rem;
+}
+
+/* brand logotype */
+.sidebar-brand h1 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(2.4rem, 3.6vw, 3.6rem);
+    line-height: 0.87;
+    text-transform: uppercase;
+    letter-spacing: -0.04em;
+    color: var(--ink);
+    margin: 2rem 0;
+    /* Thin blue rule — NYT Magazine signature */
+    border-left: 5px solid #3a7bd5;
+    padding-left: 1rem;
+}
+
+/* nav */
+.sidebar-nav { margin: auto 0; }
+
+.nav-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+}
+
+.nav-item {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--ink-muted);
+    letter-spacing: 0.06em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    transition: color 0.25s, gap 0.25s;
+}
+
+.nav-item::before {
+    content: '';
+    display: block;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent-orange);
+    opacity: 0;
+    transition: opacity 0.25s;
+    flex-shrink: 0;
+}
+
+.nav-item:hover,
+.nav-item.active {
+    color: var(--ink);
+}
+
+.nav-item.active::before,
+.nav-item:hover::before {
+    opacity: 1;
+}
+
+/* footer meta */
+.sidebar-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    border-top: 1px solid var(--border);
+    padding-top: 1.8rem;
+}
+
+.meta-block { display: flex; flex-direction: column; gap: 0.25rem; }
+
+.meta-label {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    color: var(--ink-muted);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.meta-value {
+    font-family: var(--font-sans);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+/* ============================================================
+   GALLERY CONTAINER
+   ============================================================ */
+.gallery-container {
+    flex: 1;
+    height: 100vh;
+    overflow-x: scroll;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    position: relative;
+    cursor: grab;
+}
+
+.gallery-container:active { cursor: grabbing; }
+.gallery-container::-webkit-scrollbar { display: none; }
+
+/* ── drag hint ── */
+.gallery-instruction {
+    position: absolute;
+    bottom: 2rem;
+    right: 3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    color: var(--ink-muted);
+    letter-spacing: 0.12em;
+    pointer-events: none;
+    z-index: 10;
+    transition: opacity 0.6s ease;
+}
+
+.gallery-instruction.fade-out { opacity: 0; }
+
+.drag-arrow {
+    font-size: 0.55rem;
+    animation: nudge 1.6s ease-in-out infinite;
+}
+
+@keyframes nudge {
+    0%, 100% { transform: translateX(0); }
+    50%       { transform: translateX(5px); }
+}
+
+/* ============================================================
+   SHELF TRACK
+   ============================================================ */
+.gallery-track {
+    display: inline-flex;          /* shrink-wraps to content width */
+    align-items: flex-end;
+    height: 100%;
+    padding-bottom: var(--shelf-from-btm);
+    padding-left: 7vw;
+    padding-right: 20vw;
+    gap: 10vw;
+    position: relative;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+/* shelf line */
+.shelf-line {
+    position: fixed;               /* stays in view while scrolling */
+    left: var(--sidebar-w);
+    right: 0;
+    bottom: var(--shelf-from-btm);
+    height: 1px;
+    background: var(--border);
+    pointer-events: none;
+    z-index: 5;
+}
+
+/* thin shadow strip just below shelf line — depth cue */
+.shelf-line::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    top: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.04), transparent);
+}
+
+/* ============================================================
+   PORTFOLIO ITEM
+   ============================================================ */
+.gallery-item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: clamp(260px, 22vw, 400px);
+    flex-shrink: 0;
+}
+
+/* ── image wrapper ── */
+.item-visual {
+    width: 100%;
+    height: 44vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    position: relative;
+    z-index: 6;
+}
+
+.item-visual img {
+    max-height: 100%;
+    max-width: 100%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    display: block;
+    pointer-events: none;
+    /* resting shadow */
+    filter:
+        drop-shadow(0 18px 40px rgba(0,0,0,0.06))
+        drop-shadow(0  4px 10px rgba(0,0,0,0.04));
+    transform: translateY(0) scale(1);
+    transition:
+        transform 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+        filter   0.65s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform, filter;
+}
+
+/* suppress hover effects while dragging to prevent flicker */
+[data-dragging] .gallery-item:hover .item-visual img,
+[data-dragging] .gallery-item:hover .item-info {
+    transform: none !important;
+    opacity: 0 !important;
+    filter:
+        drop-shadow(0 18px 40px rgba(0,0,0,0.06))
+        drop-shadow(0  4px 10px rgba(0,0,0,0.04)) !important;
+}
+
+/* ── floating effect on hover ── */
+.gallery-item:hover .item-visual img {
+    transform: translateY(-28px) scale(1.025);
+    filter:
+        drop-shadow(0 40px 60px rgba(0,0,0,0.14))
+        drop-shadow(0 12px 22px rgba(0,0,0,0.07));
+}
+
+/* ── cast shadow on shelf (oval under object) ── */
+.item-visual::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 50%;
+    transform: translateX(-50%) scaleY(0.35);
+    width: 60%;
+    height: 30px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(0,0,0,0.18) 0%, transparent 70%);
+    pointer-events: none;
+    transition: width 0.65s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 4;
+}
+
+.gallery-item:hover .item-visual::after {
+    width: 80%;
+    opacity: 0.5;
+}
+
+/* ============================================================
+   ITEM INFO — revealed below shelf on hover
+   ============================================================ */
+.item-info {
+    position: absolute;
+    /* shelf line is at bottom: 36vh; item-visual is 44vh tall
+       info sits 36vh from bottom minus a little padding         */
+    bottom: calc(var(--shelf-from-btm) * -1 - 2rem);
+    left: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    opacity: 0;
+    transform: translateY(-8px);
+    transition:
+        opacity   0.5s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none;
+    z-index: 7;
+}
+
+.gallery-item:hover .item-info {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.item-number {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--accent-orange);
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+}
+
+.item-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1.3rem, 1.8vw, 1.9rem);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    color: var(--ink);
+}
+
+.item-description {
+    font-family: var(--font-sans);
+    font-size: 0.82rem;
+    line-height: 1.55;
+    color: var(--ink-muted);
+    max-width: 92%;
+}
+
+.item-meta {
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid var(--border);
+    padding-top: 0.55rem;
+    margin-top: 0.2rem;
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ============================================================
+   MOBILE  (≤ 900px)
+   ============================================================ */
+@media (max-width: 900px) {
+    :root { --shelf-from-btm: 28vh; }
+
+    .app-container { flex-direction: column; }
+
+    .sidebar {
+        width: 100vw;
+        height: auto;
+        max-width: none;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+        padding: 1.6rem 1.8rem;
+        flex-direction: row;
+        align-items: center;
+        gap: 2rem;
+    }
+
+    .sidebar-header  { display: none; }
+    .sidebar-footer  { display: none; }
+
+    .sidebar-brand h1 {
+        font-size: 1.8rem;
+        margin: 0;
+        white-space: nowrap;
+    }
+
+    .sidebar-nav { margin: 0; }
+
+    .nav-menu {
+        flex-direction: row;
+        gap: 1.4rem;
+    }
+
+    .nav-item { font-size: 0.85rem; }
+
+    .gallery-container {
+        height: calc(100vh - 80px);
+    }
+
+    .shelf-line {
+        left: 0;
+        bottom: var(--shelf-from-btm);
+    }
+
+    .gallery-item {
+        width: clamp(220px, 55vw, 320px);
+    }
+
+    .item-visual { height: 32vh; }
+
+    .item-title { font-size: 1.2rem; }
+}

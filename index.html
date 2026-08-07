@@ -1,410 +1,152 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>The Playground — rawfawv</title>
-  <style>
-    *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="the play ground — rawfawv portfolio">
+    <title>the play ground — rawfawv</title>
 
-    html, body {
-      height: 100%;
-      background: #f0ede8;
-      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-      overflow: hidden;
-    }
+    <!-- Web Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Syne:wght@700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-    /* ── Header ── */
-    header {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 100;
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      padding: 28px 48px 16px;
-      background: #f0ede8;
-    }
-
-    .site-name {
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: #111;
-    }
-
-    .site-title {
-      font-size: 11px;
-      font-weight: 400;
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      color: #999;
-    }
-
-    /* ── Stage ── */
-    .stage {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      display: flex;
-      align-items: center;
-      cursor: grab;
-      user-select: none;
-    }
-
-    .stage:active {
-      cursor: grabbing;
-    }
-
-    /* ── Track ── */
-    .track {
-      display: flex;
-      align-items: center;
-      gap: 64px;
-      padding: 0 120px;
-      will-change: transform;
-      transition: transform 0.08s linear;
-    }
-
-    /* ── Name block ── */
-    .name-block {
-      flex-shrink: 0;
-      line-height: 1;
-    }
-
-    .name-block .label {
-      font-size: 10px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: #aaa;
-      margin-bottom: 12px;
-    }
-
-    .name-block .name {
-      font-size: clamp(40px, 5vw, 72px);
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      color: #111;
-      line-height: 0.95;
-    }
-
-    .name-block .sub {
-      margin-top: 14px;
-      font-size: 11px;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: #999;
-    }
-
-    /* ── Divider ── */
-    .divider {
-      width: 1px;
-      height: 200px;
-      background: #ccc;
-      flex-shrink: 0;
-    }
-
-    /* ── Card ── */
-    .card {
-      position: relative;
-      flex-shrink: 0;
-      width: 340px;
-      height: 440px;
-      background: #fff;
-      overflow: hidden;
-      cursor: pointer;
-    }
-
-    .card svg {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-
-    /* Hover overlay */
-    .card-overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(17, 17, 17, 0.88);
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      padding: 32px;
-      opacity: 0;
-      transition: opacity 0.25s ease;
-      pointer-events: none;
-    }
-
-    .card:hover .card-overlay {
-      opacity: 1;
-    }
-
-    .card-overlay .card-num {
-      font-size: 10px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.4);
-      margin-bottom: 10px;
-    }
-
-    .card-overlay .card-title {
-      font-size: 22px;
-      font-weight: 700;
-      color: #fff;
-      line-height: 1.15;
-      letter-spacing: -0.01em;
-    }
-
-    .card-overlay .card-desc {
-      margin-top: 10px;
-      font-size: 11px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: rgba(255,255,255,0.5);
-    }
-
-    /* ── Scroll hint ── */
-    .scroll-hint {
-      position: fixed;
-      bottom: 32px;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 10px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: #bbb;
-      pointer-events: none;
-      animation: fade-hint 2s ease 1.5s forwards;
-      opacity: 1;
-    }
-
-    @keyframes fade-hint {
-      to { opacity: 0; }
-    }
-  </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<div class="app-container">
 
-  <header>
-    <span class="site-name">rawfawv</span>
-    <span class="site-title">The Playground</span>
-  </header>
+    <!-- ── Sidebar ── -->
+    <aside class="sidebar" aria-label="Site navigation">
 
-  <div class="stage" id="stage">
-    <div class="track" id="track">
+        <header class="sidebar-header">
+            <span class="meta-tag">THE PLAYGROUND</span>
+            <span class="meta-tag">ISSUE NO. 01</span>
+        </header>
 
-      <!-- Name block -->
-      <div class="name-block">
-        <div class="label">Portfolio</div>
-        <div class="name">The<br>Play<br>ground</div>
-        <div class="sub">Selected Works</div>
-      </div>
-
-      <div class="divider"></div>
-
-      <!-- Card 01 -->
-      <div class="card">
-        <svg viewBox="0 0 340 440" xmlns="http://www.w3.org/2000/svg">
-          <!-- background -->
-          <rect width="340" height="440" fill="#f7f5f0"/>
-
-          <!-- shelf lines -->
-          <line x1="0" y1="280" x2="340" y2="280" stroke="#d8d4cc" stroke-width="1"/>
-          <line x1="0" y1="281" x2="340" y2="281" stroke="#e8e5e0" stroke-width="0.5"/>
-
-          <!-- object: stacked books -->
-          <rect x="60" y="180" width="90" height="14" rx="1" fill="#1a1a1a"/>
-          <rect x="64" y="170" width="86" height="12" rx="1" fill="#2d2d2d"/>
-          <rect x="68" y="161" width="82" height="11" rx="1" fill="#404040"/>
-          <rect x="72" y="153" width="78" height="10" rx="1" fill="#1a1a1a"/>
-          <!-- book spine text -->
-          <text x="102" y="189" font-size="6" fill="#888" font-family="Helvetica Neue,sans-serif" letter-spacing="1" text-anchor="middle">EDITORIAL</text>
-
-          <!-- object: bold type block -->
-          <text x="200" y="238" font-size="52" font-weight="700" fill="#111" font-family="Helvetica Neue,sans-serif" letter-spacing="-2">AG</text>
-          <line x1="192" y1="244" x2="330" y2="244" stroke="#111" stroke-width="2.5"/>
-
-          <!-- object: small scattered dots (texture) -->
-          <circle cx="52" cy="310" r="3" fill="#c8c4bc"/>
-          <circle cx="64" cy="318" r="2" fill="#c8c4bc"/>
-          <circle cx="74" cy="308" r="4" fill="#d0ccc4"/>
-          <circle cx="86" cy="316" r="2.5" fill="#c8c4bc"/>
-          <circle cx="96" cy="307" r="3" fill="#d0ccc4"/>
-
-          <!-- object: small document card -->
-          <rect x="190" y="300" width="100" height="130" rx="2" fill="#fff" stroke="#e0ddd8" stroke-width="1"/>
-          <rect x="205" y="316" width="70" height="3" rx="1" fill="#ddd"/>
-          <rect x="205" y="325" width="55" height="2" rx="1" fill="#e8e8e8"/>
-          <rect x="205" y="332" width="62" height="2" rx="1" fill="#e8e8e8"/>
-          <rect x="205" y="339" width="48" height="2" rx="1" fill="#e8e8e8"/>
-          <rect x="205" y="352" width="70" height="22" rx="1" fill="#1a1a1a"/>
-          <text x="240" y="367" font-size="7" fill="#fff" font-family="Helvetica Neue,sans-serif" letter-spacing="1" text-anchor="middle">VIEW</text>
-
-          <!-- label bottom -->
-          <text x="28" y="418" font-size="9" fill="#aaa" font-family="Helvetica Neue,sans-serif" letter-spacing="2">01 — PRINT</text>
-        </svg>
-
-        <div class="card-overlay">
-          <div class="card-num">01 / 02</div>
-          <div class="card-title">Print &<br>Editorial</div>
-          <div class="card-desc">Typography · Layout</div>
+        <div class="sidebar-brand">
+            <h1 aria-label="the play ground">the<br>play<br>ground</h1>
         </div>
-      </div>
 
-      <!-- Card 02 -->
-      <div class="card">
-        <svg viewBox="0 0 340 440" xmlns="http://www.w3.org/2000/svg">
-          <!-- background -->
-          <rect width="340" height="440" fill="#f0ede8"/>
+        <nav class="sidebar-nav" aria-label="Primary">
+            <ul class="nav-menu" role="list">
+                <li><a href="#projects" class="nav-item active">PROJECTS</a></li>
+                <li><a href="#about"    class="nav-item">ABOUT</a></li>
+                <li><a href="#contact"  class="nav-item">CONTACT</a></li>
+            </ul>
+        </nav>
 
-          <!-- large color block -->
-          <rect x="0" y="60" width="340" height="200" fill="#e8e0d0"/>
+        <footer class="sidebar-footer">
+            <div class="meta-block">
+                <span class="meta-label">BY</span>
+                <span class="meta-value">JIWOON KIM</span>
+            </div>
+            <div class="meta-block">
+                <span class="meta-label">ROLE</span>
+                <span class="meta-value">DESIGNER &amp; DEVELOPER</span>
+            </div>
+            <div class="meta-block">
+                <span class="meta-label">BASED</span>
+                <span class="meta-value">SEOUL, KR — EST. 2026</span>
+            </div>
+        </footer>
 
-          <!-- monitor shape -->
-          <rect x="70" y="90" width="200" height="130" rx="4" fill="#1a1a1a"/>
-          <rect x="78" y="98" width="184" height="114" rx="2" fill="#0a0a0a"/>
-          <!-- screen content -->
-          <rect x="90" y="108" width="80" height="6" rx="1" fill="#333"/>
-          <rect x="90" y="120" width="160" height="3" rx="1" fill="#2a2a2a"/>
-          <rect x="90" y="128" width="140" height="3" rx="1" fill="#2a2a2a"/>
-          <rect x="90" y="136" width="155" height="3" rx="1" fill="#2a2a2a"/>
-          <rect x="90" y="150" width="60" height="18" rx="1" fill="#4a90d9"/>
-          <text x="120" y="163" font-size="7" fill="#fff" font-family="Helvetica Neue,sans-serif" text-anchor="middle" letter-spacing="1">ENTER</text>
-          <!-- stand -->
-          <rect x="155" y="220" width="30" height="16" rx="1" fill="#222"/>
-          <rect x="138" y="234" width="64" height="5" rx="2" fill="#1a1a1a"/>
+    </aside>
 
-          <!-- side label bar (NYT Magazine style) -->
-          <rect x="0" y="300" width="18" height="140" fill="#3a7bd5"/>
-          <!-- rotated text -->
-          <text x="9" y="430" font-size="7" fill="#fff" font-family="Helvetica Neue,sans-serif"
-            letter-spacing="1.5" text-anchor="end"
-            transform="rotate(-90, 9, 370)">WEB DESIGN</text>
+    <!-- ── Gallery ── -->
+    <main class="gallery-container" id="gallery-container" aria-label="Portfolio gallery — drag to explore">
 
-          <!-- big type -->
-          <text x="32" y="360" font-size="36" font-weight="700" fill="#111"
-            font-family="Helvetica Neue,sans-serif" letter-spacing="-1">DIGITAL</text>
-          <text x="32" y="400" font-size="36" font-weight="700" fill="#111"
-            font-family="Helvetica Neue,sans-serif" letter-spacing="-1">WORKS</text>
+        <!-- shelf line (decorative) -->
+        <div class="shelf-line" aria-hidden="true"></div>
 
-          <!-- label bottom -->
-          <text x="32" y="430" font-size="9" fill="#aaa" font-family="Helvetica Neue,sans-serif" letter-spacing="2">02 — DIGITAL</text>
-        </svg>
-
-        <div class="card-overlay">
-          <div class="card-num">02 / 02</div>
-          <div class="card-title">Digital &<br>Web</div>
-          <div class="card-desc">Interface · Interaction</div>
+        <!-- drag hint -->
+        <div class="gallery-instruction" aria-hidden="true">
+            <span class="drag-arrow">◀</span>
+            <span class="drag-text">DRAG TO EXPLORE</span>
+            <span class="drag-arrow">▶</span>
         </div>
-      </div>
 
-    </div>
-  </div>
+        <!-- horizontal track -->
+        <div class="gallery-track" role="list">
 
-  <div class="scroll-hint">← drag to explore →</div>
+            <!-- ── Item 01 ── -->
+            <article class="gallery-item" role="listitem" data-index="01">
+                <div class="item-visual">
+                    <img
+                        src="assets/sculpture.jpg"
+                        alt="Chthonic Vase — cobalt and terracotta ceramic sculpture"
+                        draggable="false"
+                        loading="eager"
+                    >
+                </div>
+                <div class="item-info" aria-hidden="true">
+                    <span class="item-number">01 / ART OBJECT</span>
+                    <h2 class="item-title">CHTHONIC<br>VASE</h2>
+                    <p class="item-description">
+                        Cobalt and terracotta textured ceramic sculpture
+                        exploring organic, hollowed form.
+                    </p>
+                    <div class="item-meta">
+                        <span>CLAY &amp; PIGMENT</span>
+                        <span>2026</span>
+                    </div>
+                </div>
+            </article>
 
-  <script>
-    const stage = document.getElementById('stage');
-    const track = document.getElementById('track');
+            <!-- ── Item 02 ── -->
+            <article class="gallery-item" role="listitem" data-index="02">
+                <div class="item-visual">
+                    <img
+                        src="assets/chair.jpg"
+                        alt="Orange Monoblock — translucent acrylic chair with chrome frame"
+                        draggable="false"
+                        loading="eager"
+                    >
+                </div>
+                <div class="item-info" aria-hidden="true">
+                    <span class="item-number">02 / FURNITURE</span>
+                    <h2 class="item-title">ORANGE<br>MONOBLOCK</h2>
+                    <p class="item-description">
+                        Avant-garde seating in orange translucent acrylic
+                        held by a structural chrome tube frame.
+                    </p>
+                    <div class="item-meta">
+                        <span>ACRYLIC &amp; STEEL</span>
+                        <span>2026</span>
+                    </div>
+                </div>
+            </article>
 
-    let x = 0;
-    let targetX = 0;
-    let isDragging = false;
-    let startX = 0;
-    let startTranslate = 0;
-    let velX = 0;
-    let lastX = 0;
-    let raf;
+            <!-- ── Item 03 ── -->
+            <article class="gallery-item" role="listitem" data-index="03">
+                <div class="item-visual">
+                    <img
+                        src="assets/poster.jpg"
+                        alt="Form &amp; Unterschied — Swiss typographic poster"
+                        draggable="false"
+                        loading="eager"
+                    >
+                </div>
+                <div class="item-info" aria-hidden="true">
+                    <span class="item-number">03 / GRAPHIC DESIGN</span>
+                    <h2 class="item-title">FORM &amp;<br>UNTERSCHIED</h2>
+                    <p class="item-description">
+                        Editorial Swiss-style poster layout focusing on
+                        structural grid dynamics and organic shapes.
+                    </p>
+                    <div class="item-meta">
+                        <span>SERIGRAPH PRINT</span>
+                        <span>2026</span>
+                    </div>
+                </div>
+            </article>
 
-    function getMaxScroll() {
-      return -(track.scrollWidth - window.innerWidth);
-    }
+        </div><!-- /gallery-track -->
 
-    function clamp(val, min, max) {
-      return Math.min(Math.max(val, min), max);
-    }
+    </main>
 
-    // Mouse
-    stage.addEventListener('mousedown', e => {
-      isDragging = true;
-      startX = e.clientX;
-      startTranslate = x;
-      lastX = e.clientX;
-      velX = 0;
-      cancelAnimationFrame(raf);
-      stage.style.cursor = 'grabbing';
-    });
+</div><!-- /app-container -->
 
-    window.addEventListener('mousemove', e => {
-      if (!isDragging) return;
-      velX = e.clientX - lastX;
-      lastX = e.clientX;
-      const delta = e.clientX - startX;
-      x = clamp(startTranslate + delta, getMaxScroll(), 0);
-      track.style.transform = `translateX(${x}px)`;
-    });
-
-    window.addEventListener('mouseup', () => {
-      if (!isDragging) return;
-      isDragging = false;
-      stage.style.cursor = 'grab';
-      startMomentum();
-    });
-
-    // Touch
-    stage.addEventListener('touchstart', e => {
-      isDragging = true;
-      startX = e.touches[0].clientX;
-      startTranslate = x;
-      lastX = e.touches[0].clientX;
-      velX = 0;
-      cancelAnimationFrame(raf);
-    }, { passive: true });
-
-    window.addEventListener('touchmove', e => {
-      if (!isDragging) return;
-      velX = e.touches[0].clientX - lastX;
-      lastX = e.touches[0].clientX;
-      const delta = e.touches[0].clientX - startX;
-      x = clamp(startTranslate + delta, getMaxScroll(), 0);
-      track.style.transform = `translateX(${x}px)`;
-    }, { passive: true });
-
-    window.addEventListener('touchend', () => {
-      if (!isDragging) return;
-      isDragging = false;
-      startMomentum();
-    });
-
-    // Wheel (horizontal or vertical mapped to horizontal)
-    stage.addEventListener('wheel', e => {
-      e.preventDefault();
-      cancelAnimationFrame(raf);
-      const delta = e.deltaX !== 0 ? e.deltaX : e.deltaY;
-      x = clamp(x - delta, getMaxScroll(), 0);
-      track.style.transform = `translateX(${x}px)`;
-    }, { passive: false });
-
-    // Momentum
-    function startMomentum() {
-      function loop() {
-        if (Math.abs(velX) < 0.5) return;
-        velX *= 0.92;
-        x = clamp(x + velX, getMaxScroll(), 0);
-        track.style.transform = `translateX(${x}px)`;
-        raf = requestAnimationFrame(loop);
-      }
-      raf = requestAnimationFrame(loop);
-    }
-  </script>
+<script src="main.js"></script>
 </body>
 </html>
