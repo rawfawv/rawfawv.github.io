@@ -92,7 +92,7 @@ html, body {
     letter-spacing: 0.06em;
     white-space: nowrap;
     writing-mode: vertical-rl;
-    transform: rotate(180deg);
+    transform: rotate(0deg);
 }
 
 /* ============================================================
