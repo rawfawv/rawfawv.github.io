@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>어항 물고기 게임</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', Arial, sans-serif;
+      overflow: hidden;
+      cursor: none;
+    }
+
+    /* ── 뒤로가기 버튼 ── */
+    #back-btn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    #back-btn svg {
+      width: 24px;
+      height: 24px;
+      stroke: #333;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      transition: stroke 0.2s;
+    }
+
+    #back-btn:hover svg {
+      stroke: #000;
+    }
+
+    /* ── 어항 컨테이너 ── */
+    #game-container {
+      position: relative;
+      width: 100vmin;
+      height: 100vmin;
+    }
+
+    #bowl-img {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    #game-canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 2;
+    }
+
+    /* ── 어항 이름 레이블 ── */
+    #bowl-label {
+      position: absolute;
+      top: 4%;
+      left: 4%;
+      z-index: 3;
+      font-size: clamp(16px, 3vmin, 26px);
+      font-weight: bold;
+      color: #334;
+      white-space: nowrap;
+      pointer-events: none;
+      letter-spacing: 1px;
+    }
+
+    /* ── 이름 입력 팝업 ── */
+    #name-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.55);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 300;
+    }
+
+    #name-box {
+      background: #fff;
+      border-radius: 20px;
+      padding: 40px 50px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+      min-width: 320px;
+    }
+
+    #name-box h2 {
+      font-size: 22px;
+      color: #222;
+    }
+
+    #name-input {
+      width: 100%;
+      border: 2px solid #aac;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-size: 18px;
+      text-align: center;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    #name-input:focus { border-color: #4488cc; }
+
+    #name-submit {
+      background: #4488cc;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 36px;
+      font-size: 17px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+
+    #name-submit:hover { transform: scale(1.05); }
+
+    /* ── 완성 질문 팝업 ── */
+    #complete-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+
+    #complete-overlay.show { display: flex; }
+
+    #complete-overlay h1 {
+      color: #fff;
+      font-size: clamp(24px, 5vmin, 44px);
+      margin-bottom: 16px;
+      animation: pulse 1s infinite alternate;
+    }
+
+    #complete-overlay p {
+      color: #ddd;
+      font-size: clamp(14px, 2.5vmin, 20px);
+      margin-bottom: 32px;
+    }
+
+    .btn-row { display: flex; gap: 20px; }
+
+    .btn-yes {
+      background: #e84040;
+      border: none; border-radius: 12px;
+      padding: 14px 44px; font-size: 20px;
+      font-weight: bold; cursor: pointer; color: #fff;
+      transition: transform 0.2s;
+    }
+    .btn-yes:hover { transform: scale(1.08); }
+
+    .btn-no {
+      background: #e0e0e0;
+      border: none; border-radius: 12px;
+      padding: 14px 44px; font-size: 20px;
+      font-weight: bold; cursor: pointer; color: #333;
+      transition: transform 0.2s;
+    }
+    .btn-no:hover { transform: scale(1.08); }
+
+    /* ── 결과 화면 ── */
+    #result-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.82);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 250;
+      gap: 0;
+    }
+
+    #result-overlay.show { display: flex; }
+
+    #result-title {
+      font-size: clamp(20px, 4vmin, 36px);
+      font-weight: bold;
+      color: #fff;
+      margin-bottom: 24px;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.7);
+    }
+
+    #result-img {
+      max-width: 70vmin;
+      max-height: 55vmin;
+      border-radius: 16px;
+      object-fit: contain;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.5);
+    }
+
+    #result-restart {
+      margin-top: 28px;
+      background: #fff;
+      border: none; border-radius: 12px;
+      padding: 12px 40px; font-size: 17px;
+      font-weight: bold; cursor: pointer; color: #333;
+      transition: transform 0.2s;
+    }
+    #result-restart:hover { transform: scale(1.06); }
+
+    @keyframes pulse {
+      from { transform: scale(1); }
+      to   { transform: scale(1.04); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- 뒤로가기 버튼 -->
+<a id="back-btn" href="https://rawfawv.github.io" aria-label="홈으로 돌아가기">
+  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <polyline points="15 18 9 12 15 6"/>
+  </svg>
+</a>
+
+<!-- 이름 입력 팝업 -->
+<div id="name-overlay">
+  <div id="name-box">
+    <h2>물고기 이름을 정해주세요</h2>
+    <input id="name-input" type="text" maxlength="10" placeholder="이름 입력..." autocomplete="off">
+    <button id="name-submit" onclick="submitName()">시작!</button>
+  </div>
+</div>
+
+<!-- 어항 게임 -->
+<div id="game-container">
+  <img id="bowl-img" src="어항.jpg" alt="어항">
+  <div id="bowl-label"></div>
+  <canvas id="game-canvas" width="800" height="800"></canvas>
+</div>
+
+<!-- 완성 질문 팝업 -->
+<div id="complete-overlay">
+  <h1 id="complete-title">물고기를 드시겠습니까?</h1>
+  <p id="complete-sub"></p>
+  <div class="btn-row">
+    <button class="btn-yes" onclick="answerYes()">예</button>
+    <button class="btn-no"  onclick="answerNo()">아니오</button>
+  </div>
+</div>
+
+<!-- 결과 화면 -->
+<div id="result-overlay">
+  <div id="result-title"></div>
+  <img id="result-img" src="" alt="결과">
+  <button id="result-restart" onclick="restartGame()">다시 하기</button>
+</div>
+
+<script>
+  // ── 캔버스 & 이미지 ──────────────────────────────────────
+  const canvas = document.getElementById('game-canvas');
+  const ctx    = canvas.getContext('2d');
+  const CW = 800, CH = 800;
+
+  const imgHead = new Image(); imgHead.src = '물고기 얼굴.png';
+  const imgFull = new Image(); imgFull.src = '물고기 풀.png';
+
+  // ── 어항 타원 파라미터 ────────────────────────────────────
+  const BCX = CW * 0.500;
+  const BCY = CH * 0.515;
+  const BRX = CW * 0.385;
+  const BRY = CH * 0.375;
+  const BOWL_LIMIT = 0.86;
+
+  // ── 성장 단계 정의 ────────────────────────────────────────
+  // stage: 0~6  (7단계)
+  // 각 단계에서 필요한 먹이 수
+  //  0→1: 2개  (머리만 → 머리+몸 조금)
+  //  1→2: 2개  (몸 조금 더)
+  //  2→3: 2개  (몸 중간 → 이 단계에서 크기 업!)
+  //  3→4: 2개
+  //  4→5: 2개
+  //  5→6: 2개  → 완성
+  const STAGE_FOOD = [2, 2, 2, 2, 2, 2]; // 각 단계 필요 먹이
+  const TOTAL_STAGES = 6;
+  const SIZE_UP_STAGE = 3; // 이 단계부터 크기가 커짐 (한 번만)
+
+  // 각 단계별 몸통 드러내기 비율 (0=머리만, 1=꼬리까지)
+  const BODY_REVEAL = [0.0, 0.20, 0.38, 0.55, 0.70, 0.85, 1.0];
+
+  // 물고기 렌더 스케일
+  const SCALE_SMALL = 0.148;  // stage 0~2
+  const SCALE_BIG   = 0.210;  // stage 3~6 (크기 업)
+
+  // ── 상태 ─────────────────────────────────────────────────
+  let fishName = '';
+  let fish = makeDefaultFish();
+  let foods = [], particles = [];
+  let foodSpawnTimer = 0;
+  const FOOD_INTERVAL = 100;
+  const MAX_FOODS = 5;
+  let mouseX = BCX, mouseY = BCY;
+  let gameOver = false;
+
+  function makeDefaultFish() {
+    return {
+      x: BCX, y: BCY,
+      prevX: BCX,
+      stage: 0,
+      stageProgress: 0,
+      totalFood: 0,
+      revealRatio: 0,   // 현재 드러난 몸통 비율 (애니메이션)
+      renderScale: SCALE_SMALL,
+      flipX: 1,
+    };
+  }
+
+  // ── 이름 입력 ────────────────────────────────────────────
+  document.getElementById('name-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') submitName();
+  });
+
+  function submitName() {
+    const val = document.getElementById('name-input').value.trim();
+    if (!val) { document.getElementById('name-input').focus(); return; }
+    fishName = val;
+    document.getElementById('name-overlay').style.display = 'none';
+    document.getElementById('bowl-label').textContent = `${fishName}이의 집`;
+    startGame();
+  }
+
+  // ── 게임 시작 ────────────────────────────────────────────
+  function startGame() {
+    fish = makeDefaultFish();
+    foods = []; particles = [];
+    foodSpawnTimer = 0;
+    gameOver = false;
+    gameLoop();
+  }
+
+  // ── 마우스 ───────────────────────────────────────────────
+  document.getElementById('game-container').addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = (e.clientX - rect.left) * (CW / rect.width);
+    mouseY = (e.clientY - rect.top)  * (CH / rect.height);
+  });
+
+  // ── 어항 클램프 ──────────────────────────────────────────
+  function clampToBowl(x, y) {
+    const dx = (x - BCX) / BRX;
+    const dy = (y - BCY) / BRY;
+    if (dx*dx + dy*dy <= BOWL_LIMIT * BOWL_LIMIT) return { x, y };
+    const a = Math.atan2(dy, dx);
+    return {
+      x: BCX + Math.cos(a) * BRX * BOWL_LIMIT,
+      y: BCY + Math.sin(a) * BRY * BOWL_LIMIT,
+    };
+  }
+
+  function isInsideBowl(x, y) {
+    const dx = (x - BCX) / BRX;
+    const dy = (y - BCY) / BRY;
+    return dx*dx + dy*dy <= BOWL_LIMIT * BOWL_LIMIT;
+  }
+
+  // ── 먹이 스폰 ────────────────────────────────────────────
+  function spawnFood() {
+    if (foods.length >= MAX_FOODS) return;
+    const spawnX = BCX + (Math.random() - 0.5) * BRX * 1.5;
+    const spawnY = BCY - BRY * 0.82;
+    const c = clampToBowl(spawnX, spawnY);
+    foods.push({
+      x: c.x, y: BCY - BRY * 0.80,
+      vy: 0.55 + Math.random() * 0.5,
+      radius: 7,
+      wobble: Math.random() * Math.PI * 2,
+      wobbleSpeed: 0.03 + Math.random() * 0.02,
+      color: `hsl(${28 + Math.random() * 25}, 88%, 58%)`,
+    });
+  }
+
+  // ── 파티클 ───────────────────────────────────────────────
+  function spawnParticles(x, y) {
+    for (let i = 0; i < 10; i++) {
+      const a = (Math.PI * 2 * i) / 10 + Math.random() * 0.5;
+      const sp = 1.5 + Math.random() * 2.5;
+      particles.push({
+        x, y,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp,
+        life: 1, decay: 0.04 + Math.random() * 0.03,
+        radius: 3 + Math.random() * 3,
+        color: `hsl(${170 + Math.random() * 60}, 80%, 65%)`,
+      });
+    }
+  }
+
+  // ── 물고기 그리기 ─────────────────────────────────────────
+  // 앵커 포인트 = 얼굴(머리) 위치
+  // 물고기 이미지에서 얼굴은 왼쪽에 있음
+  // flip=1(오른쪽 이동): 이미지 그대로 → 얼굴이 왼쪽 → offsetX = 0 (얼굴이 x에 위치)
+  // flip=-1(왼쪽 이동): 이미지 좌우반전 → 얼굴이 오른쪽 → offsetX = -fw (오른쪽 끝이 x에 위치)
+  // translate 후 scale(flip,1) 하면 flip=-1일 때 x축 반전되므로
+  // 항상 얼굴 쪽(이미지 왼쪽)을 원점에 두면 됨: drawImage 시작을 (0, -fh/2)로
+  function drawFish() {
+    const { x, y, flipX, stage, revealRatio, renderScale } = fish;
+    const flip = -flipX; // 방향 반대 (요구사항 7)
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(flip, 1);
+
+    if (stage === 0) {
+      // 머리만 — 얼굴 이미지의 왼쪽(=얼굴)을 원점에
+      if (imgHead.complete && imgHead.naturalWidth > 0) {
+        const hw = imgHead.naturalWidth  * renderScale * 0.7;
+        const hh = imgHead.naturalHeight * renderScale * 0.7;
+        // 얼굴이 이미지 왼쪽에 있으므로 x=0 시작
+        ctx.drawImage(imgHead, 0, -hh / 2, hw, hh);
+      }
+    } else {
+      // 몸통 점점 드러내기 — 완성 이미지도 머리가 왼쪽
+      if (imgFull.complete && imgFull.naturalWidth > 0) {
+        const fw = imgFull.naturalWidth  * renderScale;
+        const fh = imgFull.naturalHeight * renderScale;
+
+        ctx.save();
+        ctx.beginPath();
+        // x=0 시작(얼굴), fw*revealRatio 만큼 드러냄
+        ctx.rect(0, -fh / 2, fw * revealRatio, fh);
+        ctx.clip();
+        ctx.drawImage(imgFull, 0, -fh / 2, fw, fh);
+        ctx.restore();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  // ── 먹이 그리기 ──────────────────────────────────────────
+  function drawFoods() {
+    foods.forEach(f => {
+      f.wobble += f.wobbleSpeed;
+      const wx = Math.sin(f.wobble) * 1.5;
+      ctx.save();
+      ctx.translate(f.x + wx, f.y);
+
+      ctx.beginPath();
+      ctx.ellipse(0, f.radius * 0.8, f.radius * 0.8, f.radius * 0.3, 0, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0,0,0,0.18)';
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.ellipse(0, 0, f.radius, f.radius * 1.3, 0, 0, Math.PI * 2);
+      ctx.fillStyle = f.color;
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.ellipse(-f.radius * 0.2, -f.radius * 0.3, f.radius * 0.3, f.radius * 0.2, -0.5, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,255,255,0.45)';
+      ctx.fill();
+
+      ctx.restore();
+    });
+  }
+
+  // ── 파티클 그리기 ────────────────────────────────────────
+  function drawParticles() {
+    particles.forEach(p => {
+      ctx.save();
+      ctx.globalAlpha = p.life;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.radius * p.life, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+      ctx.restore();
+      p.x += p.vx; p.y += p.vy; p.vy += 0.05; p.life -= p.decay;
+    });
+    particles = particles.filter(p => p.life > 0);
+  }
+
+  // ── 커서 ─────────────────────────────────────────────────
+  function drawCursor() {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(80,80,80,0.45)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(mouseX - 8, mouseY); ctx.lineTo(mouseX + 8, mouseY);
+    ctx.moveTo(mouseX, mouseY - 8); ctx.lineTo(mouseX, mouseY + 8);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // ── 성장 단계 업데이트 ────────────────────────────────────
+  function updateFishStage() {
+    const needed = STAGE_FOOD[fish.stage];
+    if (fish.stageProgress >= needed) {
+      fish.stage++;
+      fish.stageProgress = 0;
+
+      // SIZE_UP_STAGE 도달 시 한 번만 크기 업
+      if (fish.stage === SIZE_UP_STAGE) {
+        fish.renderScale = SCALE_BIG;
+      }
+
+      if (fish.stage >= TOTAL_STAGES) {
+        fish.stage = TOTAL_STAGES;
+        fish.revealRatio = 1;
+        setTimeout(() => showComplete(), 800);
+      }
+    }
+  }
+
+  // ── 게임 루프 ─────────────────────────────────────────────
+  function gameLoop() {
+    if (gameOver) return;
+
+    ctx.clearRect(0, 0, CW, CH);
+
+    // 물고기 이동
+    fish.prevX = fish.x;
+    const cl = clampToBowl(mouseX, mouseY);
+    fish.x += (cl.x - fish.x) * 0.08;
+    fish.y += (cl.y - fish.y) * 0.08;
+
+    const dx = fish.x - fish.prevX;
+    if (Math.abs(dx) > 0.3) fish.flipX = dx > 0 ? 1 : -1;
+
+    // 먹이 스폰
+    foodSpawnTimer++;
+    if (foodSpawnTimer >= FOOD_INTERVAL) { spawnFood(); foodSpawnTimer = 0; }
+
+    // 먹이 업데이트
+    foods = foods.filter(f => {
+      f.y += f.vy;
+      if (!isInsideBowl(f.x, f.y + f.radius * 2)) return false;
+      if (Math.hypot(f.x - fish.x, f.y - fish.y) < 48) {
+        spawnParticles(f.x, f.y);
+        fish.totalFood++;
+        fish.stageProgress++;
+        updateFishStage();
+        return false;
+      }
+      return true;
+    });
+
+    // 몸통 드러내기 애니메이션
+    const targetReveal = BODY_REVEAL[Math.min(fish.stage, TOTAL_STAGES)];
+    fish.revealRatio += (targetReveal - fish.revealRatio) * 0.04;
+
+    drawFoods();
+    drawParticles();
+    drawFish();
+    drawCursor();
+
+    requestAnimationFrame(gameLoop);
+  }
+
+  // ── 완성 팝업 ─────────────────────────────────────────────
+  function showComplete() {
+    gameOver = true;
+    for (let i = 0; i < 5; i++) {
+      setTimeout(() => spawnParticles(
+        BCX + (Math.random() - 0.5) * 200,
+        BCY + (Math.random() - 0.5) * 200
+      ), i * 140);
+    }
+    setTimeout(() => {
+      document.getElementById('complete-sub').textContent =
+        `${fishName}이가 다 자랐어요!`;
+      document.getElementById('complete-overlay').classList.add('show');
+    }, 900);
+  }
+
+  function answerYes() {
+    document.getElementById('complete-overlay').classList.remove('show');
+    showResult('생선요리.png', `${fishName}이가 울었습니다`);
+  }
+
+  function answerNo() {
+    document.getElementById('complete-overlay').classList.remove('show');
+    showResult('웃는생선.png', `${fishName}이가 웃었습니다`);
+  }
+
+  function showResult(imgSrc, title) {
+    document.getElementById('result-title').textContent = title;
+    document.getElementById('result-img').src = imgSrc;
+    document.getElementById('result-overlay').classList.add('show');
+  }
+
+  function restartGame() {
+    document.getElementById('result-overlay').classList.remove('show');
+    // 이름은 유지하고 게임만 재시작
+    fish = makeDefaultFish();
+    foods = []; particles = [];
+    foodSpawnTimer = 0;
+    gameOver = false;
+    gameLoop();
+  }
+
+  // ── 이미지 로드 후 대기 (이름 팝업이 먼저) ──────────────
+  let loadedCount = 0;
+  function onLoad() { loadedCount++; }
+  imgHead.onload = imgHead.onerror = onLoad;
+  imgFull.onload = imgFull.onerror = onLoad;
+
+  // 이름 팝업 포커스
+  window.addEventListener('load', () => {
+    document.getElementById('name-input').focus();
+  });
+</script>
+</body>
+</html>
