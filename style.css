@@ -243,7 +243,12 @@ html, body {
     will-change: transform;
 }
 
-/* suppress hover while dragging */
+/* 4.png — 50% 크기 */
+.gallery-item--small .item-visual img {
+    width: 50%;
+    height: 50%;
+    object-fit: contain;
+}
 [data-dragging] .gallery-item:hover .item-visual img,
 [data-dragging] .gallery-item:hover .item-info {
     transform: none !important;
