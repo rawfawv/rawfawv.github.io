@@ -101,11 +101,8 @@ html, body {
     transform: translateX(-50%);
     z-index: 30;
     display: flex;
-    gap: 2px;
-    background: rgba(18,18,18,0.06);
-    border-radius: 8px;
+    gap: 8px;
     padding: 3px;
-    /* ensure it sits above both views */
     pointer-events: auto;
 }
 
@@ -116,21 +113,20 @@ html, body {
     width: 36px;
     height: 36px;
     border: none;
-    border-radius: 6px;
+    border-radius: 0;
     background: transparent;
-    color: var(--ink-muted);
     cursor: pointer;
-    transition: background 0.2s, color 0.2s;
+    transition: opacity 0.2s;
+    padding: 0;
 }
 
-.toggle-btn:hover {
-    color: var(--ink);
+.toggle-btn:hover .toggle-icon {
+    opacity: 1;
 }
 
 .toggle-btn.active {
-    background: var(--bg);
-    color: var(--ink);
-    box-shadow: 0 1px 4px rgba(0,0,0,0.10);
+    background: transparent;
+    box-shadow: none;
 }
 
 .toggle-icon {
@@ -138,11 +134,10 @@ html, body {
     height: 20px;
     object-fit: contain;
     display: block;
-    opacity: 0.35;
+    opacity: 0.3;
     transition: opacity 0.2s;
 }
 
-.toggle-btn:hover .toggle-icon,
 .toggle-btn.active .toggle-icon {
     opacity: 1;
 }
@@ -374,7 +369,7 @@ html, body {
 .grid-visual {
     width: 100%;
     aspect-ratio: 4 / 5;
-    background: #efefec;
+    background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
