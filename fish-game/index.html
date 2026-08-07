@@ -18,6 +18,26 @@
       cursor: none;
     }
 
+    /* ── 홈 버튼 ── */
+    #home-btn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 400;
+      font-size: 28px;
+      color: #334;
+      text-decoration: none;
+      line-height: 1;
+      opacity: 0.6;
+      transition: opacity 0.2s, transform 0.2s;
+      cursor: pointer;
+    }
+    #home-btn:hover {
+      opacity: 1;
+      transform: translateX(-3px);
+    }
+
+    /* ── 어항 컨테이너 ── */
     #game-container {
       position: relative;
       width: 100vmin;
@@ -40,6 +60,7 @@
       z-index: 2;
     }
 
+    /* ── 어항 이름 레이블 ── */
     #bowl-label {
       position: absolute;
       top: 4%;
@@ -53,6 +74,7 @@
       letter-spacing: 1px;
     }
 
+    /* ── 이름 입력 팝업 ── */
     #name-overlay {
       position: fixed;
       inset: 0;
@@ -102,6 +124,7 @@
     }
     #name-submit:hover { transform: scale(1.05); }
 
+    /* ── 완성 질문 팝업 ── */
     #complete-overlay {
       position: fixed;
       inset: 0;
@@ -147,6 +170,7 @@
     }
     .btn-no:hover { transform: scale(1.08); }
 
+    /* ── 결과 화면 ── */
     #result-overlay {
       position: fixed;
       inset: 0;
@@ -170,7 +194,7 @@
     #result-img {
       max-width: 70vmin;
       max-height: 55vmin;
-      border-radius: 16px;
+      border-radius: 0;
       object-fit: contain;
       box-shadow: 0 8px 40px rgba(0,0,0,0.5);
     }
@@ -193,6 +217,10 @@
 </head>
 <body>
 
+<!-- 홈으로 돌아가기 -->
+<a href="../index.html" id="home-btn" title="홈으로">&#8592;</a>
+
+<!-- 이름 입력 팝업 -->
 <div id="name-overlay">
   <div id="name-box">
     <h2>물고기 이름을 정해주세요</h2>
@@ -201,12 +229,14 @@
   </div>
 </div>
 
+<!-- 어항 게임 -->
 <div id="game-container">
   <img id="bowl-img" src="어항.jpg" alt="어항">
   <div id="bowl-label"></div>
   <canvas id="game-canvas" width="800" height="800"></canvas>
 </div>
 
+<!-- 완성 질문 팝업 -->
 <div id="complete-overlay">
   <h1 id="complete-title">물고기를 드시겠습니까?</h1>
   <p id="complete-sub"></p>
@@ -216,6 +246,7 @@
   </div>
 </div>
 
+<!-- 결과 화면 -->
 <div id="result-overlay">
   <div id="result-title"></div>
   <img id="result-img" src="" alt="결과">
