@@ -302,7 +302,7 @@
     const spawnX = BCX + (Math.random() - 0.5) * BRX * 1.5;
     const c = clampToBowl(spawnX, BCY - BRY * 0.82);
     foods.push({ x: c.x, y: BCY - BRY * 0.80,
-      vy: 0.55 + Math.random() * 0.5, radius: 7,
+      vy: 0.3 + Math.random() * 2.2, radius: 7,
       wobble: Math.random() * Math.PI * 2,
       wobbleSpeed: 0.03 + Math.random() * 0.02,
       color: `hsl(${28 + Math.random() * 25}, 88%, 58%)` });
