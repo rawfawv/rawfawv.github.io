@@ -17,42 +17,37 @@
 
     <!-- ── Sidebar ── -->
     <aside class="sidebar" aria-label="Site navigation">
-
-        <!-- Rotated logotype -->
         <div class="sidebar-brand">
             <h1 aria-label="the play ground">theplayground</h1>
         </div>
-
-        <!-- Author name bottom -->
         <footer class="sidebar-footer">
             <span class="author-name">Jiwoon Chung</span>
         </footer>
-
     </aside>
 
     <!-- ── Gallery ── -->
     <main class="gallery-wrapper" aria-label="Portfolio gallery">
 
-        <!-- View toggle — top center -->
+        <!-- View toggle -->
         <div class="view-toggle" aria-label="View mode">
             <button class="toggle-btn active" id="btn-shelf" aria-label="Shelf view" title="Shelf view">
                 <svg width="28" height="22" viewBox="0 0 28 22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <rect x="0" y="0"  width="28" height="6" rx="0" fill="currentColor"/>
-                    <rect x="0" y="8"  width="28" height="6" rx="0" fill="currentColor"/>
-                    <rect x="0" y="16" width="28" height="6" rx="0" fill="currentColor"/>
+                    <rect x="0" y="0"  width="28" height="6" fill="currentColor"/>
+                    <rect x="0" y="8"  width="28" height="6" fill="currentColor"/>
+                    <rect x="0" y="16" width="28" height="6" fill="currentColor"/>
                 </svg>
             </button>
             <button class="toggle-btn" id="btn-grid" aria-label="Grid view" title="Grid view">
                 <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <rect x="0"    y="0"    width="6" height="6" rx="0" fill="currentColor"/>
-                    <rect x="8"    y="0"    width="6" height="6" rx="0" fill="currentColor"/>
-                    <rect x="16"   y="0"    width="6" height="6" rx="0" fill="currentColor"/>
-                    <rect x="0"    y="8"    width="6" height="6" rx="0" fill="currentColor"/>
-                    <rect x="8"    y="8"    width="6" height="6" rx="0" fill="currentColor"/>
-                    <rect x="16"   y="8"    width="6" height="6" rx="0" fill="currentColor"/>
-                    <rect x="0"    y="16"   width="6" height="6" rx="0" fill="currentColor"/>
-                    <rect x="8"    y="16"   width="6" height="6" rx="0" fill="currentColor"/>
-                    <rect x="16"   y="16"   width="6" height="6" rx="0" fill="currentColor"/>
+                    <rect x="0"  y="0"  width="6" height="6" fill="currentColor"/>
+                    <rect x="8"  y="0"  width="6" height="6" fill="currentColor"/>
+                    <rect x="16" y="0"  width="6" height="6" fill="currentColor"/>
+                    <rect x="0"  y="8"  width="6" height="6" fill="currentColor"/>
+                    <rect x="8"  y="8"  width="6" height="6" fill="currentColor"/>
+                    <rect x="16" y="8"  width="6" height="6" fill="currentColor"/>
+                    <rect x="0"  y="16" width="6" height="6" fill="currentColor"/>
+                    <rect x="8"  y="16" width="6" height="6" fill="currentColor"/>
+                    <rect x="16" y="16" width="6" height="6" fill="currentColor"/>
                 </svg>
             </button>
         </div>
@@ -65,102 +60,90 @@
                 <span class="drag-text">DRAG TO EXPLORE</span>
                 <span class="drag-arrow">▶</span>
             </div>
-
-            <div class="gallery-track" role="list">
-
-                <article class="gallery-item gallery-item--small" role="listitem" data-index="01">
-                    <div class="item-visual">
-                        <a href="https://rawfawv.github.io/fish-game/" target="_blank" rel="noopener">
-                            <img src="assets/4.png" alt="생선게임" draggable="false" loading="eager">
-                        </a>
-                    </div>
-                    <div class="item-info" aria-hidden="true">
-                        <span class="item-number">01 / ART OBJECT</span>
-                        <h2 class="item-title">생선게임</h2>
-                        <p class="item-description">Cobalt and terracotta textured ceramic sculpture exploring organic, hollowed form.</p>
-                        <div class="item-meta">
-                            <span>CLAY &amp; PIGMENT</span>
-                            <span>2026</span>
-                        </div>
-                    </div>
-                </article>
-
-                <article class="gallery-item" role="listitem" data-index="02">
-                    <div class="item-visual">
-                        <img src="assets/1.png" alt="Orange Monoblock — acrylic chair" draggable="false" loading="eager">
-                    </div>
-                    <div class="item-info" aria-hidden="true">
-                        <span class="item-number">02 / FURNITURE</span>
-                        <h2 class="item-title">ORANGE<br>MONOBLOCK</h2>
-                        <p class="item-description">Avant-garde seating in orange translucent acrylic held by a structural chrome tube frame.</p>
-                        <div class="item-meta">
-                            <span>ACRYLIC &amp; STEEL</span>
-                            <span>2026</span>
-                        </div>
-                    </div>
-                </article>
-
-                <article class="gallery-item" role="listitem" data-index="03">
-                    <div class="item-visual">
-                        <img src="assets/2.png" alt="Form &amp; Unterschied — Swiss typographic poster" draggable="false" loading="eager">
-                    </div>
-                    <div class="item-info" aria-hidden="true">
-                        <span class="item-number">03 / GRAPHIC DESIGN</span>
-                        <h2 class="item-title">FORM &amp;<br>UNTERSCHIED</h2>
-                        <p class="item-description">Editorial Swiss-style poster layout focusing on structural grid dynamics and organic shapes.</p>
-                        <div class="item-meta">
-                            <span>SERIGRAPH PRINT</span>
-                            <span>2026</span>
-                        </div>
-                    </div>
-                </article>
-
-            </div>
+            <div class="gallery-track" id="shelf-track" role="list"></div>
         </div>
 
         <!-- ── GRID VIEW ── -->
         <div class="grid-container" id="grid-container" aria-hidden="true">
-            <div class="grid-track">
-
-                <article class="grid-item">
-                    <div class="grid-visual">
-                        <img src="assets/4.png" alt="Chthonic Vase" draggable="false">
-                    </div>
-                    <div class="grid-info">
-                        <span class="grid-number">01</span>
-                        <h2 class="grid-title">CHTHONIC VASE</h2>
-                        <span class="grid-cat">ART OBJECT · 2026</span>
-                    </div>
-                </article>
-
-                <article class="grid-item">
-                    <div class="grid-visual">
-                        <img src="assets/1.png" alt="Orange Monoblock" draggable="false">
-                    </div>
-                    <div class="grid-info">
-                        <span class="grid-number">02</span>
-                        <h2 class="grid-title">ORANGE MONOBLOCK</h2>
-                        <span class="grid-cat">FURNITURE · 2026</span>
-                    </div>
-                </article>
-
-                <article class="grid-item">
-                    <div class="grid-visual">
-                        <img src="assets/2.png" alt="Form &amp; Unterschied" draggable="false">
-                    </div>
-                    <div class="grid-info">
-                        <span class="grid-number">03</span>
-                        <h2 class="grid-title">FORM &amp; UNTERSCHIED</h2>
-                        <span class="grid-cat">GRAPHIC DESIGN · 2026</span>
-                    </div>
-                </article>
-
-            </div>
+            <div class="grid-track" id="grid-track"></div>
         </div>
 
     </main>
 
 </div>
+
+<script>
+/* ============================================================
+   포트폴리오 데이터 — 여기만 수정하면 한줄보기/모아보기 모두 반영
+   ============================================================
+   link: 클릭 시 이동할 URL (없으면 null)
+   small: true면 이미지 크기 축소 (선택)
+   ============================================================ */
+const PROJECTS = [
+    {
+        id: '01',
+        title: '생선게임',
+        image: 'assets/4.png',
+        link: 'https://rawfawv.github.io/fish-game/',
+        small: true,
+    },
+    {
+        id: '02',
+        title: 'ORANGE MONOBLOCK',
+        image: 'assets/1.png',
+        link: null,
+        small: false,
+    },
+    {
+        id: '03',
+        title: 'FORM & UNTERSCHIED',
+        image: 'assets/2.png',
+        link: null,
+        small: false,
+    },
+];
+
+/* ── 한줄보기 렌더링 ── */
+function renderShelf() {
+    const track = document.getElementById('shelf-track');
+    track.innerHTML = PROJECTS.map((p, i) => {
+        const imgTag = `<img src="${p.image}" alt="${p.title}" draggable="false" loading="eager">`;
+        const visual = p.link
+            ? `<a href="${p.link}" target="_blank" rel="noopener">${imgTag}</a>`
+            : imgTag;
+
+        return `
+        <article class="gallery-item${p.small ? ' gallery-item--small' : ''}" role="listitem" data-index="${p.id}">
+            <div class="item-visual">${visual}</div>
+            <div class="item-info" aria-hidden="true">
+                <h2 class="item-title">${p.title}</h2>
+            </div>
+        </article>`;
+    }).join('');
+}
+
+/* ── 모아보기 렌더링 ── */
+function renderGrid() {
+    const track = document.getElementById('grid-track');
+    track.innerHTML = PROJECTS.map(p => {
+        const imgTag = `<img src="${p.image}" alt="${p.title}" draggable="false">`;
+        const visual = p.link
+            ? `<a href="${p.link}" target="_blank" rel="noopener">${imgTag}</a>`
+            : imgTag;
+
+        return `
+        <article class="grid-item">
+            <div class="grid-visual">${visual}</div>
+            <div class="grid-info">
+                <h2 class="grid-title">${p.title}</h2>
+            </div>
+        </article>`;
+    }).join('');
+}
+
+renderShelf();
+renderGrid();
+</script>
 
 <script src="main.js"></script>
 </body>

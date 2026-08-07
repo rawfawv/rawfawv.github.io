@@ -366,6 +366,20 @@ html, body {
     overflow: hidden;
 }
 
+.grid-visual a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+}
+
+/* grid-cat 제거 */
+.grid-cat { display: none; }
+
+/* grid-number 제거 */
+.grid-number { display: none; }
+
 .grid-visual img {
     width: 100%;
     height: 100%;
