@@ -245,7 +245,7 @@ html, body {
 
 /* 4.png — 50% 크기 */
 .gallery-item--small .item-visual {
-    height: 30vh;
+    height: 21vh;
 }
 
 .gallery-item--small .item-visual img {
