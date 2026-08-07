@@ -74,7 +74,7 @@ html, body {
     letter-spacing: 0.08em;
     color: var(--ink);
     white-space: nowrap;
-    transform: rotate(-90deg);
+    transform: rotate(-90deg) scaleX(2);
     transform-origin: center center;
 }
 
@@ -90,6 +90,7 @@ html, body {
     letter-spacing: 0.06em;
     white-space: nowrap;
     writing-mode: vertical-lr;
+    transform: rotate(180deg);
 }
 
 /* ============================================================
