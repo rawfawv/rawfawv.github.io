@@ -12,6 +12,19 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
+    /* ── 4.png 클릭 → fish-game 이동 ── */
+    document.querySelectorAll('img[src="assets/4.png"]').forEach(img => {
+        const item = img.closest('.gallery-item, .grid-item');
+        if (item) {
+            item.style.cursor = 'pointer';
+            item.addEventListener('click', () => {
+                // 드래그 중에는 무시
+                if (document.body.hasAttribute('data-dragging')) return;
+                window.location.href = 'fish-game/index.html';
+            });
+        }
+    });
+
     /* ── Elements ── */
     const container   = document.getElementById('gallery-container');
     const gridContainer = document.getElementById('grid-container');
