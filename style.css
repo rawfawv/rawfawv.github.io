@@ -116,36 +116,19 @@ html, body {
     border-radius: 0;
     background: transparent;
     cursor: pointer;
-    transition: opacity 0.2s;
+    color: #aaa;
+    transition: color 0.2s;
     padding: 0;
 }
 
-.toggle-btn:hover .toggle-icon {
-    opacity: 1;
+.toggle-btn:hover {
+    color: #555;
 }
 
 .toggle-btn.active {
     background: transparent;
     box-shadow: none;
-}
-
-.toggle-icon {
-    width: 20px;
-    height: 20px;
-    object-fit: contain;
-    display: block;
-    /* 비활성: 회색 */
-    filter: brightness(0) saturate(0) opacity(0.35);
-    transition: filter 0.2s;
-}
-
-.toggle-btn:hover .toggle-icon {
-    filter: brightness(0) saturate(0) opacity(0.7);
-}
-
-.toggle-btn.active .toggle-icon {
-    /* 활성: 검정 */
-    filter: brightness(0) saturate(0) opacity(1);
+    color: #111;
 }
 
 /* ============================================================
