@@ -133,6 +133,20 @@ html, body {
     box-shadow: 0 1px 4px rgba(0,0,0,0.10);
 }
 
+.toggle-icon {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    display: block;
+    opacity: 0.35;
+    transition: opacity 0.2s;
+}
+
+.toggle-btn:hover .toggle-icon,
+.toggle-btn.active .toggle-icon {
+    opacity: 1;
+}
+
 /* ============================================================
    SHELF VIEW
    ============================================================ */
