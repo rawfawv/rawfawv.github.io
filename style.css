@@ -68,7 +68,7 @@ html, body {
 .sidebar-brand h1 {
     font-family: var(--font-display);
     font-weight: 800;
-    font-size: clamp(1.6rem, 4.2vh, 3rem);
+    font-size: 1rem;
     line-height: 1;
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -78,17 +78,9 @@ html, body {
     transform-origin: center center;
 }
 
-/* Author name */
+/* Author name — removed */
 .sidebar-footer {
-    flex-shrink: 0;
-}
-
-.author-name {
-    font-family: var(--font-mono);
-    font-size: 0.6rem;
-    color: var(--ink-muted);
-    letter-spacing: 0.06em;
-    white-space: nowrap;
+    display: none;
 }
 
 /* ============================================================
