@@ -197,6 +197,11 @@ html, body {
     -webkit-user-select: none;
 }
 
+/* 첫 번째 썸네일 20px 오른쪽으로 */
+.gallery-item:first-child {
+    margin-left: 20px;
+}
+
 /* shelf line — hidden */
 .shelf-line {
     display: none;
@@ -252,7 +257,7 @@ html, body {
 /* oval cast shadow — removed */
 .item-visual::after { display: none; }
 
-/* item info — 이미지 바로 아래 항상 표시, 제목만 */
+/* item info — 호버 시 이미지 바로 아래 표시 */
 .item-info {
     width: 100%;
     padding: 0.6rem 0 0 0;
@@ -260,6 +265,12 @@ html, body {
     flex-direction: column;
     pointer-events: none;
     z-index: 7;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.gallery-item:hover .item-info {
+    opacity: 1;
 }
 
 /* 제목만 표시 */
