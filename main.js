@@ -29,13 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnShelf.classList.remove('active');
     });
 
-    /* ── Grid 클릭 ── */
-    gridContainer.addEventListener('click', (e) => {
-        const el = e.target.closest('[data-link]');
-        if (el) window.location.href = el.dataset.link;
-    });
-
-    /* ── Shelf: drag + click ── */
+    /* ── Drag ── */
     let startX       = 0;
     let startY       = 0;
     let scrollOrigin = 0;
@@ -46,23 +40,18 @@ document.addEventListener('DOMContentLoaded', () => {
     let moved        = false;
     let rafId        = null;
 
-    const MOVE_THRESHOLD = 5;
+    const MOVE_THRESHOLD = 6;
     const FRICTION       = 0.92;
-    const STOP_VEL       = 0.5;
 
     const stopMomentum = () => { cancelAnimationFrame(rafId); rafId = null; };
 
     const momentum = () => {
         velX *= FRICTION;
         container.scrollLeft -= velX;
-        if (Math.abs(velX) > STOP_VEL) {
-            rafId = requestAnimationFrame(momentum);
-        } else {
-            rafId = null;
-        }
+        if (Math.abs(velX) > 0.5) rafId = requestAnimationFrame(momentum);
+        else rafId = null;
     };
 
-    /* mousedown */
     container.addEventListener('mousedown', (e) => {
         stopMomentum();
         pressing     = true;
@@ -73,44 +62,49 @@ document.addEventListener('DOMContentLoaded', () => {
         prevX        = e.clientX;
         prevTime     = performance.now();
         velX         = 0;
-        e.preventDefault();
+        // preventDefault 제거 — click 이벤트가 정상 발생해야 함
     });
 
-    /* mousemove */
     window.addEventListener('mousemove', (e) => {
         if (!pressing) return;
         const dx = e.clientX - startX;
         const dy = e.clientY - startY;
-        if (!moved && (Math.abs(dx) > MOVE_THRESHOLD || Math.abs(dy) > MOVE_THRESHOLD)) {
+        if (Math.abs(dx) > MOVE_THRESHOLD || Math.abs(dy) > MOVE_THRESHOLD) {
             moved = true;
         }
-        container.scrollLeft = scrollOrigin - dx;
-
-        const now = performance.now();
-        const dt  = now - prevTime;
-        if (dt > 0) velX = ((e.clientX - prevX) / dt) * 16;
-        prevX    = e.clientX;
-        prevTime = now;
+        if (moved) {
+            container.scrollLeft = scrollOrigin - dx;
+            const now = performance.now();
+            const dt  = now - prevTime;
+            if (dt > 0) velX = ((e.clientX - prevX) / dt) * 16;
+            prevX    = e.clientX;
+            prevTime = now;
+        }
     });
 
-    /* mouseup */
-    window.addEventListener('mouseup', (e) => {
+    window.addEventListener('mouseup', () => {
         if (!pressing) return;
         pressing = false;
-
-        if (!moved) {
-            // 클릭 판정 — data-link 찾아서 이동
-            const el = e.target.closest('[data-link]');
-            if (el) {
-                window.location.href = el.dataset.link;
-                return;
-            }
-        }
-
-        if (Math.abs(velX) > STOP_VEL) momentum();
+        if (moved && Math.abs(velX) > 0.5) momentum();
     });
 
-    /* wheel */
+    /* ── click → 링크 이동 (드래그 아닐 때만) ── */
+    container.addEventListener('click', (e) => {
+        if (moved) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
+        const el = e.target.closest('[data-link]');
+        if (el) window.location.href = el.dataset.link;
+    });
+
+    gridContainer.addEventListener('click', (e) => {
+        const el = e.target.closest('[data-link]');
+        if (el) window.location.href = el.dataset.link;
+    });
+
+    /* ── wheel ── */
     container.addEventListener('wheel', (e) => {
         e.preventDefault();
         stopMomentum();
@@ -118,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
         container.scrollLeft += delta * 0.9;
     }, { passive: false });
 
-    /* touch */
+    /* ── touch ── */
     container.addEventListener('touchstart', (e) => {
         stopMomentum();
         pressing     = true;
@@ -135,30 +129,33 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!pressing) return;
         e.preventDefault();
         const dx = e.touches[0].clientX - startX;
-        if (!moved && Math.abs(dx) > MOVE_THRESHOLD) moved = true;
-        container.scrollLeft = scrollOrigin - dx;
-
-        const now = performance.now();
-        const dt  = now - prevTime;
-        if (dt > 0) velX = ((e.touches[0].clientX - prevX) / dt) * 16;
-        prevX    = e.touches[0].clientX;
-        prevTime = now;
+        if (Math.abs(dx) > MOVE_THRESHOLD) moved = true;
+        if (moved) {
+            container.scrollLeft = scrollOrigin - dx;
+            const now = performance.now();
+            const dt  = now - prevTime;
+            if (dt > 0) velX = ((e.touches[0].clientX - prevX) / dt) * 16;
+            prevX    = e.touches[0].clientX;
+            prevTime = now;
+        }
     }, { passive: false });
 
     window.addEventListener('touchend', (e) => {
         if (!pressing) return;
         pressing = false;
         if (!moved) {
-            const t = e.changedTouches[0];
+            const t  = e.changedTouches[0];
             const el = document.elementFromPoint(t.clientX, t.clientY)?.closest('[data-link]');
             if (el) { window.location.href = el.dataset.link; return; }
         }
-        if (Math.abs(velX) > STOP_VEL) momentum();
+        if (Math.abs(velX) > 0.5) momentum();
     });
 
-    /* instruction fade */
-    const hideHint = () => instruction?.classList.add('fade-out');
-    container.addEventListener('mousedown', hideHint, { once: true });
-    setTimeout(hideHint, 3000);
+    /* ── cursor style ── */
+    container.addEventListener('mousedown', () => container.style.cursor = 'grabbing');
+    window.addEventListener('mouseup', () => container.style.cursor = 'grab');
+
+    /* ── instruction fade ── */
+    setTimeout(() => instruction?.classList.add('fade-out'), 3000);
 
 });
