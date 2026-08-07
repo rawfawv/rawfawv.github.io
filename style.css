@@ -250,25 +250,22 @@ html, body {
     width: 100%;
     height: 100%;
     cursor: pointer;
+    pointer-events: auto;
 }
 
-/* 드래그 중 링크 클릭 방지 */
+/* 드래그 중에만 링크 차단 */
 [data-dragging] .item-visual a {
     pointer-events: none;
 }
 
-/* 4.png — 50% 크기 */
-.gallery-item--small .item-visual {
-    height: 21vh;
-}
-
+/* 4.png — 크기 조정 */
 .gallery-item--small .item-visual img {
-    max-height: 100%;
-    max-width: 100%;
+    max-height: 21vh;
     width: auto;
     height: auto;
     object-fit: contain;
 }
+
 [data-dragging] .gallery-item:hover .item-visual img,
 [data-dragging] .gallery-item:hover .item-info {
     transform: none !important;
@@ -282,10 +279,10 @@ html, body {
 /* oval cast shadow — removed */
 .item-visual::after { display: none; }
 
-/* item info — 기본 숨김, 호버 시 표시 */
+/* item info — 이미지 아래, 기본 숨김 호버 시 표시 */
 .item-info {
     width: 100%;
-    padding: 0.6rem 0 0 0;
+    padding: 0.5rem 0 0 0;
     display: flex;
     flex-direction: column;
     pointer-events: none;

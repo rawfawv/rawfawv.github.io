@@ -6,48 +6,23 @@
  *  - Grid view: all items visible at once
  *  - View toggle with smooth crossfade
  *  - Vertical wheel → horizontal scroll (shelf mode)
- *  - Hover suppression while dragging
+ *  - Drag vs click 구분 (5px 이하 이동 = 클릭으로 판정, 링크 허용)
  *  - Instruction hint auto-fade
  */
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    /* ── 4.png 클릭 → fish-game 이동 ── */
-    let pointerDownX = 0;
-    let pointerDownY = 0;
-
-    document.querySelectorAll('img[src="assets/4.png"]').forEach(img => {
-        const item = img.closest('.gallery-item, .grid-item');
-        if (item) {
-            item.style.cursor = 'pointer';
-
-            item.addEventListener('pointerdown', (e) => {
-                pointerDownX = e.clientX;
-                pointerDownY = e.clientY;
-            });
-
-            item.addEventListener('pointerup', (e) => {
-                const dx = Math.abs(e.clientX - pointerDownX);
-                const dy = Math.abs(e.clientY - pointerDownY);
-                // 5px 이하 이동이면 클릭으로 판정
-                if (dx < 5 && dy < 5) {
-                    window.location.href = 'fish-game/index.html';
-                }
-            });
-        }
-    });
-
-    /* ── Elements ── */
-    const container   = document.getElementById('gallery-container');
+    const container     = document.getElementById('gallery-container');
     const gridContainer = document.getElementById('grid-container');
-    const btnShelf    = document.getElementById('btn-shelf');
-    const btnGrid     = document.getElementById('btn-grid');
-    const instruction = document.querySelector('.gallery-instruction');
+    const btnShelf      = document.getElementById('btn-shelf');
+    const btnGrid       = document.getElementById('btn-grid');
+    const instruction   = document.querySelector('.gallery-instruction');
 
     if (!container) return;
 
     /* ── Drag state ── */
     let isDragging   = false;
+    let didDrag      = false;   // 실제로 움직였는지 (클릭 판정용)
     let startX       = 0;
     let scrollOrigin = 0;
     let velX         = 0;
@@ -57,14 +32,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const FRICTION       = 0.92;
     const STOP_THRESHOLD = 0.4;
+    const DRAG_THRESHOLD = 5;   // px — 이 이상 움직여야 드래그로 판정
 
-    /* ── Helpers ── */
-    const cancelMomentum = () => { cancelAnimationFrame(rafId); rafId = null; };
+    const cancelMomentum  = () => { cancelAnimationFrame(rafId); rafId = null; };
     const hideInstruction = () => instruction?.classList.add('fade-out');
-    const getPageX = (e) => e.touches ? e.touches[0].pageX : e.pageX;
+    const getPageX        = (e) => e.touches ? e.touches[0].pageX : e.pageX;
 
     /* ── View toggle ── */
-    let currentView = 'shelf'; // 'shelf' | 'grid'
+    let currentView = 'shelf';
 
     const switchToShelf = () => {
         currentView = 'shelf';
@@ -87,20 +62,19 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     btnShelf.addEventListener('click', switchToShelf);
-    btnGrid.addEventListener('click',  switchToGrid);
+    btnGrid.addEventListener ('click', switchToGrid);
 
     /* ── Drag start ── */
     const onDragStart = (e) => {
         if (currentView !== 'shelf') return;
         cancelMomentum();
         isDragging   = true;
+        didDrag      = false;
         startX       = getPageX(e) - container.offsetLeft;
         scrollOrigin = container.scrollLeft;
         lastX        = getPageX(e);
         lastTime     = performance.now();
         velX         = 0;
-
-        document.body.setAttribute('data-dragging', '');
         hideInstruction();
     };
 
@@ -111,6 +85,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const cx   = getPageX(e);
         const walk = cx - container.offsetLeft - startX;
+
+        // 드래그 임계값 넘으면 data-dragging 활성화 (hover/링크 억제)
+        if (Math.abs(cx - (startX + container.offsetLeft)) > DRAG_THRESHOLD) {
+            if (!didDrag) {
+                didDrag = true;
+                document.body.setAttribute('data-dragging', '');
+            }
+        }
+
         container.scrollLeft = scrollOrigin - walk;
 
         const now = performance.now();
@@ -139,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    /* ── Wheel → horizontal (shelf only) ── */
+    /* ── Wheel → horizontal ── */
     container.addEventListener('wheel', (e) => {
         if (currentView !== 'shelf') return;
         e.preventDefault();
@@ -160,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
     container.addEventListener('touchmove',  onDragMove,  { passive: false });
     window.addEventListener   ('touchend',   onDragEnd);
 
-    /* ── Auto-fade instruction after 3s ── */
+    /* ── Auto-fade instruction ── */
     setTimeout(hideInstruction, 3000);
 
 });
