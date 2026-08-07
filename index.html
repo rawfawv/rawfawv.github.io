@@ -108,13 +108,9 @@ function renderShelf() {
     const track = document.getElementById('shelf-track');
     track.innerHTML = PROJECTS.map((p, i) => {
         const imgTag = `<img src="${p.image}" alt="${p.title}" draggable="false" loading="eager">`;
-        const visual = p.link
-            ? `<a href="${p.link}">${imgTag}</a>`
-            : imgTag;
-
         return `
-        <article class="gallery-item${p.small ? ' gallery-item--small' : ''}" role="listitem" data-index="${p.id}">
-            <div class="item-visual">${visual}</div>
+        <article class="gallery-item${p.small ? ' gallery-item--small' : ''}" role="listitem" data-index="${p.id}"${p.link ? ` data-link="${p.link}"` : ''}>
+            <div class="item-visual">${imgTag}</div>
             <div class="item-info" aria-hidden="true">
                 <h2 class="item-title">${p.title}</h2>
             </div>
@@ -127,13 +123,9 @@ function renderGrid() {
     const track = document.getElementById('grid-track');
     track.innerHTML = PROJECTS.map(p => {
         const imgTag = `<img src="${p.image}" alt="${p.title}" draggable="false">`;
-        const visual = p.link
-            ? `<a href="${p.link}">${imgTag}</a>`
-            : imgTag;
-
         return `
-        <article class="grid-item">
-            <div class="grid-visual">${visual}</div>
+        <article class="grid-item"${p.link ? ` data-link="${p.link}"` : ''}>
+            <div class="grid-visual">${imgTag}</div>
             <div class="grid-info">
                 <h2 class="grid-title">${p.title}</h2>
             </div>
