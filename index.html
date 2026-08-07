@@ -109,7 +109,7 @@ function renderShelf() {
     track.innerHTML = PROJECTS.map((p, i) => {
         const imgTag = `<img src="${p.image}" alt="${p.title}" draggable="false" loading="eager">`;
         const visual = p.link
-            ? `<a href="${p.link}" target="_blank" rel="noopener">${imgTag}</a>`
+            ? `<a href="${p.link}">${imgTag}</a>`
             : imgTag;
 
         return `
@@ -128,7 +128,7 @@ function renderGrid() {
     track.innerHTML = PROJECTS.map(p => {
         const imgTag = `<img src="${p.image}" alt="${p.title}" draggable="false">`;
         const visual = p.link
-            ? `<a href="${p.link}" target="_blank" rel="noopener">${imgTag}</a>`
+            ? `<a href="${p.link}">${imgTag}</a>`
             : imgTag;
 
         return `
