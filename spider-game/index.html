@@ -234,7 +234,7 @@
 
 <!-- 좌하단 힌트 -->
 <div id="blow-hint">
-  <p>🌬️ 너무 불쌍하면...<br>마이크에 바람 불어서 살려줄 수 있어요</p>
+  <p>🎤 너무 불쌍하면...<br>"도망쳐!"라고 말해서 살려줄 수 있어요</p>
 </div>
 
 <!-- 엔딩 화면 -->
@@ -310,8 +310,8 @@ let ripples = [];
 // 벌레 관련
 let insects = [];
 let insectSpawnTimer = 0;
-const INSECT_SPAWN_INTERVAL = 3000; // 3초마다 벌레 생성
-const MAX_INSECTS = 8;
+const INSECT_SPAWN_INTERVAL = 1500; // 1.5초마다 벌레 생성 (더 빠르게)
+const MAX_INSECTS = 12; // 최대 벌레 수 증가
 
 // 수집 상태 (1~13번 각각 수집 여부)
 let collectedTypes = new Set();
@@ -375,25 +375,33 @@ const INSECT_NAMES = {
 // 캡쳐 알림
 let captureNotice = null;
 
-// 벌레 말풍선
-const INSECT_QUOTES = [
-  '꺄아악!',
-  '제발 살려주세요!',
-  '안돼!',
-  '으악!',
-  '사람 살려!',
-  '싫어요!',
-  '도망쳐야해!',
-  '무서워ㅠㅠ',
-  '엄마아!',
-  '왜 나야...'
-];
+// 벌레 말풍선 (각 타입별로 다르게)
+function getInsectQuotes(type) {
+  const name = INSECT_NAMES[type] || '벌레';
+  const shortName = name.replace(/^[^ ]+ /, ''); // 수식어 제거
+  return [
+    '꺄아악!',
+    '제발 살려주세요!',
+    '안돼!',
+    '으악!',
+    `${shortName} 살려!`,
+    '싫어요!',
+    '도망쳐야해!',
+    '무서워ㅠㅠ',
+    '엄마아!',
+    '왜 나야...'
+  ];
+}
 
 // 마이크 관련
 let audioContext = null;
 let analyser = null;
 let micEnabled = false;
 let blowStrength = 0;
+
+// 음성 인식 관련
+let recognition = null;
+let voiceCommandReady = true;
 
 // ─── 초기화 ──────────────────────────────────────────────────────────────
 function resize() {
@@ -470,8 +478,80 @@ function detectBlow() {
 document.addEventListener('click', () => {
   if (!micEnabled && !audioContext) {
     initMicrophone();
+    initVoiceRecognition();
   }
 }, { once: true });
+
+// ─── 음성 인식 설정 ─────────────────────────────────────────────────────
+function initVoiceRecognition() {
+  if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+    console.log('음성 인식 미지원');
+    return;
+  }
+  
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  recognition = new SpeechRecognition();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = 'ko-KR';
+  
+  recognition.onresult = (event) => {
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const transcript = event.results[i][0].transcript.toLowerCase();
+      if ((transcript.includes('도망') || transcript.includes('도망쳐') || 
+           transcript.includes('run') || transcript.includes('escape')) && voiceCommandReady) {
+        blowAwayClosestInsect('도망쳐!');
+        voiceCommandReady = false;
+        setTimeout(() => { voiceCommandReady = true; }, 2000);
+      }
+    }
+  };
+  
+  recognition.onerror = (e) => {
+    console.log('음성 인식 에러:', e.error);
+    if (e.error !== 'no-speech') {
+      setTimeout(() => {
+        try { recognition.start(); } catch(err) {}
+      }, 1000);
+    }
+  };
+  
+  recognition.onend = () => {
+    if (!gameEnded) {
+      try { recognition.start(); } catch(err) {}
+    }
+  };
+  
+  try {
+    recognition.start();
+    console.log('음성 인식 시작');
+  } catch(e) {
+    console.log('음성 인식 시작 실패:', e);
+  }
+}
+
+function blowAwayClosestInsect(message) {
+  let closestInsect = null;
+  let closestDist = Infinity;
+  
+  for (const insect of insects) {
+    if (insect.blownAway) continue;
+    const dist = Math.sqrt(
+      Math.pow(insect.x - mouse.x, 2) + Math.pow(insect.y - mouse.y, 2)
+    );
+    if (dist < closestDist) {
+      closestDist = dist;
+      closestInsect = insect;
+    }
+  }
+  
+  if (closestInsect && closestDist < 250) {
+    closestInsect.blownAway = true;
+    closestInsect.vx = (Math.random() - 0.5) * 15;
+    closestInsect.vy = -8 - Math.random() * 5;
+    closestInsect.bubble = { text: message || '살았다!', born: performance.now() };
+  }
+}
 
 // ─── 이벤트 ──────────────────────────────────────────────────────────────
 window.addEventListener('mousemove', (e) => {
@@ -932,31 +1012,6 @@ function draw(now) {
     currentBubble = null;
   }
   
-  // 바람 감지 - 거미에게 제일 가까운 벌레 하나만 날려보냄
-  blowStrength = detectBlow();
-  if (blowStrength > 0.3) {
-    let closestInsect = null;
-    let closestDist = Infinity;
-    
-    for (const insect of insects) {
-      if (insect.blownAway) continue;
-      const dist = Math.sqrt(
-        Math.pow(insect.x - mouse.x, 2) + Math.pow(insect.y - mouse.y, 2)
-      );
-      if (dist < closestDist) {
-        closestDist = dist;
-        closestInsect = insect;
-      }
-    }
-    
-    if (closestInsect && closestDist < 200) {
-      closestInsect.blownAway = true;
-      closestInsect.vx = (Math.random() - 0.5) * 15;
-      closestInsect.vy = -8 - Math.random() * 5;
-      closestInsect.bubble = { text: '살았다!', born: performance.now() };
-    }
-  }
-  
   // 벌레 생성
   insectSpawnTimer += 16;
   if (insectSpawnTimer >= INSECT_SPAWN_INTERVAL) {
@@ -1096,8 +1151,9 @@ function draw(now) {
       // 벌레 말풍선 (쿨다운 지나면 랜덤하게 표시)
       insect.bubbleCooldown -= 16;
       if (!insect.bubble && insect.bubbleCooldown <= 0 && Math.random() < 0.02) {
+        const quotes = getInsectQuotes(insect.type);
         insect.bubble = {
-          text: INSECT_QUOTES[Math.floor(Math.random() * INSECT_QUOTES.length)],
+          text: quotes[Math.floor(Math.random() * quotes.length)],
           born: performance.now()
         };
         insect.bubbleCooldown = 3000; // 3초 쿨다운
