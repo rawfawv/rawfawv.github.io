@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>거미줄 게임</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: linear-gradient(to bottom, #98d62c, #456114);
+      overflow: hidden;
+      font-family: 'Apple SD Gothic Neo', 'Malgun Gothic', Arial, sans-serif;
+      cursor: none;
+    }
+
+    #game-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* ── 홈 버튼 ── */
+    #home-btn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 500;
+      font-size: 28px;
+      color: #fff;
+      text-decoration: none;
+      line-height: 1;
+      opacity: 0.7;
+      transition: opacity 0.2s, transform 0.2s;
+      cursor: pointer;
+      text-shadow: 0 0 8px rgba(255,255,255,0.5);
+    }
+    #home-btn:hover {
+      opacity: 1;
+      transform: translateX(-3px);
+    }
+
+    /* ── 식량 창고 ── */
+    #food-storage {
+      position: fixed;
+      top: 40px;
+      right: 20px;
+      z-index: 100;
+      display: flex;
+      gap: 6px;
+      padding: 12px 16px;
+      background: rgba(0,0,0,0.6);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 8px;
+      min-width: 400px;
+      min-height: 60px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    #food-storage::before {
+      content: '식량창고';
+      position: absolute;
+      top: -24px;
+      left: 0;
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+      letter-spacing: 0.05em;
+    }
+
+    .storage-slot {
+      width: 36px;
+      height: 36px;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.05);
+    }
+
+    .storage-slot.collected {
+      border-color: rgba(255,255,255,0.5);
+      background: rgba(255,255,255,0.1);
+    }
+
+    .storage-slot img {
+      width: 30px;
+      height: 30px;
+      object-fit: contain;
+      opacity: 0.3;
+      filter: grayscale(1) brightness(0.5);
+      transition: all 0.3s ease;
+    }
+
+    .storage-slot.collected img {
+      opacity: 1;
+      filter: none;
+      animation: collectPop 0.5s ease;
+    }
+
+    .storage-slot .slot-name {
+      position: absolute;
+      bottom: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 8px;
+      color: rgba(255,255,255,0.6);
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    @keyframes collectPop {
+      0% { transform: scale(1.5); }
+      50% { transform: scale(0.8); }
+      100% { transform: scale(1); }
+    }
+
+    /* ── 엔딩 화면 ── */
+    #ending-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.9);
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #ending-overlay.show {
+      display: flex;
+    }
+
+    #ending-title {
+      font-size: clamp(28px, 6vw, 56px);
+      font-weight: bold;
+      color: #fff;
+      text-shadow: 0 0 10px rgba(0,0,0,0.8), 0 0 20px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.9);
+      margin-bottom: 40px;
+      animation: titlePulse 2s ease-in-out infinite;
+    }
+
+    @keyframes titlePulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    #ending-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    #ending-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+    }
+
+    #restart-btn {
+      margin-top: 30px;
+      padding: 12px 40px;
+      font-size: 18px;
+      font-weight: bold;
+      background: #fff;
+      border: none;
+      border-radius: 0;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+
+    #restart-btn:hover {
+      transform: scale(1.05);
+    }
+
+    /* ── 시작 안내 ── */
+    #intro-message {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 50;
+      text-align: center;
+      pointer-events: none;
+      animation: introFade 4s ease-in-out forwards;
+    }
+
+    #intro-message p {
+      font-size: clamp(18px, 4vw, 28px);
+      color: rgba(255,255,255,0.8);
+      line-height: 1.6;
+      text-shadow: 0 0 20px rgba(0,0,0,0.8);
+    }
+
+    @keyframes introFade {
+      0% { opacity: 0; }
+      20% { opacity: 1; }
+      80% { opacity: 1; }
+      100% { opacity: 0; visibility: hidden; }
+    }
+
+    /* ── 좌하단 힌트 ── */
+    #blow-hint {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      z-index: 50;
+      pointer-events: none;
+    }
+
+    #blow-hint p {
+      font-size: 12px;
+      color: rgba(255,255,255,0.5);
+      line-height: 1.5;
+    }
+  </style>
+</head>
+<body>
+
+<a href="../index.html" id="home-btn" title="홈으로">&#8592;</a>
+
+<div id="food-storage"></div>
+
+<!-- 시작 안내 -->
+<div id="intro-message">
+  <p>우리 귀여운 거미가 겨울을 날 수 있게,<br>식량을 모아주세요.</p>
+</div>
+
+<!-- 좌하단 힌트 -->
+<div id="blow-hint">
+  <p>🌬️ 너무 불쌍하면...<br>마이크에 바람 불어서 살려줄 수 있어요</p>
+</div>
+
+<!-- 엔딩 화면 -->
+<div id="ending-overlay">
+  <canvas id="ending-canvas"></canvas>
+  <div id="ending-content">
+    <div id="ending-title">거미의 겨울나기 성공!</div>
+    <button id="restart-btn" onclick="restartGame()">다시 하기</button>
+  </div>
+</div>
+
+<canvas id="game-canvas"></canvas>
+
+<script>
+const canvas = document.getElementById('game-canvas');
+const ctx = canvas.getContext('2d');
+const storage = document.getElementById('food-storage');
+
+// ─── 설정 ────────────────────────────────────────────────────────────────
+const RADIAL_LINES = 24;
+const RINGS = 12;
+const INFLUENCE_RADIUS = 280;
+const MAX_WARP = 35;
+const LERP_SPEED = 0.08;
+
+// ─── 이미지 로드 ─────────────────────────────────────────────────────────
+const spiderImg = new Image();
+spiderImg.src = 'spider.png';
+
+// 벌레 이미지들 (1~13번, 각각 일반/'버전)
+const TOTAL_INSECT_TYPES = 13;
+const insectImages = {};
+const insectWhiteImages = {};
+
+let imagesLoaded = 0;
+const totalImages = TOTAL_INSECT_TYPES * 2 + 1; // 일반 13개 + 흰색 13개 + 거미 1개
+
+function onImageLoad() {
+  imagesLoaded++;
+  if (imagesLoaded >= totalImages) {
+    requestAnimationFrame(draw);
+  }
+}
+
+// 거미 이미지 로드
+spiderImg.onload = onImageLoad;
+spiderImg.onerror = onImageLoad;
+
+// 벌레 이미지들 로드
+for (let i = 1; i <= TOTAL_INSECT_TYPES; i++) {
+  // 일반 버전
+  insectImages[i] = new Image();
+  insectImages[i].src = `insect_${i}.png`;
+  insectImages[i].onload = onImageLoad;
+  insectImages[i].onerror = onImageLoad;
+  
+  // 흰색 버전 (')
+  insectWhiteImages[i] = new Image();
+  insectWhiteImages[i].src = `insect_${i}'.png`;
+  insectWhiteImages[i].onload = onImageLoad;
+  insectWhiteImages[i].onerror = onImageLoad;
+}
+
+// ─── 상태 ────────────────────────────────────────────────────────────────
+let W = 0, H = 0;
+let centerX = 0, centerY = 0;
+let maxRadius = 0;
+
+let mouse = { x: -9999, y: -9999 };
+let targetMouse = { x: -9999, y: -9999 };
+let ripples = [];
+
+// 벌레 관련
+let insects = [];
+let insectSpawnTimer = 0;
+const INSECT_SPAWN_INTERVAL = 3000; // 3초마다 벌레 생성
+const MAX_INSECTS = 8;
+
+// 수집 상태 (1~13번 각각 수집 여부)
+let collectedTypes = new Set();
+let gameEnded = false;
+
+// 엔딩 관련
+let fireworks = [];
+let endingInsects = [];
+let snowflakes = [];
+let heartBeat = 0;
+
+// 말풍선 관련
+let currentBubble = null;
+let bubbleTimer = 0;
+const BUBBLE_INTERVAL = 8000; // 8초마다
+const BUBBLE_DURATION = 3000; // 3초간 표시
+const SPIDER_QUOTES = [
+  '아아 배가 고파...',
+  '날 살릴 생각이 있긴 한거야?',
+  '좀 더 힘내봐, 겨우 이정도밖에 못해?',
+  '벌레 잡는 것도 못하면서...',
+  '나 진짜 굶어 죽겠다',
+  '이러다 겨울 못 나겠어',
+  '아직도 못 잡았어?',
+  '내가 직접 잡을까?',
+  '한심하다 한심해...',
+  '빨리 좀 해줘',
+  '졸려... 배고파...',
+  '너 진짜 이럴거야?'
+];
+
+const PRAISE_QUOTES = [
+  '이욜~',
+  '앙 맛있떠',
+  '오 쫌 하는데?',
+  '굿굿~',
+  '냠냠쩝쩝',
+  '이거지~!',
+  '더 줘더 줘',
+  '역시 넌 할 수 있어',
+  '쪼끔 인정해줄게',
+  '흠... 괜찮네'
+];
+
+const INSECT_NAMES = {
+  1: '깜찍이 무당벌레',
+  2: '아싸 호랑나비',
+  3: '달퐁이',
+  4: '바부 애벌레',
+  5: '깡총 메뚜기',
+  6: '독거미',
+  7: '털복숭이 나방',
+  8: '삐질 민달팽이',
+  9: '호박벌',
+  10: '위잉위잉 벌',
+  11: '무서운 지네',
+  12: '불개미',
+  13: '길쭉 지롱이'
+};
+
+// 캡쳐 알림
+let captureNotice = null;
+
+// 벌레 말풍선
+const INSECT_QUOTES = [
+  '꺄아악!',
+  '제발 살려주세요!',
+  '안돼!',
+  '으악!',
+  '사람 살려!',
+  '싫어요!',
+  '도망쳐야해!',
+  '무서워ㅠㅠ',
+  '엄마아!',
+  '왜 나야...'
+];
+
+// 마이크 관련
+let audioContext = null;
+let analyser = null;
+let micEnabled = false;
+let blowStrength = 0;
+
+// ─── 초기화 ──────────────────────────────────────────────────────────────
+function resize() {
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W;
+  canvas.height = H;
+  centerX = W / 2;
+  centerY = H / 2;
+  maxRadius = Math.sqrt(centerX * centerX + centerY * centerY) * 1.2;
+}
+
+resize();
+window.addEventListener('resize', resize);
+
+// ─── 식량창고 초기화 ─────────────────────────────────────────────────────
+function initStorage() {
+  storage.innerHTML = '';
+  for (let i = 1; i <= TOTAL_INSECT_TYPES; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'storage-slot';
+    slot.id = `slot-${i}`;
+    slot.style.position = 'relative';
+    
+    const img = document.createElement('img');
+    img.src = `insect_${i}.png`;
+    slot.appendChild(img);
+    
+    const name = document.createElement('span');
+    name.className = 'slot-name';
+    name.textContent = INSECT_NAMES[i].replace(/^[^ ]+ /, ''); // 앞 수식어 제거
+    slot.appendChild(name);
+    
+    storage.appendChild(slot);
+  }
+}
+
+initStorage();
+
+// ─── 마이크 설정 ─────────────────────────────────────────────────────────
+async function initMicrophone() {
+  try {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const source = audioContext.createMediaStreamSource(stream);
+    analyser = audioContext.createAnalyser();
+    analyser.fftSize = 256;
+    source.connect(analyser);
+    micEnabled = true;
+    console.log('마이크 활성화됨');
+  } catch (e) {
+    console.log('마이크 사용 불가:', e);
+  }
+}
+
+function detectBlow() {
+  if (!analyser) return 0;
+  
+  const dataArray = new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteFrequencyData(dataArray);
+  
+  // 저주파 영역 (바람 소리) 감지
+  let sum = 0;
+  for (let i = 0; i < 20; i++) {
+    sum += dataArray[i];
+  }
+  const avg = sum / 20;
+  
+  // 임계값 넘으면 바람으로 판정
+  return avg > 80 ? (avg - 80) / 100 : 0;
+}
+
+// 첫 클릭 시 마이크 권한 요청
+document.addEventListener('click', () => {
+  if (!micEnabled && !audioContext) {
+    initMicrophone();
+  }
+}, { once: true });
+
+// ─── 이벤트 ──────────────────────────────────────────────────────────────
+window.addEventListener('mousemove', (e) => {
+  targetMouse.x = e.clientX;
+  targetMouse.y = e.clientY;
+});
+
+window.addEventListener('click', (e) => {
+  // 벌레 클릭 체크
+  let clickedInsect = null;
+  for (const insect of insects) {
+    const dx = e.clientX - insect.x;
+    const dy = e.clientY - insect.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 40) {
+      clickedInsect = insect;
+      break;
+    }
+  }
+  
+  if (clickedInsect) {
+    clickedInsect.clicks++;
+    // 크기에 따른 필요 클릭 수로 opacity 계산
+    const maxClicks = clickedInsect.maxClicks || 5;
+    clickedInsect.whiteOpacity = Math.min(100, (clickedInsect.clicks / maxClicks) * 100);
+    
+    if (clickedInsect.clicks >= maxClicks) {
+      // 식량창고로 이동
+      addToStorage(clickedInsect);
+      insects = insects.filter(i => i !== clickedInsect);
+    }
+  } else {
+    // 파동 효과
+    ripples.push({
+      x: e.clientX,
+      y: e.clientY,
+      radius: 0,
+      opacity: 1,
+      born: performance.now()
+    });
+  }
+});
+
+// 터치 지원
+window.addEventListener('touchmove', (e) => {
+  targetMouse.x = e.touches[0].clientX;
+  targetMouse.y = e.touches[0].clientY;
+}, { passive: true });
+
+window.addEventListener('touchstart', (e) => {
+  const tx = e.touches[0].clientX;
+  const ty = e.touches[0].clientY;
+  
+  let clickedInsect = null;
+  for (const insect of insects) {
+    const dx = tx - insect.x;
+    const dy = ty - insect.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 40) {
+      clickedInsect = insect;
+      break;
+    }
+  }
+  
+  if (clickedInsect) {
+    clickedInsect.clicks++;
+    const maxClicks = clickedInsect.maxClicks || 5;
+    clickedInsect.whiteOpacity = Math.min(100, (clickedInsect.clicks / maxClicks) * 100);
+    
+    if (clickedInsect.clicks >= maxClicks) {
+      addToStorage(clickedInsect);
+      insects = insects.filter(i => i !== clickedInsect);
+    }
+  } else {
+    ripples.push({
+      x: tx,
+      y: ty,
+      radius: 0,
+      opacity: 1,
+      born: performance.now()
+    });
+  }
+}, { passive: true });
+
+// ─── 식량창고에 추가 ─────────────────────────────────────────────────────
+function addToStorage(insect) {
+  collectedTypes.add(insect.type);
+  
+  const slot = document.getElementById(`slot-${insect.type}`);
+  if (slot) {
+    slot.classList.add('collected');
+  }
+  
+  // 칭찬 말풍선 표시
+  currentBubble = {
+    text: PRAISE_QUOTES[Math.floor(Math.random() * PRAISE_QUOTES.length)],
+    born: performance.now()
+  };
+  bubbleTimer = 0;
+  
+  // 캡쳐 알림 표시
+  captureNotice = {
+    text: `'${INSECT_NAMES[insect.type]}'을(를) 잡았습니다`,
+    born: performance.now()
+  };
+  
+  // 13종류 다 모았는지 체크
+  if (collectedTypes.size >= TOTAL_INSECT_TYPES) {
+    setTimeout(() => showEnding(), 500);
+  }
+}
+
+// ─── 엔딩 화면 ───────────────────────────────────────────────────────────
+function showEnding() {
+  gameEnded = true;
+  document.getElementById('ending-overlay').classList.add('show');
+  
+  const endCanvas = document.getElementById('ending-canvas');
+  const endCtx = endCanvas.getContext('2d');
+  endCanvas.width = W;
+  endCanvas.height = H;
+  
+  // 엔딩용 벌레들 배치 (각 종류당 5마리씩)
+  endingInsects = [];
+  for (let i = 1; i <= TOTAL_INSECT_TYPES; i++) {
+    for (let j = 0; j < 5; j++) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 50 + Math.random() * (Math.min(W, H) * 0.45);
+      endingInsects.push({
+        type: i,
+        x: centerX + Math.cos(angle) * dist + (Math.random() - 0.5) * 100,
+        y: centerY + Math.sin(angle) * dist + (Math.random() - 0.5) * 100,
+        scale: 0.3 + Math.random() * 0.5,
+        rotation: Math.random() * 0.4 - 0.2
+      });
+    }
+  }
+  
+  // 눈송이 생성
+  snowflakes = [];
+  for (let i = 0; i < 100; i++) {
+    snowflakes.push({
+      x: Math.random() * W,
+      y: Math.random() * H - H,
+      size: 2 + Math.random() * 4,
+      speed: 0.5 + Math.random() * 2,
+      wobble: Math.random() * Math.PI * 2,
+      wobbleSpeed: 0.02 + Math.random() * 0.03,
+      opacity: 0.5 + Math.random() * 0.4 // 50~90%
+    });
+  }
+  
+  // 폭죽 시작
+  for (let i = 0; i < 30; i++) {
+    setTimeout(() => {
+      fireworks.push({
+        x: Math.random() * W,
+        y: Math.random() * H * 0.7,
+        particles: createFireworkParticles(),
+        born: performance.now()
+      });
+    }, i * 200);
+  }
+  
+  requestAnimationFrame(drawEnding);
+}
+
+function createFireworkParticles() {
+  const particles = [];
+  const colors = ['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#ff6eb4', '#a855f7'];
+  const color = colors[Math.floor(Math.random() * colors.length)];
+  
+  for (let i = 0; i < 30; i++) {
+    const angle = (Math.PI * 2 * i) / 30;
+    const speed = 2 + Math.random() * 3;
+    particles.push({
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      x: 0,
+      y: 0,
+      life: 1,
+      color: color
+    });
+  }
+  return particles;
+}
+
+function drawEnding(now) {
+  if (!gameEnded) return;
+  
+  const endCanvas = document.getElementById('ending-canvas');
+  const endCtx = endCanvas.getContext('2d');
+  
+  endCtx.clearRect(0, 0, W, H);
+  
+  // 눈 내리기
+  for (const snow of snowflakes) {
+    snow.wobble += snow.wobbleSpeed;
+    snow.y += snow.speed;
+    snow.x += Math.sin(snow.wobble) * 0.5;
+    
+    if (snow.y > H) {
+      snow.y = -10;
+      snow.x = Math.random() * W;
+    }
+    
+    endCtx.globalAlpha = snow.opacity;
+    endCtx.fillStyle = '#fff';
+    endCtx.beginPath();
+    endCtx.arc(snow.x, snow.y, snow.size, 0, Math.PI * 2);
+    endCtx.fill();
+  }
+  endCtx.globalAlpha = 1;
+  
+  // 거미줄 배경 (간단하게)
+  endCtx.strokeStyle = 'rgba(255,255,255,0.1)';
+  endCtx.lineWidth = 1;
+  const ringSpacing = maxRadius / RINGS;
+  const angleStep = (Math.PI * 2) / RADIAL_LINES;
+  
+  for (let ring = 1; ring <= RINGS; ring++) {
+    const baseRadius = ring * ringSpacing;
+    endCtx.beginPath();
+    for (let i = 0; i <= RADIAL_LINES; i++) {
+      const angle = i * angleStep;
+      const x = centerX + Math.cos(angle) * baseRadius;
+      const y = centerY + Math.sin(angle) * baseRadius;
+      if (i === 0) endCtx.moveTo(x, y);
+      else endCtx.lineTo(x, y);
+    }
+    endCtx.closePath();
+    endCtx.stroke();
+  }
+  
+  for (let i = 0; i < RADIAL_LINES; i++) {
+    const angle = i * angleStep;
+    endCtx.beginPath();
+    endCtx.moveTo(centerX, centerY);
+    endCtx.lineTo(
+      centerX + Math.cos(angle) * maxRadius,
+      centerY + Math.sin(angle) * maxRadius
+    );
+    endCtx.stroke();
+  }
+  
+  // 하얀 벌레들 그리기
+  for (const insect of endingInsects) {
+    const img = insectWhiteImages[insect.type];
+    if (img && img.complete) {
+      const size = 70 * insect.scale;
+      endCtx.save();
+      endCtx.translate(insect.x, insect.y);
+      endCtx.rotate(insect.rotation);
+      endCtx.drawImage(img, -size/2, -size/2, size, size);
+      endCtx.restore();
+    }
+  }
+  
+  // 폭죽 그리기
+  for (let i = fireworks.length - 1; i >= 0; i--) {
+    const fw = fireworks[i];
+    const age = (now - fw.born) / 1000;
+    
+    for (const p of fw.particles) {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.05; // 중력
+      p.life -= 0.015;
+      
+      if (p.life > 0) {
+        endCtx.beginPath();
+        endCtx.arc(fw.x + p.x, fw.y + p.y, 3 * p.life, 0, Math.PI * 2);
+        endCtx.fillStyle = p.color;
+        endCtx.globalAlpha = p.life;
+        endCtx.fill();
+        endCtx.globalAlpha = 1;
+      }
+    }
+    
+    if (age > 2) fireworks.splice(i, 1);
+  }
+  
+  // 가운데 거미 (크게, 화면 중-상단에)
+  heartBeat += 0.1;
+  const heartScale = 1 + Math.sin(heartBeat) * 0.15;
+  
+  if (spiderImg.complete) {
+    const spiderSize = 180; // 더 크게
+    const spiderY = H * 0.3; // 화면 상단 30% 위치
+    endCtx.save();
+    endCtx.translate(centerX, spiderY);
+    endCtx.scale(heartScale, heartScale);
+    endCtx.drawImage(spiderImg, -spiderSize/2, -spiderSize/2, spiderSize, spiderSize);
+    
+    // 하트 눈 그리기 (더 크게, 뿅뿅)
+    const heartSize = 15 * (1 + Math.sin(heartBeat * 2) * 0.3);
+    endCtx.fillStyle = '#ff6b6b';
+    drawHeart(endCtx, -18, -25, heartSize);
+    drawHeart(endCtx, 18, -25, heartSize);
+    endCtx.restore();
+  }
+  
+  requestAnimationFrame(drawEnding);
+}
+
+function drawHeart(ctx, x, y, size) {
+  ctx.beginPath();
+  ctx.moveTo(x, y + size / 4);
+  ctx.bezierCurveTo(x, y, x - size / 2, y, x - size / 2, y + size / 4);
+  ctx.bezierCurveTo(x - size / 2, y + size / 2, x, y + size * 0.75, x, y + size);
+  ctx.bezierCurveTo(x, y + size * 0.75, x + size / 2, y + size / 2, x + size / 2, y + size / 4);
+  ctx.bezierCurveTo(x + size / 2, y, x, y, x, y + size / 4);
+  ctx.fill();
+}
+
+function restartGame() {
+  gameEnded = false;
+  collectedTypes.clear();
+  insects = [];
+  fireworks = [];
+  endingInsects = [];
+  insectSpawnTimer = 0;
+  
+  document.getElementById('ending-overlay').classList.remove('show');
+  initStorage();
+  
+  requestAnimationFrame(draw);
+}
+
+// ─── 벌레 생성 ───────────────────────────────────────────────────────────
+function spawnInsect() {
+  if (insects.length >= MAX_INSECTS) return;
+  if (gameEnded) return;
+  
+  // 아직 수집 안 된 타입 중에서 우선 선택 (70% 확률)
+  let type;
+  const uncollected = [];
+  for (let i = 1; i <= TOTAL_INSECT_TYPES; i++) {
+    if (!collectedTypes.has(i)) uncollected.push(i);
+  }
+  
+  if (uncollected.length > 0 && Math.random() < 0.7) {
+    type = uncollected[Math.floor(Math.random() * uncollected.length)];
+  } else {
+    type = Math.floor(Math.random() * TOTAL_INSECT_TYPES) + 1;
+  }
+  
+  // 거미줄 위의 랜덤 위치 (중심에서 일정 거리, 상하 제한)
+  const angle = Math.random() * Math.PI * 2;
+  const minDist = maxRadius * 0.2;
+  const maxDist = maxRadius * 0.5; // 더 안쪽으로 제한
+  const dist = minDist + Math.random() * (maxDist - minDist);
+  
+  let x = centerX + Math.cos(angle) * dist;
+  let y = centerY + Math.sin(angle) * dist;
+  
+  // 상하 여백 확보 (화면 위/아래 15% 영역 제외)
+  const marginY = H * 0.15;
+  y = Math.max(marginY + 50, Math.min(H - marginY - 50, y));
+  
+  insects.push({
+    x: x,
+    y: y,
+    type: type,
+    clicks: 0,
+    whiteOpacity: 0, // 0~100
+    shakeOffset: 0,
+    shakeTime: 0,
+    scale: 0.6 + Math.random() * 0.8, // 랜덤 크기 (0.6 ~ 1.4)
+    maxClicks: 0, // 나중에 계산
+    bubble: null, // 말풍선
+    bubbleCooldown: 0,
+    vx: 0, // 바람에 의한 속도
+    vy: 0,
+    blownAway: false
+  });
+  
+  // 크기에 따른 필요 클릭 수 계산 (작으면 2~3, 크면 5)
+  const lastInsect = insects[insects.length - 1];
+  if (lastInsect.scale < 0.8) {
+    lastInsect.maxClicks = 2;
+  } else if (lastInsect.scale < 1.0) {
+    lastInsect.maxClicks = 3;
+  } else if (lastInsect.scale < 1.2) {
+    lastInsect.maxClicks = 4;
+  } else {
+    lastInsect.maxClicks = 5;
+  }
+}
+
+// ─── 헬퍼 함수 ───────────────────────────────────────────────────────────
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+function getWarpedPoint(x, y) {
+  const dx = x - mouse.x;
+  const dy = y - mouse.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  
+  let wx = x, wy = y;
+  let proximity = 0;
+  
+  if (dist < INFLUENCE_RADIUS && dist > 0) {
+    const t = dist / INFLUENCE_RADIUS;
+    const eased = (1 - t) * (1 - t) * Math.min(1, dist / 60);
+    const warpAmt = eased * MAX_WARP;
+    const angle = Math.atan2(dy, dx);
+    wx = x - Math.cos(angle) * warpAmt;
+    wy = y - Math.sin(angle) * warpAmt;
+    proximity = Math.max(0, 1 - dist / INFLUENCE_RADIUS);
+  }
+  
+  for (const r of ripples) {
+    const rdx = x - r.x;
+    const rdy = y - r.y;
+    const rdist = Math.sqrt(rdx * rdx + rdy * rdy);
+    const waveWidth = 60;
+    const diff = rdist - r.radius;
+    if (Math.abs(diff) < waveWidth) {
+      const strength = (1 - Math.abs(diff) / waveWidth) * r.opacity * 20;
+      const angle = Math.atan2(rdy, rdx);
+      const sign = diff < 0 ? -1 : 1;
+      wx += Math.cos(angle) * strength * sign * -1;
+      wy += Math.sin(angle) * strength * sign * -1;
+    }
+  }
+  
+  return { x: wx, y: wy, proximity };
+}
+
+// ─── 그리기 ──────────────────────────────────────────────────────────────
+function draw(now) {
+  if (gameEnded) return;
+  // 부드러운 마우스 이동
+  mouse.x = lerp(mouse.x, targetMouse.x, LERP_SPEED);
+  mouse.y = lerp(mouse.y, targetMouse.y, LERP_SPEED);
+  
+  // 파동 업데이트
+  for (let i = ripples.length - 1; i >= 0; i--) {
+    const r = ripples[i];
+    const age = (now - r.born) / 1000;
+    r.radius = Math.max(0, age * 350);
+    r.opacity = Math.max(0, 1 - age * 1.0);
+    if (r.opacity <= 0) ripples.splice(i, 1);
+  }
+  
+  // 말풍선 업데이트
+  bubbleTimer += 16;
+  if (!currentBubble && bubbleTimer >= BUBBLE_INTERVAL) {
+    currentBubble = {
+      text: SPIDER_QUOTES[Math.floor(Math.random() * SPIDER_QUOTES.length)],
+      born: performance.now()
+    };
+    bubbleTimer = 0;
+  }
+  if (currentBubble && (now - currentBubble.born) > BUBBLE_DURATION) {
+    currentBubble = null;
+  }
+  
+  // 바람 감지 - 거미에게 제일 가까운 벌레 하나만 날려보냄
+  blowStrength = detectBlow();
+  if (blowStrength > 0.3) {
+    let closestInsect = null;
+    let closestDist = Infinity;
+    
+    for (const insect of insects) {
+      if (insect.blownAway) continue;
+      const dist = Math.sqrt(
+        Math.pow(insect.x - mouse.x, 2) + Math.pow(insect.y - mouse.y, 2)
+      );
+      if (dist < closestDist) {
+        closestDist = dist;
+        closestInsect = insect;
+      }
+    }
+    
+    if (closestInsect && closestDist < 200) {
+      closestInsect.blownAway = true;
+      closestInsect.vx = (Math.random() - 0.5) * 15;
+      closestInsect.vy = -8 - Math.random() * 5;
+      closestInsect.bubble = { text: '살았다!', born: performance.now() };
+    }
+  }
+  
+  // 벌레 생성
+  insectSpawnTimer += 16;
+  if (insectSpawnTimer >= INSECT_SPAWN_INTERVAL) {
+    spawnInsect();
+    insectSpawnTimer = 0;
+  }
+  
+  ctx.clearRect(0, 0, W, H);
+  
+  // 배경 그라데이션
+  const bgGradient = ctx.createLinearGradient(0, 0, 0, H);
+  bgGradient.addColorStop(0, '#98d62c');
+  bgGradient.addColorStop(1, '#456114');
+  ctx.fillStyle = bgGradient;
+  ctx.fillRect(0, 0, W, H);
+  
+  // 거미줄 그리기
+  const ringSpacing = maxRadius / RINGS;
+  const angleStep = (Math.PI * 2) / RADIAL_LINES;
+  
+  // 동심원
+  for (let ring = 1; ring <= RINGS; ring++) {
+    const baseRadius = ring * ringSpacing;
+    
+    ctx.beginPath();
+    for (let i = 0; i <= RADIAL_LINES; i++) {
+      const angle = i * angleStep;
+      const bx = centerX + Math.cos(angle) * baseRadius;
+      const by = centerY + Math.sin(angle) * baseRadius;
+      const { x, y } = getWarpedPoint(bx, by);
+      
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    
+    const alpha = 0.08 + (1 - ring / RINGS) * 0.12;
+    ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+  }
+  
+  // 방사형 줄
+  for (let i = 0; i < RADIAL_LINES; i++) {
+    const angle = i * angleStep;
+    
+    ctx.beginPath();
+    for (let ring = 0; ring <= RINGS; ring++) {
+      const baseRadius = ring * ringSpacing;
+      const bx = centerX + Math.cos(angle) * baseRadius;
+      const by = centerY + Math.sin(angle) * baseRadius;
+      const { x, y } = getWarpedPoint(bx, by);
+      
+      if (ring === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.lineWidth = 0.6;
+    ctx.stroke();
+  }
+  
+  // 교차점 노드
+  for (let ring = 0; ring <= RINGS; ring++) {
+    const baseRadius = ring * ringSpacing;
+    for (let i = 0; i < RADIAL_LINES; i++) {
+      const angle = i * angleStep;
+      const bx = centerX + Math.cos(angle) * baseRadius;
+      const by = centerY + Math.sin(angle) * baseRadius;
+      const { x, y, proximity } = getWarpedPoint(bx, by);
+      
+      const t = proximity * proximity * (3 - 2 * proximity);
+      const nodeRadius = lerp(1.2, 3.5, t);
+      const alpha = lerp(0.15, 1, t);
+      
+      if (t > 0.2) {
+        const glowR = nodeRadius + lerp(0, 8, (t - 0.2) / 0.8);
+        const grd = ctx.createRadialGradient(x, y, nodeRadius * 0.5, x, y, glowR);
+        grd.addColorStop(0, `rgba(255, 255, 255, ${t * 0.3})`);
+        grd.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.beginPath();
+        ctx.arc(x, y, glowR, 0, Math.PI * 2);
+        ctx.fillStyle = grd;
+        ctx.fill();
+      }
+      
+      ctx.beginPath();
+      ctx.arc(x, y, nodeRadius, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+      ctx.fill();
+    }
+  }
+  
+  // 파동 링
+  for (const r of ripples) {
+    const safeRadius = Math.max(0, r.radius);
+    ctx.beginPath();
+    ctx.arc(r.x, r.y, safeRadius, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(255, 255, 255, ${r.opacity * 0.3})`;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+  
+  // 벌레 그리기
+  for (let i = insects.length - 1; i >= 0; i--) {
+    const insect = insects[i];
+    const normalImg = insectImages[insect.type];
+    const whiteImg = insectWhiteImages[insect.type];
+    
+    if (!normalImg || !normalImg.complete) continue;
+    
+    // 날아가는 중이면 물리 적용
+    if (insect.blownAway) {
+      insect.x += insect.vx;
+      insect.vy += 0.2; // 중력
+      insect.y += insect.vy;
+      insect.vx *= 0.99;
+      
+      // 화면 밖으로 나가면 제거
+      if (insect.y > H + 100 || insect.x < -100 || insect.x > W + 100) {
+        insects.splice(i, 1);
+        continue;
+      }
+    }
+    
+    if (!normalImg || !normalImg.complete) continue;
+    
+    // 거미와의 거리 체크 (떨림)
+    const distToSpider = Math.sqrt(
+      Math.pow(insect.x - mouse.x, 2) + Math.pow(insect.y - mouse.y, 2)
+    );
+    
+    if (distToSpider < 120) {
+      insect.shakeTime += 0.5;
+      insect.shakeOffset = Math.sin(insect.shakeTime * 2) * (1 - distToSpider / 120) * 5;
+      
+      // 벌레 말풍선 (쿨다운 지나면 랜덤하게 표시)
+      insect.bubbleCooldown -= 16;
+      if (!insect.bubble && insect.bubbleCooldown <= 0 && Math.random() < 0.02) {
+        insect.bubble = {
+          text: INSECT_QUOTES[Math.floor(Math.random() * INSECT_QUOTES.length)],
+          born: performance.now()
+        };
+        insect.bubbleCooldown = 3000; // 3초 쿨다운
+      }
+    } else {
+      insect.shakeOffset *= 0.9;
+    }
+    
+    // 말풍선 만료 체크
+    if (insect.bubble && (now - insect.bubble.born) > 1500) {
+      insect.bubble = null;
+    }
+    
+    const drawSize = 108 * insect.scale; // 60 * 1.8 = 108
+    
+    // 원본 비율 유지
+    const imgW = normalImg.naturalWidth;
+    const imgH = normalImg.naturalHeight;
+    const aspectRatio = imgW / imgH;
+    
+    let finalW, finalH;
+    if (aspectRatio > 1) {
+      finalW = drawSize;
+      finalH = drawSize / aspectRatio;
+    } else {
+      finalH = drawSize;
+      finalW = drawSize * aspectRatio;
+    }
+    
+    const drawX = insect.x - finalW / 2 + insect.shakeOffset;
+    const drawY = insect.y - finalH / 2;
+    
+    ctx.save();
+    
+    // 일반 벌레 이미지 그리기
+    ctx.drawImage(normalImg, drawX, drawY, finalW, finalH);
+    
+    // 흰색 버전 오버레이 (opacity에 따라)
+    if (insect.whiteOpacity > 0 && whiteImg && whiteImg.complete) {
+      ctx.globalAlpha = insect.whiteOpacity / 100;
+      ctx.drawImage(whiteImg, drawX, drawY, finalW, finalH);
+      ctx.globalAlpha = 1;
+    }
+    
+    ctx.restore();
+    
+    // 벌레 말풍선 그리기
+    if (insect.bubble) {
+      const bubbleAge = now - insect.bubble.born;
+      let bubbleAlpha = 1;
+      if (bubbleAge < 150) bubbleAlpha = bubbleAge / 150;
+      else if (bubbleAge > 1200) bubbleAlpha = (1500 - bubbleAge) / 300;
+      
+      ctx.save();
+      ctx.globalAlpha = bubbleAlpha;
+      
+      const text = insect.bubble.text;
+      ctx.font = 'bold 11px "Apple SD Gothic Neo", sans-serif';
+      const textWidth = ctx.measureText(text).width;
+      const padding = 6;
+      const bW = textWidth + padding * 2;
+      const bH = 20;
+      const bX = insect.x - bW / 2;
+      const bY = insect.y - finalH / 2 - bH - 8;
+      
+      // 말풍선 배경
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.roundRect(bX, bY, bW, bH, 4);
+      ctx.fill();
+      
+      // 말풍선 꼬리
+      ctx.beginPath();
+      ctx.moveTo(insect.x - 4, bY + bH);
+      ctx.lineTo(insect.x, bY + bH + 5);
+      ctx.lineTo(insect.x + 4, bY + bH);
+      ctx.fill();
+      
+      // 텍스트
+      ctx.fillStyle = '#e84040';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, insect.x, bY + bH / 2);
+      
+      ctx.restore();
+    }
+  }
+  
+  // 거미 (마우스 위치) 그리기
+  if (spiderImg.complete && mouse.x > 0) {
+    const spiderSize = 80;
+    
+    ctx.save();
+    ctx.translate(mouse.x, mouse.y);
+    
+    // 약간의 기울기
+    const tilt = Math.sin(now * 0.003) * 0.05;
+    ctx.rotate(tilt);
+    
+    // 약간의 상하 움직임
+    const bobY = Math.sin(now * 0.006) * 2;
+    
+    ctx.drawImage(
+      spiderImg,
+      -spiderSize / 2,
+      -spiderSize / 2 + bobY,
+      spiderSize,
+      spiderSize
+    );
+    ctx.restore();
+    
+    // 말풍선 그리기
+    if (currentBubble) {
+      const bubbleAge = now - currentBubble.born;
+      let bubbleAlpha = 1;
+      if (bubbleAge < 300) bubbleAlpha = bubbleAge / 300;
+      else if (bubbleAge > BUBBLE_DURATION - 300) bubbleAlpha = (BUBBLE_DURATION - bubbleAge) / 300;
+      
+      ctx.save();
+      ctx.globalAlpha = bubbleAlpha;
+      
+      const text = currentBubble.text;
+      ctx.font = 'bold 14px "Apple SD Gothic Neo", sans-serif';
+      const textWidth = ctx.measureText(text).width;
+      const padding = 12;
+      const bubbleW = textWidth + padding * 2;
+      const bubbleH = 32;
+      const bubbleX = mouse.x - bubbleW / 2;
+      const bubbleY = mouse.y - spiderSize / 2 - bubbleH - 15;
+      
+      // 말풍선 배경
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.roundRect(bubbleX, bubbleY, bubbleW, bubbleH, 8);
+      ctx.fill();
+      
+      // 말풍선 꼬리
+      ctx.beginPath();
+      ctx.moveTo(mouse.x - 6, bubbleY + bubbleH);
+      ctx.lineTo(mouse.x, bubbleY + bubbleH + 8);
+      ctx.lineTo(mouse.x + 6, bubbleY + bubbleH);
+      ctx.fill();
+      
+      // 텍스트
+      ctx.fillStyle = '#333';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, mouse.x, bubbleY + bubbleH / 2);
+      
+      ctx.restore();
+    }
+  }
+  
+  // 캡쳐 알림 그리기
+  if (captureNotice) {
+    const age = now - captureNotice.born;
+    const duration = 2000;
+    
+    if (age > duration) {
+      captureNotice = null;
+    } else {
+      let alpha = 1;
+      if (age < 200) alpha = age / 200;
+      else if (age > duration - 500) alpha = (duration - age) / 500;
+      
+      ctx.save();
+      ctx.globalAlpha = alpha * 0.8;
+      ctx.font = '16px "Apple SD Gothic Neo", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      
+      // 텍스트 그림자
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillText(captureNotice.text, centerX + 1, H - 60 + 1);
+      
+      // 텍스트
+      ctx.fillStyle = '#fff';
+      ctx.fillText(captureNotice.text, centerX, H - 60);
+      
+      ctx.restore();
+    }
+  }
+  
+  requestAnimationFrame(draw);
+}
+
+// 이미지가 이미 로드되어 있으면 바로 시작 체크
+if (spiderImg.complete) onImageLoad();
+for (let i = 1; i <= TOTAL_INSECT_TYPES; i++) {
+  if (insectImages[i] && insectImages[i].complete) onImageLoad();
+  if (insectWhiteImages[i] && insectWhiteImages[i].complete) onImageLoad();
+}
+</script>
+</body>
+</html>
