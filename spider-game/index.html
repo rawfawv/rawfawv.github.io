@@ -46,7 +46,7 @@
     /* ── 식량 창고 ── */
     #food-storage {
       position: fixed;
-      top: 40px;
+      top: 70px;
       right: 20px;
       z-index: 100;
       display: flex;
@@ -69,6 +69,51 @@
       font-size: 12px;
       color: rgba(255,255,255,0.5);
       letter-spacing: 0.05em;
+    }
+
+    /* ── 난이도 선택 ── */
+    #difficulty-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 150;
+      display: flex;
+      gap: 8px;
+    }
+
+    .diff-btn {
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: bold;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 20px;
+      background: rgba(0,0,0,0.4);
+      color: rgba(255,255,255,0.7);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .diff-btn:hover {
+      background: rgba(0,0,0,0.6);
+      border-color: rgba(255,255,255,0.5);
+    }
+
+    .diff-btn.active {
+      background: rgba(255,255,255,0.9);
+      color: #333;
+      border-color: #fff;
+    }
+
+    .diff-btn.easy.active {
+      background: #ffb6c1;
+      border-color: #ff69b4;
+      color: #8b0040;
+    }
+
+    .diff-btn.hard.active {
+      background: #98d62c;
+      border-color: #6fb52a;
+      color: #2d4a0f;
     }
 
     .storage-slot {
@@ -130,6 +175,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
+      cursor: none;
     }
 
     #ending-overlay.show {
@@ -226,6 +272,12 @@
 
 <a href="../index.html" id="home-btn" title="홈으로">&#8592;</a>
 
+<!-- 난이도 선택 -->
+<div id="difficulty-toggle">
+  <button class="diff-btn easy active" onclick="setDifficulty('easy')">쉬움</button>
+  <button class="diff-btn hard" onclick="setDifficulty('hard')">어려움</button>
+</div>
+
 <div id="food-storage"></div>
 
 <!-- 시작 안내 -->
@@ -307,6 +359,10 @@ let maxRadius = 0;
 let mouse = { x: -9999, y: -9999 };
 let targetMouse = { x: -9999, y: -9999 };
 let ripples = [];
+
+// 난이도 관련
+let difficulty = 'easy'; // 'easy' 또는 'hard'
+let targetTypes = 7; // 쉬움: 7개, 어려움: 13개
 
 // 벌레 관련
 let insects = [];
@@ -421,7 +477,8 @@ window.addEventListener('resize', resize);
 // ─── 식량창고 초기화 ─────────────────────────────────────────────────────
 function initStorage() {
   storage.innerHTML = '';
-  for (let i = 1; i <= TOTAL_INSECT_TYPES; i++) {
+  const count = (difficulty === 'easy') ? 7 : TOTAL_INSECT_TYPES;
+  for (let i = 1; i <= count; i++) {
     const slot = document.createElement('div');
     slot.className = 'storage-slot';
     slot.id = `slot-${i}`;
@@ -438,9 +495,37 @@ function initStorage() {
     
     storage.appendChild(slot);
   }
+  
+  // 식량창고 크기 조정
+  storage.style.minWidth = (difficulty === 'easy') ? '250px' : '400px';
+}
+
+// ─── 난이도 설정 ─────────────────────────────────────────────────────────
+function setDifficulty(diff) {
+  difficulty = diff;
+  targetTypes = (diff === 'easy') ? 7 : TOTAL_INSECT_TYPES;
+  
+  // 버튼 UI 업데이트
+  document.querySelectorAll('.diff-btn').forEach(btn => btn.classList.remove('active'));
+  document.querySelector(`.diff-btn.${diff}`).classList.add('active');
+  
+  // 배경색 업데이트
+  updateBackground();
+  
+  // 게임 리셋
+  restartGame();
+}
+
+function updateBackground() {
+  if (difficulty === 'easy') {
+    document.body.style.background = 'linear-gradient(to bottom, #ffafeb, #ff7794)';
+  } else {
+    document.body.style.background = 'linear-gradient(to bottom, #98d62c, #456114)';
+  }
 }
 
 initStorage();
+updateBackground(); // 초기 배경색 설정
 
 // ─── 마이크 설정 ─────────────────────────────────────────────────────────
 async function initMicrophone() {
@@ -659,8 +744,8 @@ function addToStorage(insect) {
     born: performance.now()
   };
   
-  // 13종류 다 모았는지 체크
-  if (collectedTypes.size >= TOTAL_INSECT_TYPES) {
+  // 목표 수량 모았는지 체크
+  if (collectedTypes.size >= targetTypes) {
     setTimeout(() => showEnding(), 500);
   }
 }
@@ -670,15 +755,34 @@ function showEnding() {
   gameEnded = true;
   document.getElementById('ending-overlay').classList.add('show');
   
+  // 엔딩 타이틀 및 버튼 업데이트
+  const endingTitle = document.getElementById('ending-title');
+  const restartBtn = document.getElementById('restart-btn');
+  
+  if (difficulty === 'easy') {
+    endingTitle.textContent = '어찌저찌 겨울을 버틸 수 있을 것 같아요';
+    endingTitle.style.fontSize = 'clamp(20px, 4vw, 40px)';
+    restartBtn.textContent = '어려운 버전 도전하기';
+    restartBtn.onclick = () => { setDifficulty('hard'); };
+  } else {
+    endingTitle.textContent = '거미의 겨울나기 성공!';
+    endingTitle.style.fontSize = 'clamp(28px, 6vw, 56px)';
+    restartBtn.textContent = '다시 하기';
+    restartBtn.onclick = restartGame;
+  }
+  
   const endCanvas = document.getElementById('ending-canvas');
   const endCtx = endCanvas.getContext('2d');
   endCanvas.width = W;
   endCanvas.height = H;
   
-  // 엔딩용 벌레들 배치 (각 종류당 5마리씩)
+  // 엔딩용 벌레들 배치 (난이도에 따라 다르게)
   endingInsects = [];
-  for (let i = 1; i <= TOTAL_INSECT_TYPES; i++) {
-    for (let j = 0; j < 5; j++) {
+  const insectCount = (difficulty === 'easy') ? 2 : 5; // 쉬움: 2마리씩, 어려움: 5마리씩
+  const typeCount = (difficulty === 'easy') ? 7 : TOTAL_INSECT_TYPES;
+  
+  for (let i = 1; i <= typeCount; i++) {
+    for (let j = 0; j < insectCount; j++) {
       const angle = Math.random() * Math.PI * 2;
       const dist = 50 + Math.random() * (Math.min(W, H) * 0.45);
       endingInsects.push({
@@ -705,16 +809,19 @@ function showEnding() {
     });
   }
   
-  // 폭죽 시작
-  for (let i = 0; i < 30; i++) {
-    setTimeout(() => {
-      fireworks.push({
-        x: Math.random() * W,
-        y: Math.random() * H * 0.7,
-        particles: createFireworkParticles(),
-        born: performance.now()
-      });
-    }, i * 200);
+  // 폭죽 (어려운 버전에서만)
+  fireworks = [];
+  if (difficulty === 'hard') {
+    for (let i = 0; i < 30; i++) {
+      setTimeout(() => {
+        fireworks.push({
+          x: Math.random() * W,
+          y: Math.random() * H * 0.7,
+          particles: createFireworkParticles(),
+          born: performance.now()
+        });
+      }, i * 200);
+    }
   }
   
   requestAnimationFrame(drawEnding);
@@ -742,6 +849,10 @@ function createFireworkParticles() {
 
 function drawEnding(now) {
   if (!gameEnded) return;
+  
+  // 엔딩에서도 부드러운 마우스 이동
+  mouse.x = lerp(mouse.x, targetMouse.x, LERP_SPEED);
+  mouse.y = lerp(mouse.y, targetMouse.y, LERP_SPEED);
   
   const endCanvas = document.getElementById('ending-canvas');
   const endCtx = endCanvas.getContext('2d');
@@ -847,12 +958,20 @@ function drawEnding(now) {
     endCtx.scale(heartScale, heartScale);
     endCtx.drawImage(spiderImg, -spiderSize/2, -spiderSize/2, spiderSize, spiderSize);
     
-    // 하트 눈 그리기 (더 크게, 뿅뿅)
-    const heartSize = 15 * (1 + Math.sin(heartBeat * 2) * 0.3);
-    endCtx.fillStyle = '#ff6b6b';
-    drawHeart(endCtx, -18, -25, heartSize);
-    drawHeart(endCtx, 18, -25, heartSize);
+    // 하트 눈 그리기 (어려운 버전에서만)
+    if (difficulty === 'hard') {
+      const heartSize = 15 * (1 + Math.sin(heartBeat * 2) * 0.3);
+      endCtx.fillStyle = '#ff6b6b';
+      drawHeart(endCtx, -18, -25, heartSize);
+      drawHeart(endCtx, 18, -25, heartSize);
+    }
     endCtx.restore();
+  }
+  
+  // 마우스 커서 (거미) 그리기
+  if (spiderImg.complete) {
+    const cursorSize = 60;
+    endCtx.drawImage(spiderImg, mouse.x - cursorSize/2, mouse.y - cursorSize/2, cursorSize, cursorSize);
   }
   
   requestAnimationFrame(drawEnding);
@@ -887,17 +1006,19 @@ function spawnInsect() {
   if (insects.length >= MAX_INSECTS) return;
   if (gameEnded) return;
   
+  const maxType = (difficulty === 'easy') ? 7 : TOTAL_INSECT_TYPES;
+  
   // 아직 수집 안 된 타입 중에서 우선 선택 (70% 확률)
   let type;
   const uncollected = [];
-  for (let i = 1; i <= TOTAL_INSECT_TYPES; i++) {
+  for (let i = 1; i <= maxType; i++) {
     if (!collectedTypes.has(i)) uncollected.push(i);
   }
   
   if (uncollected.length > 0 && Math.random() < 0.7) {
     type = uncollected[Math.floor(Math.random() * uncollected.length)];
   } else {
-    type = Math.floor(Math.random() * TOTAL_INSECT_TYPES) + 1;
+    type = Math.floor(Math.random() * maxType) + 1;
   }
   
   // 거미줄 위의 랜덤 위치 (중심에서 일정 거리, 상하 제한)
@@ -1022,10 +1143,15 @@ function draw(now) {
   
   ctx.clearRect(0, 0, W, H);
   
-  // 배경 그라데이션
+  // 배경 그라데이션 (난이도에 따라 다름)
   const bgGradient = ctx.createLinearGradient(0, 0, 0, H);
-  bgGradient.addColorStop(0, '#98d62c');
-  bgGradient.addColorStop(1, '#456114');
+  if (difficulty === 'easy') {
+    bgGradient.addColorStop(0, '#ffafeb');
+    bgGradient.addColorStop(1, '#ff7794');
+  } else {
+    bgGradient.addColorStop(0, '#98d62c');
+    bgGradient.addColorStop(1, '#456114');
+  }
   ctx.fillStyle = bgGradient;
   ctx.fillRect(0, 0, W, H);
   
