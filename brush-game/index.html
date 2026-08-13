@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>붓 - 폰트 애니메이션</title>
+  <style>
+    @font-face {
+      font-family: 'CustomFont';
+      src: url('BAEMINWORK.otf') format('opentype');
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      background: #f5f5f5;
+      font-family: 'Apple SD Gothic Neo', sans-serif;
+      color: #333;
+      display: flex;
+      overflow: hidden;
+    }
+    a#home-btn {
+      position: fixed; top: 20px; left: 20px; z-index: 500;
+      font-size: 28px; color: #333; text-decoration: none; opacity: 0.7;
+    }
+    a#home-btn:hover { opacity: 1; }
+
+    #controls {
+      width: 320px; min-height: 100vh; max-height: 100vh; background: #ffffff;
+      padding: 80px 24px 24px; display: flex; flex-direction: column; gap: 14px;
+      border-right: 1px solid #e0e0e0;
+      overflow-y: auto;
+      flex-shrink: 0;
+    }
+    .control-group { display: flex; flex-direction: column; gap: 6px; }
+    .control-group label { font-size: 11px; color: #666; text-transform: uppercase; }
+    .control-group input[type="text"] {
+      width: 100%; padding: 10px; background: #f9f9f9; border: 1px solid #ddd;
+      border-radius: 6px; color: #333; font-size: 20px;
+      font-family: 'CustomFont', sans-serif; text-align: center;
+    }
+    .control-group input[type="range"] { width: 100%; accent-color: #4ade80; }
+    .control-group input[type="color"] { width: 50px; height: 32px; border: 1px solid #ddd; border-radius: 4px; }
+    .range-value { font-size: 12px; color: #666; min-width: 45px; text-align: right; }
+    .control-row { display: flex; align-items: center; gap: 10px; }
+    .font-info { padding: 8px 10px; background: #f0fdf4; border: 1px solid #4ade80; border-radius: 6px; color: #16a34a; font-size: 12px; }
+
+    .mask-type-btns { display: flex; gap: 6px; }
+    .mask-type-btn {
+      flex: 1; padding: 10px 8px; background: #f9f9f9; border: 2px solid #ddd;
+      border-radius: 6px; color: #666; font-size: 12px; cursor: pointer; text-align: center;
+    }
+    .mask-type-btn:hover { border-color: #bbb; color: #333; }
+    .mask-type-btn.active { border-color: #4ade80; color: #16a34a; background: #f0fdf4; }
+
+    .bg-type-btn {
+      flex: 1; padding: 10px 8px; background: #f9f9f9; border: 2px solid #ddd;
+      border-radius: 6px; color: #666; font-size: 12px; cursor: pointer; text-align: center;
+    }
+    .bg-type-btn:hover { border-color: #bbb; color: #333; }
+    .bg-type-btn.active { border-color: #4ade80; color: #16a34a; background: #f0fdf4; }
+
+    .angle-preview {
+      width: 50px; height: 50px; border: 2px solid #ddd; border-radius: 50%;
+      position: relative; margin: 6px auto;
+    }
+    .angle-arrow {
+      position: absolute; top: 50%; left: 50%; width: 20px; height: 2px;
+      background: #4ade80; transform-origin: left center;
+    }
+    .angle-arrow::after {
+      content: ''; position: absolute; right: -2px; top: -3px;
+      border: 4px solid transparent; border-left: 5px solid #4ade80;
+    }
+
+    .btn-group { display: flex; gap: 8px; }
+    .btn {
+      flex: 1; padding: 12px; border: none; border-radius: 8px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .btn-primary { background: #4ade80; color: #000; }
+    .btn-secondary { background: #e5e5e5; color: #333; }
+    .btn-clear { background: #ef4444; color: #fff; }
+    .help-text { font-size: 11px; color: #888; line-height: 1.5; padding: 10px; background: #f5f5f5; border-radius: 6px; }
+
+    #canvas-area {
+      flex: 1; position: relative; cursor: crosshair;
+      display: flex; align-items: center; justify-content: center;
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    #text-box {
+      position: relative;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+    .text-layer {
+      font-family: 'CustomFont', sans-serif;
+      font-size: 200px;
+      white-space: nowrap;
+      user-select: none;
+    }
+    #main-text {
+      color: #fff;
+    }
+    .reveal-text {
+      position: absolute;
+      top: 0;
+      left: 0;
+      color: #fff;
+    }
+
+    #draw-svg {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 5;
+    }
+    .shape-preview {
+      fill: rgba(74,222,128,0.3);
+      stroke: #4ade80;
+      stroke-width: 2;
+      stroke-dasharray: 5,5;
+    }
+    .point-marker {
+      fill: #4ade80;
+      stroke: #fff;
+      stroke-width: 2;
+    }
+    .point-marker.first { fill: #f59e0b; }
+    .mask-settings {
+      margin-top: 10px; padding: 10px; border-radius: 8px; font-size: 11px;
+    }
+    .mask-settings.mask-0 { background: rgba(74,222,128,0.15); border: 1px solid #4ade80; }
+    .mask-settings.mask-1 { background: rgba(251,191,36,0.15); border: 1px solid #fbbf24; }
+    .mask-settings .mask-title { font-weight: 600; margin-bottom: 8px; }
+    .mask-settings.mask-0 .mask-title { color: #4ade80; }
+    .mask-settings.mask-1 .mask-title { color: #fbbf24; }
+    .mask-settings .setting-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+    .mask-settings .setting-row label { flex: 0 0 50px; color: #666; }
+    .mask-settings .setting-row input[type="range"] { flex: 1; accent-color: inherit; }
+    .mask-settings .setting-row input[type="number"] { 
+      width: 50px; padding: 3px; background: #f9f9f9; border: 1px solid #ddd; 
+      border-radius: 4px; color: #333; text-align: center; font-size: 11px;
+    }
+    .mask-settings .setting-row span { min-width: 35px; text-align: right; color: #666; }
+    .angle-btns { display: flex; gap: 4px; }
+    .angle-btn {
+      width: 32px; height: 32px; border: 1px solid #ddd; border-radius: 4px;
+      background: #f9f9f9; color: #666; font-size: 14px; cursor: pointer;
+    }
+    .angle-btn:hover { border-color: #bbb; }
+    .angle-btn.active { background: #4ade80; border-color: #4ade80; color: #fff; }
+    .mask-settings.mask-1 .angle-btn.active { background: #fbbf24; border-color: #fbbf24; }
+  </style>
+</head>
+<body>
+  <a href="../index.html" id="home-btn">←</a>
+
+  <div id="controls">
+    <div class="control-group">
+      <label>폰트</label>
+      <div class="font-info">BAEMINWORK</div>
+    </div>
+    <div class="control-group">
+      <label>글자 입력 (최대 3자)</label>
+      <input type="text" id="textInput" value="그림자" maxlength="3">
+    </div>
+    <div class="control-group">
+      <label>폰트 크기</label>
+      <div class="control-row">
+        <input type="range" id="fontSize" min="80" max="400" value="200">
+        <span class="range-value" id="fontSizeVal">200px</span>
+      </div>
+    </div>
+    <div class="control-group">
+      <label>자간</label>
+      <div class="control-row">
+        <input type="range" id="letterSpacing" min="-20" max="50" value="0">
+        <span class="range-value" id="letterSpacingVal">0px</span>
+      </div>
+    </div>
+    <div class="control-group">
+      <label>글자 색상</label>
+      <input type="color" id="textColor" value="#000000">
+    </div>
+    <div class="control-group">
+      <label>배경색 (내보내기용)</label>
+      <div class="mask-type-btns">
+        <button class="bg-type-btn active" data-bg="#ffffff">화이트</button>
+        <button class="bg-type-btn" data-bg="#03ff00">그린스크린</button>
+      </div>
+    </div>
+    <div class="control-group">
+      <label>마스크 타입</label>
+      <div class="mask-type-btns">
+        <button class="mask-type-btn active" data-type="rect">■ 네모</button>
+        <button class="mask-type-btn" data-type="circle">● 동그라미</button>
+        <button class="mask-type-btn" data-type="polygon">◆ 다각형</button>
+      </div>
+    </div>
+    <div id="maskSettingsContainer"></div>
+    <div class="btn-group">
+      <button class="btn btn-primary" id="playBtn">▶ 재생</button>
+    </div>
+    <button class="btn btn-clear" id="clearBtn">마스크 전체 삭제</button>
+    <div class="control-group" style="margin-top:8px;">
+      <label>내보내기</label>
+      <div class="btn-group">
+        <button class="btn" id="mp4Btn" style="background:#f59e0b; color:#000;">MP4</button>
+        <button class="btn" id="pngSeqBtn" style="background:#8b5cf6; color:#fff;">PNG</button>
+      </div>
+    </div>
+    <p class="help-text" id="helpText"><strong>드래그</strong>로 마스크를 그리세요 (최대 2개)</p>
+  </div>
+
+  <div id="canvas-area">
+    <div id="text-box">
+      <div id="main-text" class="text-layer">그림자</div>
+      <div id="reveal-text-0" class="reveal-text text-layer">그림자</div>
+      <div id="reveal-text-1" class="reveal-text text-layer">그림자</div>
+    </div>
+    <svg id="draw-svg"></svg>
+  </div>
+
+  <canvas id="recordCanvas" style="display:none;"></canvas>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.3/build/mp4-muxer.min.js"></script>
+
+<script>
+(function() {
+  // State - 마스크 2개까지 지원
+  var maskType = 'rect';
+  var masks = []; // 최대 2개, 각 마스크에 설정 포함
+  var maskSettings = [
+    { angle: 0, speed: 0.8, delay: 0 },
+    { angle: 0, speed: 0.8, delay: 0 }
+  ];
+  var isDrawing = false;
+  var startX = 0, startY = 0;
+  var polyPoints = [];
+  var isAnimating = false;
+  var exportBgColor = '#ffffff'; // 내보내기 배경색
+
+  // Elements
+  var mainText = document.getElementById('main-text');
+  var revealTexts = [
+    document.getElementById('reveal-text-0'),
+    document.getElementById('reveal-text-1')
+  ];
+  var textBox = document.getElementById('text-box');
+  var canvasArea = document.getElementById('canvas-area');
+  var drawSvg = document.getElementById('draw-svg');
+
+  var textInput = document.getElementById('textInput');
+  var fontSize = document.getElementById('fontSize');
+  var letterSpacing = document.getElementById('letterSpacing');
+  var textColor = document.getElementById('textColor');
+  var playBtn = document.getElementById('playBtn');
+  var clearBtn = document.getElementById('clearBtn');
+  var helpText = document.getElementById('helpText');
+  var maskSettingsContainer = document.getElementById('maskSettingsContainer');
+
+  // 초기 설정
+  revealTexts.forEach(function(rt) { rt.style.clipPath = 'inset(0% 0% 100% 0%)'; });
+
+  function updateText() {
+    var txt = textInput.value || '그림자';
+    var size = fontSize.value + 'px';
+    var spacing = letterSpacing.value + 'px';
+    var color = textColor.value;
+
+    mainText.textContent = txt;
+    mainText.style.fontSize = size;
+    mainText.style.letterSpacing = spacing;
+    mainText.style.color = color;
+
+    revealTexts.forEach(function(rt) {
+      rt.textContent = txt;
+      rt.style.fontSize = size;
+      rt.style.letterSpacing = spacing;
+      rt.style.color = color;
+    });
+  }
+
+  function resizeSvg() {
+    var r = canvasArea.getBoundingClientRect();
+    drawSvg.setAttribute('viewBox', '0 0 ' + r.width + ' ' + r.height);
+    drawSvg.style.width = r.width + 'px';
+    drawSvg.style.height = r.height + 'px';
+  }
+
+  function getPos(e) {
+    var r = canvasArea.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  }
+
+  function onMouseDown(e) {
+    if (masks.length >= 2) return;
+    var p = getPos(e);
+
+    if (maskType === 'polygon') {
+      if (polyPoints.length >= 3) {
+        var f = polyPoints[0];
+        var dist = Math.sqrt((p.x - f.x) * (p.x - f.x) + (p.y - f.y) * (p.y - f.y));
+        if (dist < 15) {
+          finishPolygon();
+          return;
+        }
+      }
+      polyPoints.push(p);
+      drawPreview();
+    } else {
+      isDrawing = true;
+      startX = p.x;
+      startY = p.y;
+    }
+  }
+
+  function onMouseMove(e) {
+    var p = getPos(e);
+
+    if (maskType === 'polygon' && polyPoints.length > 0) {
+      drawPreview(p);
+      return;
+    }
+
+    if (!isDrawing) return;
+
+    var newMask;
+    if (maskType === 'rect') {
+      newMask = { type: 'rect', x: Math.min(startX, p.x), y: Math.min(startY, p.y),
+        w: Math.abs(p.x - startX), h: Math.abs(p.y - startY) };
+    } else if (maskType === 'circle') {
+      var cx = (startX + p.x) / 2, cy = (startY + p.y) / 2;
+      var r = Math.sqrt((p.x - startX) * (p.x - startX) + (p.y - startY) * (p.y - startY)) / 2;
+      newMask = { type: 'circle', cx: cx, cy: cy, r: r };
+    }
+    var tempMasks = masks.slice();
+    tempMasks.push(newMask);
+    drawAllMasks(tempMasks, true);
+  }
+
+  function onMouseUp(e) {
+    if (isDrawing && masks.length < 2) {
+      var p = getPos(e);
+      var newMask;
+      if (maskType === 'rect') {
+        newMask = { type: 'rect', x: Math.min(startX, p.x), y: Math.min(startY, p.y),
+          w: Math.abs(p.x - startX), h: Math.abs(p.y - startY) };
+        if (newMask.w > 5 && newMask.h > 5) masks.push(newMask);
+      } else if (maskType === 'circle') {
+        var cx = (startX + p.x) / 2, cy = (startY + p.y) / 2;
+        var r = Math.sqrt((p.x - startX) * (p.x - startX) + (p.y - startY) * (p.y - startY)) / 2;
+        newMask = { type: 'circle', cx: cx, cy: cy, r: r };
+        if (r > 5) masks.push(newMask);
+      }
+      drawAllMasks(masks, false);
+      updateHelpText();
+    }
+    isDrawing = false;
+  }
+
+  function onDblClick() {
+    if (maskType === 'polygon' && polyPoints.length >= 3) finishPolygon();
+  }
+
+  function finishPolygon() {
+    if (masks.length >= 2) return;
+    masks.push({ type: 'polygon', points: polyPoints.slice() });
+    polyPoints = [];
+    drawAllMasks(masks, false);
+    updateHelpText();
+  }
+
+  function updateHelpText() {
+    var remaining = 2 - masks.length;
+    if (remaining === 0) {
+      helpText.innerHTML = '마스크 2개 완성! <strong>재생</strong>하거나 <strong>삭제</strong>하세요';
+    } else if (maskType === 'polygon') {
+      helpText.innerHTML = '<strong>클릭</strong>으로 점 찍기 (남은 마스크: ' + remaining + '개)';
+    } else {
+      helpText.innerHTML = '<strong>드래그</strong>로 마스크 그리기 (남은: ' + remaining + '개)';
+    }
+    updateMaskSettingsUI();
+  }
+
+  function updateMaskSettingsUI() {
+    maskSettingsContainer.innerHTML = '';
+    var colors = ['#4ade80', '#fbbf24'];
+    var names = ['마스크 ①', '마스크 ②'];
+    var angleOptions = [
+      { value: 0, label: '←' },
+      { value: 90, label: '↑' },
+      { value: 180, label: '→' },
+      { value: 270, label: '↓' }
+    ];
+    
+    for (var i = 0; i < masks.length; i++) {
+      var s = maskSettings[i];
+      var angleBtns = '';
+      for (var a = 0; a < angleOptions.length; a++) {
+        var opt = angleOptions[a];
+        var activeClass = s.angle === opt.value ? ' active' : '';
+        angleBtns += '<button class="angle-btn' + activeClass + '" data-idx="' + i + '" data-angle="' + opt.value + '">' + opt.label + '</button>';
+      }
+      
+      var div = document.createElement('div');
+      div.className = 'mask-settings mask-' + i;
+      div.innerHTML = '<div class="mask-title">' + names[i] + '</div>' +
+        '<div class="setting-row">' +
+          '<label>방향</label>' +
+          '<div class="angle-btns">' + angleBtns + '</div>' +
+        '</div>' +
+        '<div class="setting-row">' +
+          '<label>속도</label>' +
+          '<input type="range" min="0.2" max="3" step="0.1" value="' + s.speed + '" data-idx="' + i + '" data-prop="speed">' +
+          '<span>' + s.speed + 's</span>' +
+        '</div>' +
+        '<div class="setting-row">' +
+          '<label>딜레이</label>' +
+          '<input type="range" min="0" max="2" step="0.1" value="' + s.delay + '" data-idx="' + i + '" data-prop="delay">' +
+          '<span>' + s.delay + 's</span>' +
+        '</div>';
+      div.style.setProperty('--accent', colors[i]);
+      maskSettingsContainer.appendChild(div);
+    }
+
+    // 각도 버튼 이벤트
+    maskSettingsContainer.querySelectorAll('.angle-btn').forEach(function(btn) {
+      btn.onclick = function() {
+        var idx = parseInt(this.dataset.idx);
+        var angle = parseInt(this.dataset.angle);
+        maskSettings[idx].angle = angle;
+        // 같은 마스크의 버튼들만 업데이트
+        this.parentElement.querySelectorAll('.angle-btn').forEach(function(b) { b.classList.remove('active'); });
+        this.classList.add('active');
+      };
+    });
+
+    // 슬라이더 이벤트
+    maskSettingsContainer.querySelectorAll('input[type="range"]').forEach(function(inp) {
+      inp.style.accentColor = colors[inp.dataset.idx];
+      inp.oninput = function() {
+        var idx = parseInt(this.dataset.idx);
+        var prop = this.dataset.prop;
+        var val = parseFloat(this.value);
+        maskSettings[idx][prop] = val;
+        this.parentElement.querySelector('span').textContent = val + 's';
+      };
+    });
+  }
+
+  function drawPreview(cursor) {
+    drawSvg.innerHTML = '';
+    for (var m = 0; m < masks.length; m++) drawSingleMask(masks[m], m);
+    if (polyPoints.length === 0) return;
+
+    var pts = '';
+    for (var i = 0; i < polyPoints.length; i++) pts += polyPoints[i].x + ',' + polyPoints[i].y + ' ';
+    if (cursor) pts += cursor.x + ',' + cursor.y;
+
+    var poly = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    poly.setAttribute('points', pts);
+    poly.setAttribute('class', 'shape-preview');
+    poly.setAttribute('fill', 'rgba(74,222,128,0.2)');
+    drawSvg.appendChild(poly);
+
+    for (var j = 0; j < polyPoints.length; j++) {
+      var c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      c.setAttribute('cx', polyPoints[j].x);
+      c.setAttribute('cy', polyPoints[j].y);
+      c.setAttribute('r', j === 0 ? 8 : 6);
+      c.setAttribute('class', 'point-marker' + (j === 0 ? ' first' : ''));
+      drawSvg.appendChild(c);
+    }
+  }
+
+  function drawSingleMask(mask, index) {
+    var el;
+    var colors = ['rgba(74,222,128,0.3)', 'rgba(251,191,36,0.3)'];
+    var strokes = ['#4ade80', '#fbbf24'];
+    
+    if (mask.type === 'rect') {
+      el = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      el.setAttribute('x', mask.x); el.setAttribute('y', mask.y);
+      el.setAttribute('width', mask.w); el.setAttribute('height', mask.h);
+    } else if (mask.type === 'circle') {
+      el = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+      el.setAttribute('cx', mask.cx); el.setAttribute('cy', mask.cy);
+      el.setAttribute('rx', mask.r); el.setAttribute('ry', mask.r);
+    } else if (mask.type === 'polygon') {
+      el = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      var pts = '';
+      for (var i = 0; i < mask.points.length; i++) pts += mask.points[i].x + ',' + mask.points[i].y + ' ';
+      el.setAttribute('points', pts);
+    }
+    el.setAttribute('fill', colors[index] || colors[0]);
+    el.setAttribute('stroke', strokes[index] || strokes[0]);
+    el.setAttribute('stroke-width', '2');
+    el.setAttribute('stroke-dasharray', '5,5');
+    drawSvg.appendChild(el);
+  }
+
+  function drawAllMasks(maskList, isPreview) {
+    drawSvg.innerHTML = '';
+    if (maskList.length === 0) {
+      mainText.style.clipPath = 'none';
+      revealTexts.forEach(function(rt) { rt.style.clipPath = 'inset(0% 100% 0% 0%)'; rt.style.opacity = '1'; });
+      return;
+    }
+    for (var i = 0; i < maskList.length; i++) drawSingleMask(maskList[i], i);
+    if (!isPreview) { applyMasksToMain(); doReset(); }
+  }
+
+  function clearMask() {
+    masks = [];
+    polyPoints = [];
+    isDrawing = false;
+    drawSvg.innerHTML = '';
+    mainText.style.clipPath = 'none';
+    var existingDefs = document.getElementById('mask-clip-defs');
+    if (existingDefs) existingDefs.remove();
+    revealTexts.forEach(function(rt) { rt.style.clipPath = 'inset(0% 100% 0% 0%)'; rt.style.opacity = '1'; });
+    isAnimating = false;
+    updateHelpText();
+  }
+
+  // 다각형 clip-path 생성 (방향에 따라 잘라내기)
+  function getPolygonClipPath(pts, angle, t) {
+    if (t >= 1) {
+      // 완전히 보임
+      var fullPts = pts.map(function(p) { return (p.x * 100) + '% ' + (p.y * 100) + '%'; });
+      return 'polygon(' + fullPts.join(', ') + ')';
+    }
+    if (t <= 0) {
+      // 완전히 숨김
+      return 'polygon(0% 0%, 0% 0%, 0% 0%)';
+    }
+    
+    // 바운딩 박스 계산
+    var minX = Math.min.apply(null, pts.map(function(p) { return p.x; }));
+    var maxX = Math.max.apply(null, pts.map(function(p) { return p.x; }));
+    var minY = Math.min.apply(null, pts.map(function(p) { return p.y; }));
+    var maxY = Math.max.apply(null, pts.map(function(p) { return p.y; }));
+    var width = maxX - minX;
+    var height = maxY - minY;
+    
+    // 방향에 따라 클리핑 영역 계산
+    var clipMinX, clipMaxX, clipMinY, clipMaxY;
+    if (angle === 0) { // 오른쪽에서
+      clipMinX = minX + width * (1 - t);
+      clipMaxX = maxX;
+      clipMinY = minY;
+      clipMaxY = maxY;
+    } else if (angle === 90) { // 아래에서
+      clipMinX = minX;
+      clipMaxX = maxX;
+      clipMinY = minY + height * (1 - t);
+      clipMaxY = maxY;
+    } else if (angle === 180) { // 왼쪽에서
+      clipMinX = minX;
+      clipMaxX = maxX - width * (1 - t);
+      clipMinY = minY;
+      clipMaxY = maxY;
+    } else { // 위에서 (270)
+      clipMinX = minX;
+      clipMaxX = maxX;
+      clipMinY = minY;
+      clipMaxY = maxY - height * (1 - t);
+    }
+    
+    // 다각형과 클리핑 사각형의 교집합 계산 (간단한 구현)
+    var clippedPts = [];
+    for (var i = 0; i < pts.length; i++) {
+      var p = pts[i];
+      var clippedX = Math.max(clipMinX, Math.min(clipMaxX, p.x));
+      var clippedY = Math.max(clipMinY, Math.min(clipMaxY, p.y));
+      
+      // 포인트가 클리핑 영역 안에 있는지 확인
+      if (p.x >= clipMinX && p.x <= clipMaxX && p.y >= clipMinY && p.y <= clipMaxY) {
+        clippedPts.push((p.x * 100) + '% ' + (p.y * 100) + '%');
+      } else {
+        clippedPts.push((clippedX * 100) + '% ' + (clippedY * 100) + '%');
+      }
+    }
+    
+    return 'polygon(' + clippedPts.join(', ') + ')';
+  }
+
+  function getMaskBounds(mask) {
+    var canvasRect = canvasArea.getBoundingClientRect();
+    var textRect = textBox.getBoundingClientRect();
+    var offX = textRect.left - canvasRect.left;
+    var offY = textRect.top - canvasRect.top;
+
+    var mx1, my1, mx2, my2;
+    if (mask.type === 'rect') {
+      mx1 = mask.x; my1 = mask.y;
+      mx2 = mask.x + mask.w; my2 = mask.y + mask.h;
+    } else if (mask.type === 'circle') {
+      mx1 = mask.cx - mask.r; my1 = mask.cy - mask.r;
+      mx2 = mask.cx + mask.r; my2 = mask.cy + mask.r;
+    } else {
+      var xs = mask.points.map(function(p) { return p.x; });
+      var ys = mask.points.map(function(p) { return p.y; });
+      mx1 = Math.min.apply(null, xs); my1 = Math.min.apply(null, ys);
+      mx2 = Math.max.apply(null, xs); my2 = Math.max.apply(null, ys);
+    }
+
+    var tx1 = mx1 - offX, ty1 = my1 - offY;
+    var tx2 = mx2 - offX, ty2 = my2 - offY;
+    var tw = textRect.width, th = textRect.height;
+
+    // 다각형일 경우 실제 점들의 좌표도 저장
+    var polygonPoints = null;
+    if (mask.type === 'polygon') {
+      polygonPoints = mask.points.map(function(p) {
+        return {
+          x: (p.x - offX) / tw,
+          y: (p.y - offY) / th
+        };
+      });
+    }
+
+    return {
+      top: (ty1 / th) * 100,
+      right: 100 - (tx2 / tw) * 100,
+      bottom: 100 - (ty2 / th) * 100,
+      left: (tx1 / tw) * 100,
+      width: ((tx2 - tx1) / tw) * 100,
+      height: ((ty2 - ty1) / th) * 100,
+      polygonPoints: polygonPoints,
+      type: mask.type
+    };
+  }
+
+  function applyMasksToMain() {
+    if (masks.length === 0) { 
+      mainText.style.clipPath = 'none'; 
+      return; 
+    }
+    
+    // SVG clipPath로 여러 구멍 뚫기 (evenodd 규칙)
+    var existingDefs = document.getElementById('mask-clip-defs');
+    if (existingDefs) existingDefs.remove();
+    
+    // 외곽 사각형 (시계 방향) + 각 마스크 구멍 (반시계 방향)
+    var pathD = 'M0,0 L1,0 L1,1 L0,1 Z';
+    
+    for (var i = 0; i < masks.length; i++) {
+      var b = getMaskBounds(masks[i]);
+      
+      if (b.type === 'polygon' && b.polygonPoints) {
+        // 다각형: 실제 모양 사용 (반시계 방향)
+        var pts = b.polygonPoints;
+        pathD += ' M' + pts[0].x + ',' + pts[0].y;
+        for (var pi = pts.length - 1; pi >= 1; pi--) {
+          pathD += ' L' + pts[pi].x + ',' + pts[pi].y;
+        }
+        pathD += ' Z';
+      } else {
+        // 사각형/원: 바운딩 박스 사용
+        var l = b.left / 100, t = b.top / 100;
+        var r = (100 - b.right) / 100, bt = (100 - b.bottom) / 100;
+        // 반시계 방향으로 구멍
+        pathD += ' M' + l + ',' + t + ' L' + l + ',' + bt + ' L' + r + ',' + bt + ' L' + r + ',' + t + ' Z';
+      }
+    }
+    
+    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.id = 'mask-clip-defs';
+    svg.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;';
+    
+    var defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    var clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
+    clipPath.id = 'main-text-clip';
+    clipPath.setAttribute('clipPathUnits', 'objectBoundingBox');
+    
+    var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('fill-rule', 'evenodd');
+    path.setAttribute('d', pathD);
+    
+    clipPath.appendChild(path);
+    defs.appendChild(clipPath);
+    svg.appendChild(defs);
+    textBox.appendChild(svg);
+    
+    mainText.style.clipPath = 'url(#main-text-clip)';
+  }
+
+  function play(forRecord) {
+    if (masks.length === 0) { if (!forRecord) alert('마스크를 먼저 그려주세요!'); return; }
+    if (isAnimating) return;
+    isAnimating = true;
+    drawSvg.style.display = 'none';
+
+    var bounds = masks.map(function(m) { return getMaskBounds(m); });
+    var startTime = null;
+    
+    // 전체 애니메이션 시간 계산 (가장 긴 것 기준)
+    var maxDuration = 0;
+    for (var i = 0; i < masks.length; i++) {
+      var total = maskSettings[i].delay + maskSettings[i].speed;
+      if (total > maxDuration) maxDuration = total;
+    }
+    maxDuration *= 1000;
+
+    function easeInOut(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+
+    function frame(ts) {
+      if (!startTime) startTime = ts;
+      var elapsed = ts - startTime;
+      var allDone = true;
+
+      for (var i = 0; i < masks.length; i++) {
+        var s = maskSettings[i];
+        var b = bounds[i];
+        var rt = revealTexts[i];
+        var angle = s.angle;
+        var delayMs = s.delay * 1000;
+        var durationMs = s.speed * 1000;
+        
+        var maskElapsed = elapsed - delayMs;
+        var rawT, t;
+        
+        if (maskElapsed < 0) {
+          rawT = 0;
+          t = 0;
+          allDone = false;
+        } else if (maskElapsed >= durationMs) {
+          rawT = 1;
+          t = 1;
+        } else {
+          rawT = maskElapsed / durationMs;
+          t = easeInOut(rawT);
+          allDone = false;
+        }
+
+        rt.style.opacity = '1';
+        
+        // 다각형인 경우 polygon clip-path 사용
+        if (b.type === 'polygon' && b.polygonPoints) {
+          var pts = b.polygonPoints;
+          var clipPath = getPolygonClipPath(pts, angle, t);
+          rt.style.clipPath = clipPath;
+        } else {
+          // 사각형/원: inset 사용
+          var top = b.top, right = b.right, bottom = b.bottom, left = b.left;
+
+          // 각도에 따라 방향 설정 (0=오른쪽에서, 90=아래에서, 180=왼쪽에서, 270=위에서)
+          if (angle === 0) {
+            left = b.left + b.width * (1 - t);
+          } else if (angle === 90) {
+            top = b.top + b.height * (1 - t);
+          } else if (angle === 180) {
+            right = b.right + b.width * (1 - t);
+          } else if (angle === 270) {
+            bottom = b.bottom + b.height * (1 - t);
+          }
+
+          rt.style.clipPath = 'inset(' + top + '% ' + right + '% ' + bottom + '% ' + left + '%)';
+        }
+      }
+
+      if (!allDone) requestAnimationFrame(frame);
+      else { isAnimating = false; if (forRecord && typeof forRecord === 'function') forRecord(); }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function doReset() {
+    for (var i = 0; i < masks.length; i++) {
+      var b = getMaskBounds(masks[i]);
+      revealTexts[i].style.opacity = '0.2';
+      
+      if (b.type === 'polygon' && b.polygonPoints) {
+        // 다각형: 숨김 상태
+        revealTexts[i].style.clipPath = 'polygon(0% 0%, 0% 0%, 0% 0%)';
+      } else {
+        revealTexts[i].style.clipPath = 'inset(' + b.top + '% ' + b.right + '% ' + b.bottom + '% ' + b.left + '%)';
+      }
+    }
+    for (var j = masks.length; j < revealTexts.length; j++) {
+      revealTexts[j].style.clipPath = 'inset(0% 100% 0% 0%)';
+      revealTexts[j].style.opacity = '1';
+    }
+    isAnimating = false;
+    drawSvg.style.display = 'block';
+  }
+
+  // 영상 내보내기 (MP4 - WebCodecs + mp4-muxer, 폴백: WebM)
+  async function exportVideo() {
+    if (masks.length === 0) { alert('마스크를 먼저 그려주세요!'); return; }
+    
+    var videoBtn = document.getElementById('mp4Btn');
+    
+    // WebCodecs API 지원 확인
+    var supportsWebCodecs = typeof VideoEncoder !== 'undefined';
+    
+    if (supportsWebCodecs) {
+      await exportMP4();
+    } else {
+      await exportWebM();
+    }
+  }
+  
+  // MP4 내보내기 (WebCodecs + mp4-muxer)
+  async function exportMP4() {
+    var videoBtn = document.getElementById('mp4Btn');
+    videoBtn.textContent = 'MP4 생성 중...';
+    videoBtn.disabled = true;
+
+    var recordCanvas = document.getElementById('recordCanvas');
+    var ctx = recordCanvas.getContext('2d');
+    var textRect = textBox.getBoundingClientRect();
+    
+    // 짝수로 맞추기 (H.264 요구사항)
+    var width = Math.round(textRect.width * 2 / 2) * 2;
+    var height = Math.round(textRect.height * 2 / 2) * 2;
+    recordCanvas.width = width;
+    recordCanvas.height = height;
+
+    var bounds = masks.map(function(m) { return getMaskBounds(m); });
+    var txt = textInput.value || '그림자';
+    var size = parseFloat(fontSize.value) * 2;
+    var spacing = parseFloat(letterSpacing.value) * 2;
+    var color = textColor.value;
+    var tw = width, th = height;
+
+    var maxDuration = 0;
+    for (var k = 0; k < masks.length; k++) {
+      var total = maskSettings[k].delay + maskSettings[k].speed;
+      if (total > maxDuration) maxDuration = total;
+    }
+
+    var fps = 30;
+    var totalFrames = Math.ceil(maxDuration * fps);
+
+    function easeInOut(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+
+    // mp4-muxer 설정
+    var muxer = new Mp4Muxer.Muxer({
+      target: new Mp4Muxer.ArrayBufferTarget(),
+      video: {
+        codec: 'avc',
+        width: width,
+        height: height
+      },
+      fastStart: 'in-memory'
+    });
+
+    // VideoEncoder 설정
+    var encoder = new VideoEncoder({
+      output: function(chunk, meta) {
+        muxer.addVideoChunk(chunk, meta);
+      },
+      error: function(e) {
+        console.error('Encoder error:', e);
+      }
+    });
+
+    await encoder.configure({
+      codec: 'avc1.42001f',
+      width: width,
+      height: height,
+      bitrate: 5000000,
+      framerate: fps
+    });
+
+    // 프레임 생성 및 인코딩
+    for (var frameIdx = 0; frameIdx <= totalFrames; frameIdx++) {
+      var elapsed = (frameIdx / fps) * 1000;
+
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = exportBgColor;
+      ctx.fillRect(0, 0, width, height);
+      
+      ctx.font = size + 'px CustomFont';
+      ctx.fillStyle = color;
+      ctx.textBaseline = 'top';
+
+      // 전체 텍스트 (마스크 영역들 제외)
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, tw, th);
+      for (var m = 0; m < masks.length; m++) {
+        var b = bounds[m];
+        ctx.rect(b.left / 100 * tw, b.top / 100 * th, (100 - b.right - b.left) / 100 * tw, (100 - b.bottom - b.top) / 100 * th);
+      }
+      ctx.clip('evenodd');
+      var x = 0;
+      for (var i = 0; i < txt.length; i++) { ctx.fillText(txt[i], x, 0); x += ctx.measureText(txt[i]).width + spacing; }
+      ctx.restore();
+
+      // 각 마스크 영역 애니메이션
+      for (var mi = 0; mi < masks.length; mi++) {
+        var s = maskSettings[mi];
+        var b = bounds[mi];
+        var angle = s.angle;
+        var delayMs = s.delay * 1000;
+        var durationMs = s.speed * 1000;
+        
+        var maskElapsed = elapsed - delayMs;
+        var t;
+        if (maskElapsed < 0) t = 0;
+        else if (maskElapsed >= durationMs) t = 1;
+        else t = easeInOut(maskElapsed / durationMs);
+
+        var top = b.top, right = b.right, bottom = b.bottom, left = b.left;
+        
+        // 각도에 따라 방향 설정 (0=오른쪽에서, 90=아래에서, 180=왼쪽에서, 270=위에서)
+        if (angle === 0) {
+          left = b.left + b.width * (1 - t);
+        } else if (angle === 90) {
+          top = b.top + b.height * (1 - t);
+        } else if (angle === 180) {
+          right = b.right + b.width * (1 - t);
+        } else if (angle === 270) {
+          bottom = b.bottom + b.height * (1 - t);
+        }
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(left / 100 * tw, top / 100 * th, (100 - right - left) / 100 * tw, (100 - bottom - top) / 100 * th);
+        ctx.clip();
+        x = 0;
+        for (var j = 0; j < txt.length; j++) { ctx.fillText(txt[j], x, 0); x += ctx.measureText(txt[j]).width + spacing; }
+        ctx.restore();
+      }
+
+      // VideoFrame 생성 및 인코딩
+      var frame = new VideoFrame(recordCanvas, {
+        timestamp: frameIdx * (1000000 / fps)
+      });
+      
+      encoder.encode(frame, { keyFrame: frameIdx % 30 === 0 });
+      frame.close();
+      
+      videoBtn.textContent = 'MP4 ' + Math.round((frameIdx / totalFrames) * 100) + '%';
+    }
+
+    // 인코딩 완료 대기
+    await encoder.flush();
+    encoder.close();
+    muxer.finalize();
+
+    // MP4 다운로드
+    var buffer = muxer.target.buffer;
+    var blob = new Blob([buffer], { type: 'video/mp4' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'brush-animation-' + Date.now() + '.mp4';
+    a.click();
+    URL.revokeObjectURL(url);
+
+    videoBtn.textContent = 'MP4';
+    videoBtn.disabled = false;
+  }
+  
+  // WebM 폴백 (WebCodecs 미지원 브라우저용)
+  async function exportWebM() {
+    var videoBtn = document.getElementById('mp4Btn');
+    videoBtn.textContent = '녹화 중...';
+    videoBtn.disabled = true;
+
+    var recordCanvas = document.getElementById('recordCanvas');
+    var ctx = recordCanvas.getContext('2d');
+    var textRect = textBox.getBoundingClientRect();
+    
+    recordCanvas.width = textRect.width * 2;
+    recordCanvas.height = textRect.height * 2;
+
+    var bounds = masks.map(function(m) { return getMaskBounds(m); });
+    var txt = textInput.value || '그림자';
+    var size = parseFloat(fontSize.value) * 2;
+    var spacing = parseFloat(letterSpacing.value) * 2;
+    var color = textColor.value;
+    var tw = textRect.width * 2, th = textRect.height * 2;
+
+    var maxDuration = 0;
+    for (var k = 0; k < masks.length; k++) {
+      var total = maskSettings[k].delay + maskSettings[k].speed;
+      if (total > maxDuration) maxDuration = total;
+    }
+
+    var fps = 30;
+    var totalFrames = Math.ceil(maxDuration * fps);
+
+    function easeInOut(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+
+    // MediaRecorder 설정
+    var stream = recordCanvas.captureStream(fps);
+    var chunks = [];
+    var recorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' });
+    
+    recorder.ondataavailable = function(e) {
+      if (e.data.size > 0) chunks.push(e.data);
+    };
+    
+    recorder.onstop = function() {
+      var blob = new Blob(chunks, { type: 'video/webm' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'brush-animation-' + Date.now() + '.webm';
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      videoBtn.textContent = 'MP4';
+      videoBtn.disabled = false;
+      alert('이 브라우저는 MP4를 지원하지 않아 WebM으로 저장됩니다.\nChrome 최신 버전에서 MP4 내보내기가 가능합니다.');
+    };
+    
+    recorder.start();
+
+    // 프레임별 그리기
+    var frameIdx = 0;
+    
+    function drawFrame() {
+      if (frameIdx > totalFrames) {
+        recorder.stop();
+        return;
+      }
+      
+      var elapsed = (frameIdx / fps) * 1000;
+
+      ctx.clearRect(0, 0, recordCanvas.width, recordCanvas.height);
+      ctx.fillStyle = exportBgColor;
+      ctx.fillRect(0, 0, recordCanvas.width, recordCanvas.height);
+      
+      ctx.font = size + 'px CustomFont';
+      ctx.fillStyle = color;
+      ctx.textBaseline = 'top';
+
+      // 전체 텍스트 (마스크 영역들 제외)
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, tw, th);
+      for (var m = 0; m < masks.length; m++) {
+        var b = bounds[m];
+        ctx.rect(b.left / 100 * tw, b.top / 100 * th, (100 - b.right - b.left) / 100 * tw, (100 - b.bottom - b.top) / 100 * th);
+      }
+      ctx.clip('evenodd');
+      var x = 0;
+      for (var i = 0; i < txt.length; i++) { ctx.fillText(txt[i], x, 0); x += ctx.measureText(txt[i]).width + spacing; }
+      ctx.restore();
+
+      // 각 마스크 영역 애니메이션
+      for (var mi = 0; mi < masks.length; mi++) {
+        var s = maskSettings[mi];
+        var b = bounds[mi];
+        var angle = s.angle;
+        var delayMs = s.delay * 1000;
+        var durationMs = s.speed * 1000;
+        
+        var maskElapsed = elapsed - delayMs;
+        var t;
+        if (maskElapsed < 0) t = 0;
+        else if (maskElapsed >= durationMs) t = 1;
+        else t = easeInOut(maskElapsed / durationMs);
+
+        var top = b.top, right = b.right, bottom = b.bottom, left = b.left;
+        
+        // 각도에 따라 방향 설정 (0=오른쪽에서, 90=아래에서, 180=왼쪽에서, 270=위에서)
+        if (angle === 0) {
+          left = b.left + b.width * (1 - t);
+        } else if (angle === 90) {
+          top = b.top + b.height * (1 - t);
+        } else if (angle === 180) {
+          right = b.right + b.width * (1 - t);
+        } else if (angle === 270) {
+          bottom = b.bottom + b.height * (1 - t);
+        }
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(left / 100 * tw, top / 100 * th, (100 - right - left) / 100 * tw, (100 - bottom - top) / 100 * th);
+        ctx.clip();
+        x = 0;
+        for (var j = 0; j < txt.length; j++) { ctx.fillText(txt[j], x, 0); x += ctx.measureText(txt[j]).width + spacing; }
+        ctx.restore();
+      }
+
+      videoBtn.textContent = '녹화 ' + Math.round((frameIdx / totalFrames) * 100) + '%';
+      frameIdx++;
+      setTimeout(drawFrame, 1000 / fps);
+    }
+    
+    drawFrame();
+  }
+
+  // PNG 시퀀스 내보내기 (ZIP)
+  function exportPngSequence() {
+    if (masks.length === 0) { alert('마스크를 먼저 그려주세요!'); return; }
+
+    var pngBtn = document.getElementById('pngSeqBtn');
+    pngBtn.textContent = '생성 중...';
+    pngBtn.disabled = true;
+
+    var recordCanvas = document.getElementById('recordCanvas');
+    var ctx = recordCanvas.getContext('2d');
+    var textRect = textBox.getBoundingClientRect();
+    
+    recordCanvas.width = textRect.width * 2;
+    recordCanvas.height = textRect.height * 2;
+
+    var bounds = masks.map(function(m) { return getMaskBounds(m); });
+    var txt = textInput.value || '붓';
+    var size = parseFloat(fontSize.value) * 2;
+    var spacing = parseFloat(letterSpacing.value) * 2;
+    var color = textColor.value;
+    var tw = textRect.width * 2, th = textRect.height * 2;
+
+    var maxDuration = 0;
+    for (var k = 0; k < masks.length; k++) {
+      var total = maskSettings[k].delay + maskSettings[k].speed;
+      if (total > maxDuration) maxDuration = total;
+    }
+
+    var fps = 30;
+    var totalFrames = Math.ceil(maxDuration * fps);
+    var zip = new JSZip();
+
+    function easeInOut(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+
+    for (var frameIdx = 0; frameIdx <= totalFrames; frameIdx++) {
+      var elapsed = (frameIdx / fps) * 1000;
+
+      ctx.clearRect(0, 0, recordCanvas.width, recordCanvas.height);
+      // 배경색 적용
+      ctx.fillStyle = exportBgColor;
+      ctx.fillRect(0, 0, recordCanvas.width, recordCanvas.height);
+      ctx.font = size + 'px CustomFont';
+      ctx.fillStyle = color;
+      ctx.textBaseline = 'top';
+
+      // 전체 텍스트 (마스크 영역들 제외)
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, tw, th);
+      for (var m = 0; m < masks.length; m++) {
+        var b = bounds[m];
+        ctx.rect(b.left / 100 * tw, b.top / 100 * th, (100 - b.right - b.left) / 100 * tw, (100 - b.bottom - b.top) / 100 * th);
+      }
+      ctx.clip('evenodd');
+      var x = 0;
+      for (var i = 0; i < txt.length; i++) { ctx.fillText(txt[i], x, 0); x += ctx.measureText(txt[i]).width + spacing; }
+      ctx.restore();
+
+      // 각 마스크 영역 애니메이션
+      for (var mi = 0; mi < masks.length; mi++) {
+        var s = maskSettings[mi];
+        var b = bounds[mi];
+        var angle = s.angle;
+        var delayMs = s.delay * 1000;
+        var durationMs = s.speed * 1000;
+        
+        var maskElapsed = elapsed - delayMs;
+        var t;
+        if (maskElapsed < 0) t = 0;
+        else if (maskElapsed >= durationMs) t = 1;
+        else t = easeInOut(maskElapsed / durationMs);
+
+        var top = b.top, right = b.right, bottom = b.bottom, left = b.left;
+        
+        // 각도에 따라 방향 설정 (0=오른쪽에서, 90=아래에서, 180=왼쪽에서, 270=위에서)
+        if (angle === 0) {
+          left = b.left + b.width * (1 - t);
+        } else if (angle === 90) {
+          top = b.top + b.height * (1 - t);
+        } else if (angle === 180) {
+          right = b.right + b.width * (1 - t);
+        } else if (angle === 270) {
+          bottom = b.bottom + b.height * (1 - t);
+        }
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(left / 100 * tw, top / 100 * th, (100 - right - left) / 100 * tw, (100 - bottom - top) / 100 * th);
+        ctx.clip();
+        x = 0;
+        for (var j = 0; j < txt.length; j++) { ctx.fillText(txt[j], x, 0); x += ctx.measureText(txt[j]).width + spacing; }
+        ctx.restore();
+      }
+
+      var dataUrl = recordCanvas.toDataURL('image/png');
+      var base64 = dataUrl.split(',')[1];
+      var num = String(frameIdx).padStart(4, '0');
+      zip.file('frame_' + num + '.png', base64, { base64: true });
+    }
+
+    pngBtn.textContent = 'ZIP 압축 중...';
+
+    zip.generateAsync({ type: 'blob' }).then(function(content) {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(content);
+      a.download = 'brush-animation-' + Date.now() + '.zip';
+      a.click();
+      URL.revokeObjectURL(a.href);
+
+      pngBtn.textContent = '📁 PNG 시퀀스';
+      pngBtn.disabled = false;
+      alert('PNG 시퀀스 ZIP 다운로드 완료! (' + (totalFrames + 1) + '장)\n\n프리미어에서:\n1. ZIP 압축 해제\n2. 파일 > 가져오기 > 첫 번째 PNG 선택\n3. "이미지 시퀀스" 체크 후 가져오기');
+    });
+  }
+
+  // 이벤트 바인딩
+  textInput.oninput = updateText;
+  fontSize.oninput = function() {
+    document.getElementById('fontSizeVal').textContent = fontSize.value + 'px';
+    updateText();
+  };
+  letterSpacing.oninput = function() {
+    document.getElementById('letterSpacingVal').textContent = letterSpacing.value + 'px';
+    updateText();
+  };
+  textColor.oninput = updateText;
+
+  document.querySelectorAll('.mask-type-btn').forEach(function(btn) {
+    btn.onclick = function() {
+      document.querySelectorAll('.mask-type-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      maskType = btn.dataset.type;
+      updateHelpText();
+    };
+  });
+
+  document.querySelectorAll('.bg-type-btn').forEach(function(btn) {
+    btn.onclick = function() {
+      document.querySelectorAll('.bg-type-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      exportBgColor = btn.dataset.bg;
+      canvasArea.style.background = exportBgColor;
+    };
+  });
+
+  playBtn.onclick = function() { play(); };
+  clearBtn.onclick = clearMask;
+  document.getElementById('mp4Btn').onclick = exportVideo;
+  document.getElementById('pngSeqBtn').onclick = exportPngSequence;
+
+  canvasArea.onmousedown = onMouseDown;
+  canvasArea.onmousemove = onMouseMove;
+  canvasArea.onmouseup = onMouseUp;
+  canvasArea.ondblclick = onDblClick;
+
+  window.onresize = resizeSvg;
+
+  // 초기화
+  updateText();
+  resizeSvg();
+  updateHelpText();
+})();
+</script>
+</body>
+</html>
