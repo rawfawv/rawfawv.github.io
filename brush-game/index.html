@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>붓 - 폰트 애니메이션</title>
+  <title>붓 - 한글 획순서 애니메이션</title>
   <style>
     @font-face {
       font-family: 'CustomFont';
@@ -32,200 +32,154 @@
       flex-shrink: 0;
     }
     .control-group { display: flex; flex-direction: column; gap: 6px; }
-    .control-group label { font-size: 11px; color: #666; text-transform: uppercase; }
-    .control-group input[type="text"] {
-      width: 100%; padding: 10px; background: #f9f9f9; border: 1px solid #ddd;
-      border-radius: 6px; color: #333; font-size: 20px;
-      font-family: 'CustomFont', sans-serif; text-align: center;
-    }
+    .control-group label { font-size: 11px; color: #666; text-transform: uppercase; font-weight: 600; }
+    .control-row { display: flex; align-items: center; gap: 10px; }
+    .range-value { font-size: 12px; color: #666; min-width: 45px; text-align: right; }
     .control-group input[type="range"] { width: 100%; accent-color: #4ade80; }
     .control-group input[type="color"] { width: 50px; height: 32px; border: 1px solid #ddd; border-radius: 4px; }
-    .range-value { font-size: 12px; color: #666; min-width: 45px; text-align: right; }
-    .control-row { display: flex; align-items: center; gap: 10px; }
-    .font-info { padding: 8px 10px; background: #f0fdf4; border: 1px solid #4ade80; border-radius: 6px; color: #16a34a; font-size: 12px; }
 
-    .mask-type-btns { display: flex; gap: 6px; }
-    .mask-type-btn {
-      flex: 1; padding: 10px 8px; background: #f9f9f9; border: 2px solid #ddd;
-      border-radius: 6px; color: #666; font-size: 12px; cursor: pointer; text-align: center;
+    /* 자소 선택 버튼 */
+    .jamo-section { margin-bottom: 12px; }
+    .jamo-section-title { font-size: 12px; color: #888; margin-bottom: 6px; }
+    .jamo-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
     }
-    .mask-type-btn:hover { border-color: #bbb; color: #333; }
-    .mask-type-btn.active { border-color: #4ade80; color: #16a34a; background: #f0fdf4; }
+    .jamo-btn {
+      padding: 8px 4px;
+      background: #f9f9f9;
+      border: 2px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 16px;
+      font-family: 'CustomFont', sans-serif;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .jamo-btn:hover { border-color: #4ade80; background: #f0fdf4; }
+    .jamo-btn.active { border-color: #4ade80; background: #4ade80; color: #fff; }
+    .jamo-btn.disabled { opacity: 0.3; cursor: not-allowed; }
 
-    .bg-type-btn {
-      flex: 1; padding: 10px 8px; background: #f9f9f9; border: 2px solid #ddd;
-      border-radius: 6px; color: #666; font-size: 12px; cursor: pointer; text-align: center;
-    }
-    .bg-type-btn:hover { border-color: #bbb; color: #333; }
-    .bg-type-btn.active { border-color: #4ade80; color: #16a34a; background: #f0fdf4; }
-
-    .angle-preview {
-      width: 50px; height: 50px; border: 2px solid #ddd; border-radius: 50%;
-      position: relative; margin: 6px auto;
-    }
-    .angle-arrow {
-      position: absolute; top: 50%; left: 50%; width: 20px; height: 2px;
-      background: #4ade80; transform-origin: left center;
-    }
-    .angle-arrow::after {
-      content: ''; position: absolute; right: -2px; top: -3px;
-      border: 4px solid transparent; border-left: 5px solid #4ade80;
-    }
-
-    .btn-group { display: flex; gap: 8px; }
+    .btn-group { display: flex; gap: 8px; margin-top: 8px; }
     .btn {
       flex: 1; padding: 12px; border: none; border-radius: 8px;
       font-size: 13px; font-weight: 600; cursor: pointer;
     }
     .btn-primary { background: #4ade80; color: #000; }
     .btn-secondary { background: #e5e5e5; color: #333; }
-    .btn-clear { background: #ef4444; color: #fff; }
-    .help-text { font-size: 11px; color: #888; line-height: 1.5; padding: 10px; background: #f5f5f5; border-radius: 6px; }
 
+    .bg-btns { display: flex; gap: 6px; }
+    .bg-btn {
+      flex: 1; padding: 8px; background: #f9f9f9; border: 2px solid #ddd;
+      border-radius: 6px; font-size: 11px; cursor: pointer; text-align: center;
+    }
+    .bg-btn:hover { border-color: #bbb; }
+    .bg-btn.active { border-color: #4ade80; background: #f0fdf4; color: #16a34a; }
+
+    .info-box {
+      padding: 10px; background: #f0fdf4; border: 1px solid #4ade80;
+      border-radius: 6px; font-size: 12px; color: #16a34a;
+    }
+
+    /* 캔버스 영역 */
     #canvas-area {
-      flex: 1; position: relative; cursor: crosshair;
+      flex: 1; position: relative;
       display: flex; align-items: center; justify-content: center;
       background: #ffffff;
       overflow: hidden;
     }
-
-    #text-box {
-      position: relative;
-      display: inline-block;
-      flex-shrink: 0;
+    #preview-svg {
+      width: 400px; height: 400px;
     }
-    .text-layer {
-      font-family: 'CustomFont', sans-serif;
-      font-size: 200px;
-      white-space: nowrap;
-      user-select: none;
+    .stroke-path {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
     }
-    #main-text {
-      color: #fff;
+    .stroke-guide {
+      fill: none;
+      stroke: #e0e0e0;
+      stroke-width: 8;
+      stroke-linecap: round;
     }
-    .reveal-text {
-      position: absolute;
-      top: 0;
-      left: 0;
-      color: #fff;
+    @keyframes drawStroke {
+      to { stroke-dashoffset: 0; }
     }
-
-    #draw-svg {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      z-index: 5;
-    }
-    .shape-preview {
-      fill: rgba(74,222,128,0.3);
-      stroke: #4ade80;
-      stroke-width: 2;
-      stroke-dasharray: 5,5;
-    }
-    .point-marker {
-      fill: #4ade80;
-      stroke: #fff;
-      stroke-width: 2;
-    }
-    .point-marker.first { fill: #f59e0b; }
-    .mask-settings {
-      margin-top: 10px; padding: 10px; border-radius: 8px; font-size: 11px;
-    }
-    .mask-settings.mask-0 { background: rgba(74,222,128,0.15); border: 1px solid #4ade80; }
-    .mask-settings.mask-1 { background: rgba(251,191,36,0.15); border: 1px solid #fbbf24; }
-    .mask-settings .mask-title { font-weight: 600; margin-bottom: 8px; }
-    .mask-settings.mask-0 .mask-title { color: #4ade80; }
-    .mask-settings.mask-1 .mask-title { color: #fbbf24; }
-    .mask-settings .setting-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
-    .mask-settings .setting-row label { flex: 0 0 50px; color: #666; }
-    .mask-settings .setting-row input[type="range"] { flex: 1; accent-color: inherit; }
-    .mask-settings .setting-row input[type="number"] { 
-      width: 50px; padding: 3px; background: #f9f9f9; border: 1px solid #ddd; 
-      border-radius: 4px; color: #333; text-align: center; font-size: 11px;
-    }
-    .mask-settings .setting-row span { min-width: 35px; text-align: right; color: #666; }
-    .angle-btns { display: flex; gap: 4px; }
-    .angle-btn {
-      width: 32px; height: 32px; border: 1px solid #ddd; border-radius: 4px;
-      background: #f9f9f9; color: #666; font-size: 14px; cursor: pointer;
-    }
-    .angle-btn:hover { border-color: #bbb; }
-    .angle-btn.active { background: #4ade80; border-color: #4ade80; color: #fff; }
-    .mask-settings.mask-1 .angle-btn.active { background: #fbbf24; border-color: #fbbf24; }
   </style>
 </head>
 <body>
   <a href="../index.html" id="home-btn">←</a>
 
   <div id="controls">
-    <div class="control-group">
-      <label>폰트</label>
-      <div class="font-info">BAEMINWORK</div>
+    <div class="info-box">
+      <strong>사용법:</strong> 자소를 선택하고 재생 버튼을 누르면 획 순서대로 글자가 써집니다.
     </div>
+
     <div class="control-group">
-      <label>글자 입력 (최대 3자)</label>
-      <input type="text" id="textInput" value="그림자" maxlength="3">
+      <label>초성 선택</label>
+      <div class="jamo-grid" id="cho-grid"></div>
     </div>
+
     <div class="control-group">
-      <label>폰트 크기</label>
+      <label>중성 선택</label>
+      <div class="jamo-grid" id="jung-grid"></div>
+    </div>
+
+    <div class="control-group">
+      <label>종성 선택 (선택사항)</label>
+      <div class="jamo-grid" id="jong-grid"></div>
+    </div>
+
+    <div class="control-group">
+      <label>조합 결과</label>
+      <div id="result-char" style="font-size:48px; font-family:'CustomFont'; text-align:center; padding:10px;">-</div>
+    </div>
+
+    <div class="control-group">
+      <label>획 굵기</label>
       <div class="control-row">
-        <input type="range" id="fontSize" min="80" max="400" value="200">
-        <span class="range-value" id="fontSizeVal">200px</span>
+        <input type="range" id="strokeWidth" min="4" max="20" value="10">
+        <span class="range-value" id="strokeWidthVal">10px</span>
       </div>
     </div>
+
     <div class="control-group">
-      <label>자간</label>
+      <label>획 속도</label>
       <div class="control-row">
-        <input type="range" id="letterSpacing" min="-20" max="50" value="0">
-        <span class="range-value" id="letterSpacingVal">0px</span>
+        <input type="range" id="strokeSpeed" min="0.1" max="1" step="0.1" value="0.4">
+        <span class="range-value" id="strokeSpeedVal">0.4s</span>
       </div>
     </div>
+
     <div class="control-group">
       <label>글자 색상</label>
-      <input type="color" id="textColor" value="#000000">
+      <input type="color" id="strokeColor" value="#000000">
     </div>
+
     <div class="control-group">
       <label>배경색 (내보내기용)</label>
-      <div class="mask-type-btns">
-        <button class="bg-type-btn active" data-bg="#ffffff">화이트</button>
-        <button class="bg-type-btn" data-bg="#03ff00">그린스크린</button>
+      <div class="bg-btns">
+        <button class="bg-btn active" data-bg="#ffffff">화이트</button>
+        <button class="bg-btn" data-bg="#03ff00">그린스크린</button>
       </div>
     </div>
-    <div class="control-group">
-      <label>마스크 타입</label>
-      <div class="mask-type-btns">
-        <button class="mask-type-btn active" data-type="rect">■ 네모</button>
-        <button class="mask-type-btn" data-type="polygon">◆ 다각형</button>
-      </div>
-    </div>
-    <div id="maskSettingsContainer"></div>
+
     <div class="btn-group">
       <button class="btn btn-primary" id="playBtn">▶ 재생</button>
+      <button class="btn btn-secondary" id="resetBtn">↺ 리셋</button>
     </div>
-    <button class="btn btn-clear" id="clearBtn">마스크 전체 삭제</button>
+
     <div class="control-group" style="margin-top:8px;">
       <label>내보내기</label>
       <div class="btn-group">
         <button class="btn" id="mp4Btn" style="background:#888; color:#fff;">MP4</button>
-        <button class="btn" id="pngSeqBtn" style="background:#888; color:#fff;">PNG</button>
+        <button class="btn" id="pngBtn" style="background:#888; color:#fff;">PNG</button>
       </div>
-    </div>
-    <p class="help-text" id="helpText"><strong>드래그</strong>로 마스크를 그리세요 (최대 2개)</p>
-    
-    <div class="control-group" style="margin-top:16px; border-top: 1px solid #e0e0e0; padding-top: 16px;">
-      <label>획순서 모드 (실험적)</label>
-      <button class="btn btn-secondary" id="strokeOrderBtn">✏️ 획순서 분석</button>
-      <div id="strokeOrderInfo" style="margin-top:8px; font-size:11px; color:#666;"></div>
     </div>
   </div>
 
   <div id="canvas-area">
-    <div id="text-box">
-      <div id="main-text" class="text-layer">그림자</div>
-      <div id="reveal-text-0" class="reveal-text text-layer">그림자</div>
-      <div id="reveal-text-1" class="reveal-text text-layer">그림자</div>
-    </div>
-    <svg id="draw-svg"></svg>
+    <svg id="preview-svg" viewBox="0 0 400 400"></svg>
   </div>
 
   <canvas id="recordCanvas" style="display:none;"></canvas>
@@ -234,1407 +188,645 @@
 
 <script>
 (function() {
-  // State - 마스크 2개까지 지원
-  var maskType = 'rect';
-  var masks = []; // 최대 2개, 각 마스크에 설정 포함
-  var maskSettings = [
-    { angle: 0, speed: 0.8, delay: 0 },
-    { angle: 0, speed: 0.8, delay: 0 }
-  ];
-  var isDrawing = false;
-  var startX = 0, startY = 0;
-  var polyPoints = [];
-  var isAnimating = false;
-  var exportBgColor = '#ffffff'; // 내보내기 배경색
-
-  // Elements
-  var mainText = document.getElementById('main-text');
-  var revealTexts = [
-    document.getElementById('reveal-text-0'),
-    document.getElementById('reveal-text-1')
-  ];
-  var textBox = document.getElementById('text-box');
-  var canvasArea = document.getElementById('canvas-area');
-  var drawSvg = document.getElementById('draw-svg');
-
-  var textInput = document.getElementById('textInput');
-  var fontSize = document.getElementById('fontSize');
-  var letterSpacing = document.getElementById('letterSpacing');
-  var textColor = document.getElementById('textColor');
-  var playBtn = document.getElementById('playBtn');
-  var clearBtn = document.getElementById('clearBtn');
-  var helpText = document.getElementById('helpText');
-  var maskSettingsContainer = document.getElementById('maskSettingsContainer');
-
-  // 초기 설정
-  revealTexts.forEach(function(rt) { rt.style.clipPath = 'inset(0% 0% 100% 0%)'; });
-
-  function updateText() {
-    var txt = textInput.value || '그림자';
-    var size = fontSize.value + 'px';
-    var spacing = letterSpacing.value + 'px';
-    var color = textColor.value;
-
-    mainText.textContent = txt;
-    mainText.style.fontSize = size;
-    mainText.style.letterSpacing = spacing;
-    mainText.style.color = color;
-
-    revealTexts.forEach(function(rt) {
-      rt.textContent = txt;
-      rt.style.fontSize = size;
-      rt.style.letterSpacing = spacing;
-      rt.style.color = color;
-    });
-  }
-
-  function resizeSvg() {
-    var r = canvasArea.getBoundingClientRect();
-    drawSvg.setAttribute('viewBox', '0 0 ' + r.width + ' ' + r.height);
-    drawSvg.style.width = r.width + 'px';
-    drawSvg.style.height = r.height + 'px';
-  }
-
-  function getPos(e) {
-    var r = canvasArea.getBoundingClientRect();
-    return { x: e.clientX - r.left, y: e.clientY - r.top };
-  }
-
-  function onMouseDown(e) {
-    if (masks.length >= 2) return;
-    var p = getPos(e);
-
-    if (maskType === 'polygon') {
-      if (polyPoints.length >= 3) {
-        var f = polyPoints[0];
-        var dist = Math.sqrt((p.x - f.x) * (p.x - f.x) + (p.y - f.y) * (p.y - f.y));
-        if (dist < 15) {
-          finishPolygon();
-          return;
-        }
-      }
-      polyPoints.push(p);
-      drawPreview();
-    } else {
-      isDrawing = true;
-      startX = p.x;
-      startY = p.y;
-    }
-  }
-
-  function onMouseMove(e) {
-    var p = getPos(e);
-
-    if (maskType === 'polygon' && polyPoints.length > 0) {
-      drawPreview(p);
-      return;
-    }
-
-    if (!isDrawing) return;
-
-    var newMask;
-    if (maskType === 'rect') {
-      newMask = { type: 'rect', x: Math.min(startX, p.x), y: Math.min(startY, p.y),
-        w: Math.abs(p.x - startX), h: Math.abs(p.y - startY) };
-    } else if (maskType === 'circle') {
-      var cx = (startX + p.x) / 2, cy = (startY + p.y) / 2;
-      var r = Math.sqrt((p.x - startX) * (p.x - startX) + (p.y - startY) * (p.y - startY)) / 2;
-      newMask = { type: 'circle', cx: cx, cy: cy, r: r };
-    }
-    var tempMasks = masks.slice();
-    tempMasks.push(newMask);
-    drawAllMasks(tempMasks, true);
-  }
-
-  function onMouseUp(e) {
-    if (isDrawing && masks.length < 2) {
-      var p = getPos(e);
-      var newMask;
-      if (maskType === 'rect') {
-        newMask = { type: 'rect', x: Math.min(startX, p.x), y: Math.min(startY, p.y),
-          w: Math.abs(p.x - startX), h: Math.abs(p.y - startY) };
-        if (newMask.w > 5 && newMask.h > 5) masks.push(newMask);
-      } else if (maskType === 'circle') {
-        var cx = (startX + p.x) / 2, cy = (startY + p.y) / 2;
-        var r = Math.sqrt((p.x - startX) * (p.x - startX) + (p.y - startY) * (p.y - startY)) / 2;
-        newMask = { type: 'circle', cx: cx, cy: cy, r: r };
-        if (r > 5) masks.push(newMask);
-      }
-      drawAllMasks(masks, false);
-      updateHelpText();
-    }
-    isDrawing = false;
-  }
-
-  function onDblClick() {
-    if (maskType === 'polygon' && polyPoints.length >= 3) finishPolygon();
-  }
-
-  function finishPolygon() {
-    if (masks.length >= 2) return;
-    masks.push({ type: 'polygon', points: polyPoints.slice() });
-    polyPoints = [];
-    drawAllMasks(masks, false);
-    updateHelpText();
-  }
-
-  function updateHelpText() {
-    var remaining = 2 - masks.length;
-    if (remaining === 0) {
-      helpText.innerHTML = '마스크 2개 완성! <strong>재생</strong>하거나 <strong>삭제</strong>하세요';
-    } else if (maskType === 'polygon') {
-      helpText.innerHTML = '<strong>클릭</strong>으로 점 찍기 (남은 마스크: ' + remaining + '개)';
-    } else {
-      helpText.innerHTML = '<strong>드래그</strong>로 마스크 그리기 (남은: ' + remaining + '개)';
-    }
-    updateMaskSettingsUI();
-  }
-
-  function updateMaskSettingsUI() {
-    maskSettingsContainer.innerHTML = '';
-    var colors = ['#4ade80', '#fbbf24'];
-    var names = ['마스크 ①', '마스크 ②'];
-    var angleOptions = [
-      { value: 0, label: '←' },
-      { value: 90, label: '↑' },
-      { value: 180, label: '→' },
-      { value: 270, label: '↓' }
-    ];
-    
-    for (var i = 0; i < masks.length; i++) {
-      var s = maskSettings[i];
-      var angleBtns = '';
-      for (var a = 0; a < angleOptions.length; a++) {
-        var opt = angleOptions[a];
-        var activeClass = s.angle === opt.value ? ' active' : '';
-        angleBtns += '<button class="angle-btn' + activeClass + '" data-idx="' + i + '" data-angle="' + opt.value + '">' + opt.label + '</button>';
-      }
-      
-      var div = document.createElement('div');
-      div.className = 'mask-settings mask-' + i;
-      div.innerHTML = '<div class="mask-title">' + names[i] + '</div>' +
-        '<div class="setting-row">' +
-          '<label>방향</label>' +
-          '<div class="angle-btns">' + angleBtns + '</div>' +
-        '</div>' +
-        '<div class="setting-row">' +
-          '<label>속도</label>' +
-          '<input type="range" min="0.2" max="3" step="0.1" value="' + s.speed + '" data-idx="' + i + '" data-prop="speed">' +
-          '<span>' + s.speed + 's</span>' +
-        '</div>' +
-        '<div class="setting-row">' +
-          '<label>딜레이</label>' +
-          '<input type="range" min="0" max="2" step="0.1" value="' + s.delay + '" data-idx="' + i + '" data-prop="delay">' +
-          '<span>' + s.delay + 's</span>' +
-        '</div>';
-      div.style.setProperty('--accent', colors[i]);
-      maskSettingsContainer.appendChild(div);
-    }
-
-    // 각도 버튼 이벤트
-    maskSettingsContainer.querySelectorAll('.angle-btn').forEach(function(btn) {
-      btn.onclick = function() {
-        var idx = parseInt(this.dataset.idx);
-        var angle = parseInt(this.dataset.angle);
-        maskSettings[idx].angle = angle;
-        // 같은 마스크의 버튼들만 업데이트
-        this.parentElement.querySelectorAll('.angle-btn').forEach(function(b) { b.classList.remove('active'); });
-        this.classList.add('active');
-      };
-    });
-
-    // 슬라이더 이벤트
-    maskSettingsContainer.querySelectorAll('input[type="range"]').forEach(function(inp) {
-      inp.style.accentColor = colors[inp.dataset.idx];
-      inp.oninput = function() {
-        var idx = parseInt(this.dataset.idx);
-        var prop = this.dataset.prop;
-        var val = parseFloat(this.value);
-        maskSettings[idx][prop] = val;
-        this.parentElement.querySelector('span').textContent = val + 's';
-      };
-    });
-  }
-
-  function drawPreview(cursor) {
-    drawSvg.innerHTML = '';
-    for (var m = 0; m < masks.length; m++) drawSingleMask(masks[m], m);
-    if (polyPoints.length === 0) return;
-
-    var pts = '';
-    for (var i = 0; i < polyPoints.length; i++) pts += polyPoints[i].x + ',' + polyPoints[i].y + ' ';
-    if (cursor) pts += cursor.x + ',' + cursor.y;
-
-    var poly = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
-    poly.setAttribute('points', pts);
-    poly.setAttribute('class', 'shape-preview');
-    poly.setAttribute('fill', 'rgba(74,222,128,0.2)');
-    drawSvg.appendChild(poly);
-
-    for (var j = 0; j < polyPoints.length; j++) {
-      var c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
-      c.setAttribute('cx', polyPoints[j].x);
-      c.setAttribute('cy', polyPoints[j].y);
-      c.setAttribute('r', j === 0 ? 8 : 6);
-      c.setAttribute('class', 'point-marker' + (j === 0 ? ' first' : ''));
-      drawSvg.appendChild(c);
-    }
-  }
-
-  function drawSingleMask(mask, index) {
-    var el;
-    var colors = ['rgba(74,222,128,0.3)', 'rgba(251,191,36,0.3)'];
-    var strokes = ['#4ade80', '#fbbf24'];
-    
-    if (mask.type === 'rect') {
-      el = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      el.setAttribute('x', mask.x); el.setAttribute('y', mask.y);
-      el.setAttribute('width', mask.w); el.setAttribute('height', mask.h);
-    } else if (mask.type === 'circle') {
-      el = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
-      el.setAttribute('cx', mask.cx); el.setAttribute('cy', mask.cy);
-      el.setAttribute('rx', mask.r); el.setAttribute('ry', mask.r);
-    } else if (mask.type === 'polygon') {
-      el = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
-      var pts = '';
-      for (var i = 0; i < mask.points.length; i++) pts += mask.points[i].x + ',' + mask.points[i].y + ' ';
-      el.setAttribute('points', pts);
-    }
-    el.setAttribute('fill', colors[index] || colors[0]);
-    el.setAttribute('stroke', strokes[index] || strokes[0]);
-    el.setAttribute('stroke-width', '2');
-    el.setAttribute('stroke-dasharray', '5,5');
-    drawSvg.appendChild(el);
-  }
-
-  function drawAllMasks(maskList, isPreview) {
-    drawSvg.innerHTML = '';
-    if (maskList.length === 0) {
-      mainText.style.clipPath = 'none';
-      revealTexts.forEach(function(rt) { rt.style.clipPath = 'inset(0% 100% 0% 0%)'; rt.style.opacity = '1'; });
-      return;
-    }
-    for (var i = 0; i < maskList.length; i++) drawSingleMask(maskList[i], i);
-    if (!isPreview) { applyMasksToMain(); doReset(); }
-  }
-
-  function clearMask() {
-    masks = [];
-    polyPoints = [];
-    isDrawing = false;
-    drawSvg.innerHTML = '';
-    mainText.style.clipPath = 'none';
-    var existingDefs = document.getElementById('mask-clip-defs');
-    if (existingDefs) existingDefs.remove();
-    revealTexts.forEach(function(rt) { rt.style.clipPath = 'inset(0% 100% 0% 0%)'; rt.style.opacity = '1'; });
-    isAnimating = false;
-    updateHelpText();
-  }
-
-  // 다각형 clip-path 생성 (방향에 따라 잘라내기)
-  function getPolygonClipPath(pts, angle, t) {
-    if (t >= 1) {
-      // 완전히 보임
-      var fullPts = pts.map(function(p) { return (p.x * 100) + '% ' + (p.y * 100) + '%'; });
-      return 'polygon(' + fullPts.join(', ') + ')';
-    }
-    if (t <= 0) {
-      // 완전히 숨김
-      return 'polygon(0% 0%, 0% 0%, 0% 0%)';
-    }
-    
-    // 바운딩 박스 계산
-    var minX = Math.min.apply(null, pts.map(function(p) { return p.x; }));
-    var maxX = Math.max.apply(null, pts.map(function(p) { return p.x; }));
-    var minY = Math.min.apply(null, pts.map(function(p) { return p.y; }));
-    var maxY = Math.max.apply(null, pts.map(function(p) { return p.y; }));
-    var width = maxX - minX;
-    var height = maxY - minY;
-    
-    // 방향에 따라 클리핑 영역 계산
-    var clipMinX, clipMaxX, clipMinY, clipMaxY;
-    if (angle === 0) { // 오른쪽에서
-      clipMinX = minX + width * (1 - t);
-      clipMaxX = maxX;
-      clipMinY = minY;
-      clipMaxY = maxY;
-    } else if (angle === 90) { // 아래에서
-      clipMinX = minX;
-      clipMaxX = maxX;
-      clipMinY = minY + height * (1 - t);
-      clipMaxY = maxY;
-    } else if (angle === 180) { // 왼쪽에서
-      clipMinX = minX;
-      clipMaxX = maxX - width * (1 - t);
-      clipMinY = minY;
-      clipMaxY = maxY;
-    } else { // 위에서 (270)
-      clipMinX = minX;
-      clipMaxX = maxX;
-      clipMinY = minY;
-      clipMaxY = maxY - height * (1 - t);
-    }
-    
-    // 다각형과 클리핑 사각형의 교집합 계산 (간단한 구현)
-    var clippedPts = [];
-    for (var i = 0; i < pts.length; i++) {
-      var p = pts[i];
-      var clippedX = Math.max(clipMinX, Math.min(clipMaxX, p.x));
-      var clippedY = Math.max(clipMinY, Math.min(clipMaxY, p.y));
-      
-      // 포인트가 클리핑 영역 안에 있는지 확인
-      if (p.x >= clipMinX && p.x <= clipMaxX && p.y >= clipMinY && p.y <= clipMaxY) {
-        clippedPts.push((p.x * 100) + '% ' + (p.y * 100) + '%');
-      } else {
-        clippedPts.push((clippedX * 100) + '% ' + (clippedY * 100) + '%');
-      }
-    }
-    
-    return 'polygon(' + clippedPts.join(', ') + ')';
-  }
-
-  function getMaskBounds(mask) {
-    var canvasRect = canvasArea.getBoundingClientRect();
-    var textRect = textBox.getBoundingClientRect();
-    var offX = textRect.left - canvasRect.left;
-    var offY = textRect.top - canvasRect.top;
-
-    var mx1, my1, mx2, my2;
-    if (mask.type === 'rect') {
-      mx1 = mask.x; my1 = mask.y;
-      mx2 = mask.x + mask.w; my2 = mask.y + mask.h;
-    } else if (mask.type === 'circle') {
-      mx1 = mask.cx - mask.r; my1 = mask.cy - mask.r;
-      mx2 = mask.cx + mask.r; my2 = mask.cy + mask.r;
-    } else {
-      var xs = mask.points.map(function(p) { return p.x; });
-      var ys = mask.points.map(function(p) { return p.y; });
-      mx1 = Math.min.apply(null, xs); my1 = Math.min.apply(null, ys);
-      mx2 = Math.max.apply(null, xs); my2 = Math.max.apply(null, ys);
-    }
-
-    var tx1 = mx1 - offX, ty1 = my1 - offY;
-    var tx2 = mx2 - offX, ty2 = my2 - offY;
-    var tw = textRect.width, th = textRect.height;
-
-    // 다각형일 경우 실제 점들의 좌표도 저장
-    var polygonPoints = null;
-    if (mask.type === 'polygon') {
-      polygonPoints = mask.points.map(function(p) {
-        return {
-          x: (p.x - offX) / tw,
-          y: (p.y - offY) / th
-        };
-      });
-    }
-
-    return {
-      top: (ty1 / th) * 100,
-      right: 100 - (tx2 / tw) * 100,
-      bottom: 100 - (ty2 / th) * 100,
-      left: (tx1 / tw) * 100,
-      width: ((tx2 - tx1) / tw) * 100,
-      height: ((ty2 - ty1) / th) * 100,
-      polygonPoints: polygonPoints,
-      type: mask.type
-    };
-  }
-
-  function applyMasksToMain() {
-    if (masks.length === 0) { 
-      mainText.style.clipPath = 'none'; 
-      return; 
-    }
-    
-    // SVG clipPath로 여러 구멍 뚫기 (evenodd 규칙)
-    var existingDefs = document.getElementById('mask-clip-defs');
-    if (existingDefs) existingDefs.remove();
-    
-    // 외곽 사각형 (시계 방향) + 각 마스크 구멍 (반시계 방향)
-    var pathD = 'M0,0 L1,0 L1,1 L0,1 Z';
-    
-    for (var i = 0; i < masks.length; i++) {
-      var b = getMaskBounds(masks[i]);
-      
-      if (b.type === 'polygon' && b.polygonPoints) {
-        // 다각형: 실제 모양 사용 (반시계 방향)
-        var pts = b.polygonPoints;
-        pathD += ' M' + pts[0].x + ',' + pts[0].y;
-        for (var pi = pts.length - 1; pi >= 1; pi--) {
-          pathD += ' L' + pts[pi].x + ',' + pts[pi].y;
-        }
-        pathD += ' Z';
-      } else {
-        // 사각형/원: 바운딩 박스 사용
-        var l = b.left / 100, t = b.top / 100;
-        var r = (100 - b.right) / 100, bt = (100 - b.bottom) / 100;
-        // 반시계 방향으로 구멍
-        pathD += ' M' + l + ',' + t + ' L' + l + ',' + bt + ' L' + r + ',' + bt + ' L' + r + ',' + t + ' Z';
-      }
-    }
-    
-    var svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.id = 'mask-clip-defs';
-    svg.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden;';
-    
-    var defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
-    var clipPath = document.createElementNS('http://www.w3.org/2000/svg', 'clipPath');
-    clipPath.id = 'main-text-clip';
-    clipPath.setAttribute('clipPathUnits', 'objectBoundingBox');
-    
-    var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('fill-rule', 'evenodd');
-    path.setAttribute('d', pathD);
-    
-    clipPath.appendChild(path);
-    defs.appendChild(clipPath);
-    svg.appendChild(defs);
-    textBox.appendChild(svg);
-    
-    mainText.style.clipPath = 'url(#main-text-clip)';
-  }
-
-  function play(forRecord) {
-    if (masks.length === 0) { if (!forRecord) alert('마스크를 먼저 그려주세요!'); return; }
-    if (isAnimating) return;
-    isAnimating = true;
-    drawSvg.style.display = 'none';
-
-    var bounds = masks.map(function(m) { return getMaskBounds(m); });
-    var startTime = null;
-    
-    // 전체 애니메이션 시간 계산 (가장 긴 것 기준)
-    var maxDuration = 0;
-    for (var i = 0; i < masks.length; i++) {
-      var total = maskSettings[i].delay + maskSettings[i].speed;
-      if (total > maxDuration) maxDuration = total;
-    }
-    maxDuration *= 1000;
-
-    function easeInOut(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
-
-    function frame(ts) {
-      if (!startTime) startTime = ts;
-      var elapsed = ts - startTime;
-      var allDone = true;
-
-      for (var i = 0; i < masks.length; i++) {
-        var s = maskSettings[i];
-        var b = bounds[i];
-        var rt = revealTexts[i];
-        var angle = s.angle;
-        var delayMs = s.delay * 1000;
-        var durationMs = s.speed * 1000;
-        
-        var maskElapsed = elapsed - delayMs;
-        var rawT, t;
-        
-        if (maskElapsed < 0) {
-          rawT = 0;
-          t = 0;
-          allDone = false;
-        } else if (maskElapsed >= durationMs) {
-          rawT = 1;
-          t = 1;
-        } else {
-          rawT = maskElapsed / durationMs;
-          t = easeInOut(rawT);
-          allDone = false;
-        }
-
-        rt.style.opacity = '1';
-        
-        // 다각형인 경우 polygon clip-path 사용
-        if (b.type === 'polygon' && b.polygonPoints) {
-          var pts = b.polygonPoints;
-          var clipPath = getPolygonClipPath(pts, angle, t);
-          rt.style.clipPath = clipPath;
-        } else {
-          // 사각형/원: inset 사용
-          var top = b.top, right = b.right, bottom = b.bottom, left = b.left;
-
-          // 각도에 따라 방향 설정 (0=오른쪽에서, 90=아래에서, 180=왼쪽에서, 270=위에서)
-          if (angle === 0) {
-            left = b.left + b.width * (1 - t);
-          } else if (angle === 90) {
-            top = b.top + b.height * (1 - t);
-          } else if (angle === 180) {
-            right = b.right + b.width * (1 - t);
-          } else if (angle === 270) {
-            bottom = b.bottom + b.height * (1 - t);
-          }
-
-          rt.style.clipPath = 'inset(' + top + '% ' + right + '% ' + bottom + '% ' + left + '%)';
-        }
-      }
-
-      if (!allDone) requestAnimationFrame(frame);
-      else { isAnimating = false; if (forRecord && typeof forRecord === 'function') forRecord(); }
-    }
-    requestAnimationFrame(frame);
-  }
-
-  function doReset() {
-    for (var i = 0; i < masks.length; i++) {
-      var b = getMaskBounds(masks[i]);
-      revealTexts[i].style.opacity = '0.2';
-      
-      if (b.type === 'polygon' && b.polygonPoints) {
-        // 다각형: 숨김 상태
-        revealTexts[i].style.clipPath = 'polygon(0% 0%, 0% 0%, 0% 0%)';
-      } else {
-        revealTexts[i].style.clipPath = 'inset(' + b.top + '% ' + b.right + '% ' + b.bottom + '% ' + b.left + '%)';
-      }
-    }
-    for (var j = masks.length; j < revealTexts.length; j++) {
-      revealTexts[j].style.clipPath = 'inset(0% 100% 0% 0%)';
-      revealTexts[j].style.opacity = '1';
-    }
-    isAnimating = false;
-    drawSvg.style.display = 'block';
-  }
-
-  // 영상 내보내기 (MP4 - WebCodecs + mp4-muxer, 폴백: WebM)
-  async function exportVideo() {
-    if (masks.length === 0) { alert('마스크를 먼저 그려주세요!'); return; }
-    
-    var videoBtn = document.getElementById('mp4Btn');
-    
-    // WebCodecs API 지원 확인
-    var supportsWebCodecs = typeof VideoEncoder !== 'undefined';
-    
-    if (supportsWebCodecs) {
-      await exportMP4();
-    } else {
-      await exportWebM();
-    }
-  }
-  
-  // MP4 내보내기 (WebCodecs + mp4-muxer)
-  async function exportMP4() {
-    var videoBtn = document.getElementById('mp4Btn');
-    videoBtn.textContent = 'MP4 생성 중...';
-    videoBtn.disabled = true;
-
-    var recordCanvas = document.getElementById('recordCanvas');
-    var ctx = recordCanvas.getContext('2d');
-    var textRect = textBox.getBoundingClientRect();
-    
-    // 짝수로 맞추기 (H.264 요구사항)
-    var width = Math.round(textRect.width * 2 / 2) * 2;
-    var height = Math.round(textRect.height * 2 / 2) * 2;
-    recordCanvas.width = width;
-    recordCanvas.height = height;
-
-    var bounds = masks.map(function(m) { return getMaskBounds(m); });
-    var txt = textInput.value || '그림자';
-    var size = parseFloat(fontSize.value) * 2;
-    var spacing = parseFloat(letterSpacing.value) * 2;
-    var color = textColor.value;
-    var tw = width, th = height;
-
-    var maxDuration = 0;
-    for (var k = 0; k < masks.length; k++) {
-      var total = maskSettings[k].delay + maskSettings[k].speed;
-      if (total > maxDuration) maxDuration = total;
-    }
-
-    var fps = 30;
-    var totalFrames = Math.ceil(maxDuration * fps);
-
-    function easeInOut(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
-
-    // mp4-muxer 설정
-    var muxer = new Mp4Muxer.Muxer({
-      target: new Mp4Muxer.ArrayBufferTarget(),
-      video: {
-        codec: 'avc',
-        width: width,
-        height: height
-      },
-      fastStart: 'in-memory'
-    });
-
-    // VideoEncoder 설정
-    var encoder = new VideoEncoder({
-      output: function(chunk, meta) {
-        muxer.addVideoChunk(chunk, meta);
-      },
-      error: function(e) {
-        console.error('Encoder error:', e);
-      }
-    });
-
-    await encoder.configure({
-      codec: 'avc1.42001f',
-      width: width,
-      height: height,
-      bitrate: 5000000,
-      framerate: fps
-    });
-
-    // 프레임 생성 및 인코딩
-    for (var frameIdx = 0; frameIdx <= totalFrames; frameIdx++) {
-      var elapsed = (frameIdx / fps) * 1000;
-
-      ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = exportBgColor;
-      ctx.fillRect(0, 0, width, height);
-      
-      ctx.font = size + 'px CustomFont';
-      ctx.fillStyle = color;
-      ctx.textBaseline = 'top';
-
-      // 전체 텍스트 (마스크 영역들 제외)
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(0, 0, tw, th);
-      for (var m = 0; m < masks.length; m++) {
-        var b = bounds[m];
-        ctx.rect(b.left / 100 * tw, b.top / 100 * th, (100 - b.right - b.left) / 100 * tw, (100 - b.bottom - b.top) / 100 * th);
-      }
-      ctx.clip('evenodd');
-      var x = 0;
-      for (var i = 0; i < txt.length; i++) { ctx.fillText(txt[i], x, 0); x += ctx.measureText(txt[i]).width + spacing; }
-      ctx.restore();
-
-      // 각 마스크 영역 애니메이션
-      for (var mi = 0; mi < masks.length; mi++) {
-        var s = maskSettings[mi];
-        var b = bounds[mi];
-        var angle = s.angle;
-        var delayMs = s.delay * 1000;
-        var durationMs = s.speed * 1000;
-        
-        var maskElapsed = elapsed - delayMs;
-        var t;
-        if (maskElapsed < 0) t = 0;
-        else if (maskElapsed >= durationMs) t = 1;
-        else t = easeInOut(maskElapsed / durationMs);
-
-        var top = b.top, right = b.right, bottom = b.bottom, left = b.left;
-        
-        // 각도에 따라 방향 설정 (0=오른쪽에서, 90=아래에서, 180=왼쪽에서, 270=위에서)
-        if (angle === 0) {
-          left = b.left + b.width * (1 - t);
-        } else if (angle === 90) {
-          top = b.top + b.height * (1 - t);
-        } else if (angle === 180) {
-          right = b.right + b.width * (1 - t);
-        } else if (angle === 270) {
-          bottom = b.bottom + b.height * (1 - t);
-        }
-
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(left / 100 * tw, top / 100 * th, (100 - right - left) / 100 * tw, (100 - bottom - top) / 100 * th);
-        ctx.clip();
-        x = 0;
-        for (var j = 0; j < txt.length; j++) { ctx.fillText(txt[j], x, 0); x += ctx.measureText(txt[j]).width + spacing; }
-        ctx.restore();
-      }
-
-      // VideoFrame 생성 및 인코딩
-      var frame = new VideoFrame(recordCanvas, {
-        timestamp: frameIdx * (1000000 / fps)
-      });
-      
-      encoder.encode(frame, { keyFrame: frameIdx % 30 === 0 });
-      frame.close();
-      
-      videoBtn.textContent = 'MP4 ' + Math.round((frameIdx / totalFrames) * 100) + '%';
-    }
-
-    // 인코딩 완료 대기
-    await encoder.flush();
-    encoder.close();
-    muxer.finalize();
-
-    // MP4 다운로드
-    var buffer = muxer.target.buffer;
-    var blob = new Blob([buffer], { type: 'video/mp4' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = 'brush-animation-' + Date.now() + '.mp4';
-    a.click();
-    URL.revokeObjectURL(url);
-
-    videoBtn.textContent = 'MP4';
-    videoBtn.disabled = false;
-  }
-  
-  // WebM 폴백 (WebCodecs 미지원 브라우저용)
-  async function exportWebM() {
-    var videoBtn = document.getElementById('mp4Btn');
-    videoBtn.textContent = '녹화 중...';
-    videoBtn.disabled = true;
-
-    var recordCanvas = document.getElementById('recordCanvas');
-    var ctx = recordCanvas.getContext('2d');
-    var textRect = textBox.getBoundingClientRect();
-    
-    recordCanvas.width = textRect.width * 2;
-    recordCanvas.height = textRect.height * 2;
-
-    var bounds = masks.map(function(m) { return getMaskBounds(m); });
-    var txt = textInput.value || '그림자';
-    var size = parseFloat(fontSize.value) * 2;
-    var spacing = parseFloat(letterSpacing.value) * 2;
-    var color = textColor.value;
-    var tw = textRect.width * 2, th = textRect.height * 2;
-
-    var maxDuration = 0;
-    for (var k = 0; k < masks.length; k++) {
-      var total = maskSettings[k].delay + maskSettings[k].speed;
-      if (total > maxDuration) maxDuration = total;
-    }
-
-    var fps = 30;
-    var totalFrames = Math.ceil(maxDuration * fps);
-
-    function easeInOut(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
-
-    // MediaRecorder 설정
-    var stream = recordCanvas.captureStream(fps);
-    var chunks = [];
-    var recorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' });
-    
-    recorder.ondataavailable = function(e) {
-      if (e.data.size > 0) chunks.push(e.data);
-    };
-    
-    recorder.onstop = function() {
-      var blob = new Blob(chunks, { type: 'video/webm' });
-      var url = URL.createObjectURL(blob);
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = 'brush-animation-' + Date.now() + '.webm';
-      a.click();
-      URL.revokeObjectURL(url);
-      
-      videoBtn.textContent = 'MP4';
-      videoBtn.disabled = false;
-      alert('이 브라우저는 MP4를 지원하지 않아 WebM으로 저장됩니다.\nChrome 최신 버전에서 MP4 내보내기가 가능합니다.');
-    };
-    
-    recorder.start();
-
-    // 프레임별 그리기
-    var frameIdx = 0;
-    
-    function drawFrame() {
-      if (frameIdx > totalFrames) {
-        recorder.stop();
-        return;
-      }
-      
-      var elapsed = (frameIdx / fps) * 1000;
-
-      ctx.clearRect(0, 0, recordCanvas.width, recordCanvas.height);
-      ctx.fillStyle = exportBgColor;
-      ctx.fillRect(0, 0, recordCanvas.width, recordCanvas.height);
-      
-      ctx.font = size + 'px CustomFont';
-      ctx.fillStyle = color;
-      ctx.textBaseline = 'top';
-
-      // 전체 텍스트 (마스크 영역들 제외)
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(0, 0, tw, th);
-      for (var m = 0; m < masks.length; m++) {
-        var b = bounds[m];
-        ctx.rect(b.left / 100 * tw, b.top / 100 * th, (100 - b.right - b.left) / 100 * tw, (100 - b.bottom - b.top) / 100 * th);
-      }
-      ctx.clip('evenodd');
-      var x = 0;
-      for (var i = 0; i < txt.length; i++) { ctx.fillText(txt[i], x, 0); x += ctx.measureText(txt[i]).width + spacing; }
-      ctx.restore();
-
-      // 각 마스크 영역 애니메이션
-      for (var mi = 0; mi < masks.length; mi++) {
-        var s = maskSettings[mi];
-        var b = bounds[mi];
-        var angle = s.angle;
-        var delayMs = s.delay * 1000;
-        var durationMs = s.speed * 1000;
-        
-        var maskElapsed = elapsed - delayMs;
-        var t;
-        if (maskElapsed < 0) t = 0;
-        else if (maskElapsed >= durationMs) t = 1;
-        else t = easeInOut(maskElapsed / durationMs);
-
-        var top = b.top, right = b.right, bottom = b.bottom, left = b.left;
-        
-        // 각도에 따라 방향 설정 (0=오른쪽에서, 90=아래에서, 180=왼쪽에서, 270=위에서)
-        if (angle === 0) {
-          left = b.left + b.width * (1 - t);
-        } else if (angle === 90) {
-          top = b.top + b.height * (1 - t);
-        } else if (angle === 180) {
-          right = b.right + b.width * (1 - t);
-        } else if (angle === 270) {
-          bottom = b.bottom + b.height * (1 - t);
-        }
-
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(left / 100 * tw, top / 100 * th, (100 - right - left) / 100 * tw, (100 - bottom - top) / 100 * th);
-        ctx.clip();
-        x = 0;
-        for (var j = 0; j < txt.length; j++) { ctx.fillText(txt[j], x, 0); x += ctx.measureText(txt[j]).width + spacing; }
-        ctx.restore();
-      }
-
-      videoBtn.textContent = '녹화 ' + Math.round((frameIdx / totalFrames) * 100) + '%';
-      frameIdx++;
-      setTimeout(drawFrame, 1000 / fps);
-    }
-    
-    drawFrame();
-  }
-
-  // PNG 시퀀스 내보내기 (ZIP)
-  function exportPngSequence() {
-    if (masks.length === 0) { alert('마스크를 먼저 그려주세요!'); return; }
-
-    var pngBtn = document.getElementById('pngSeqBtn');
-    pngBtn.textContent = '생성 중...';
-    pngBtn.disabled = true;
-
-    var recordCanvas = document.getElementById('recordCanvas');
-    var ctx = recordCanvas.getContext('2d');
-    var textRect = textBox.getBoundingClientRect();
-    
-    recordCanvas.width = textRect.width * 2;
-    recordCanvas.height = textRect.height * 2;
-
-    var bounds = masks.map(function(m) { return getMaskBounds(m); });
-    var txt = textInput.value || '붓';
-    var size = parseFloat(fontSize.value) * 2;
-    var spacing = parseFloat(letterSpacing.value) * 2;
-    var color = textColor.value;
-    var tw = textRect.width * 2, th = textRect.height * 2;
-
-    var maxDuration = 0;
-    for (var k = 0; k < masks.length; k++) {
-      var total = maskSettings[k].delay + maskSettings[k].speed;
-      if (total > maxDuration) maxDuration = total;
-    }
-
-    var fps = 30;
-    var totalFrames = Math.ceil(maxDuration * fps);
-    var zip = new JSZip();
-
-    function easeInOut(t) { return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
-
-    for (var frameIdx = 0; frameIdx <= totalFrames; frameIdx++) {
-      var elapsed = (frameIdx / fps) * 1000;
-
-      ctx.clearRect(0, 0, recordCanvas.width, recordCanvas.height);
-      // 배경색 적용
-      ctx.fillStyle = exportBgColor;
-      ctx.fillRect(0, 0, recordCanvas.width, recordCanvas.height);
-      ctx.font = size + 'px CustomFont';
-      ctx.fillStyle = color;
-      ctx.textBaseline = 'top';
-
-      // 전체 텍스트 (마스크 영역들 제외)
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(0, 0, tw, th);
-      for (var m = 0; m < masks.length; m++) {
-        var b = bounds[m];
-        ctx.rect(b.left / 100 * tw, b.top / 100 * th, (100 - b.right - b.left) / 100 * tw, (100 - b.bottom - b.top) / 100 * th);
-      }
-      ctx.clip('evenodd');
-      var x = 0;
-      for (var i = 0; i < txt.length; i++) { ctx.fillText(txt[i], x, 0); x += ctx.measureText(txt[i]).width + spacing; }
-      ctx.restore();
-
-      // 각 마스크 영역 애니메이션
-      for (var mi = 0; mi < masks.length; mi++) {
-        var s = maskSettings[mi];
-        var b = bounds[mi];
-        var angle = s.angle;
-        var delayMs = s.delay * 1000;
-        var durationMs = s.speed * 1000;
-        
-        var maskElapsed = elapsed - delayMs;
-        var t;
-        if (maskElapsed < 0) t = 0;
-        else if (maskElapsed >= durationMs) t = 1;
-        else t = easeInOut(maskElapsed / durationMs);
-
-        var top = b.top, right = b.right, bottom = b.bottom, left = b.left;
-        
-        // 각도에 따라 방향 설정 (0=오른쪽에서, 90=아래에서, 180=왼쪽에서, 270=위에서)
-        if (angle === 0) {
-          left = b.left + b.width * (1 - t);
-        } else if (angle === 90) {
-          top = b.top + b.height * (1 - t);
-        } else if (angle === 180) {
-          right = b.right + b.width * (1 - t);
-        } else if (angle === 270) {
-          bottom = b.bottom + b.height * (1 - t);
-        }
-
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(left / 100 * tw, top / 100 * th, (100 - right - left) / 100 * tw, (100 - bottom - top) / 100 * th);
-        ctx.clip();
-        x = 0;
-        for (var j = 0; j < txt.length; j++) { ctx.fillText(txt[j], x, 0); x += ctx.measureText(txt[j]).width + spacing; }
-        ctx.restore();
-      }
-
-      var dataUrl = recordCanvas.toDataURL('image/png');
-      var base64 = dataUrl.split(',')[1];
-      var num = String(frameIdx).padStart(4, '0');
-      zip.file('frame_' + num + '.png', base64, { base64: true });
-    }
-
-    pngBtn.textContent = 'ZIP 압축 중...';
-
-    zip.generateAsync({ type: 'blob' }).then(function(content) {
-      var a = document.createElement('a');
-      a.href = URL.createObjectURL(content);
-      a.download = 'brush-animation-' + Date.now() + '.zip';
-      a.click();
-      URL.revokeObjectURL(a.href);
-
-      pngBtn.textContent = '📁 PNG 시퀀스';
-      pngBtn.disabled = false;
-      alert('PNG 시퀀스 ZIP 다운로드 완료! (' + (totalFrames + 1) + '장)\n\n프리미어에서:\n1. ZIP 압축 해제\n2. 파일 > 가져오기 > 첫 번째 PNG 선택\n3. "이미지 시퀀스" 체크 후 가져오기');
-    });
-  }
-
-  // 이벤트 바인딩
-  textInput.oninput = updateText;
-  fontSize.oninput = function() {
-    document.getElementById('fontSizeVal').textContent = fontSize.value + 'px';
-    updateText();
+  // 자소 목록
+  var choList = ['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+  var jungList = ['ㅏ','ㅐ','ㅑ','ㅓ','ㅔ','ㅕ','ㅗ','ㅛ','ㅜ','ㅠ','ㅡ','ㅣ'];
+  var jongList = ['','ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+
+  // 현재 선택
+  var selectedCho = null;
+  var selectedJung = null;
+  var selectedJong = '';
+  var exportBgColor = '#ffffff';
+
+  // 자소별 획순서 SVG path 데이터 (viewBox 0 0 100 100 기준)
+  // 각 획은 배열로, 순서대로 그려짐
+  var jamoStrokes = {
+    // 초성 (왼쪽 위 영역: 대략 x:10-50, y:10-55)
+    'ㄱ_cho': [
+      'M 15 20 L 45 20',      // 가로획
+      'M 45 20 L 45 50'       // 세로획
+    ],
+    'ㄴ_cho': [
+      'M 15 20 L 15 50',      // 세로획
+      'M 15 50 L 45 50'       // 가로획
+    ],
+    'ㄷ_cho': [
+      'M 15 20 L 45 20',      // 위 가로
+      'M 15 20 L 15 50',      // 세로
+      'M 15 50 L 45 50'       // 아래 가로
+    ],
+    'ㄹ_cho': [
+      'M 15 15 L 45 15',      // 1획
+      'M 45 15 L 45 28',      // 2획
+      'M 45 28 L 15 28',      // 3획
+      'M 15 28 L 15 42',      // 4획
+      'M 15 42 L 45 42'       // 5획
+    ],
+    'ㅁ_cho': [
+      'M 15 20 L 15 50',      // 왼쪽 세로
+      'M 15 20 L 45 20',      // 위 가로
+      'M 45 20 L 45 50',      // 오른쪽 세로
+      'M 15 50 L 45 50'       // 아래 가로
+    ],
+    'ㅂ_cho': [
+      'M 15 20 L 15 50',      // 왼쪽 세로
+      'M 45 20 L 45 50',      // 오른쪽 세로
+      'M 15 35 L 45 35',      // 중간 가로
+      'M 15 50 L 45 50'       // 아래 가로
+    ],
+    'ㅅ_cho': [
+      'M 20 20 L 30 45',      // 왼쪽 사선
+      'M 40 20 L 30 45'       // 오른쪽 사선
+    ],
+    'ㅇ_cho': [
+      'M 30 15 A 15 17 0 1 1 30 49 A 15 17 0 1 1 30 15'  // 원
+    ],
+    'ㅈ_cho': [
+      'M 15 15 L 45 15',      // 위 가로
+      'M 20 25 L 30 48',      // 왼쪽 사선
+      'M 40 25 L 30 48'       // 오른쪽 사선
+    ],
+    'ㅊ_cho': [
+      'M 30 10 L 30 18',      // 점
+      'M 15 22 L 45 22',      // 가로
+      'M 20 30 L 30 50',      // 왼쪽 사선
+      'M 40 30 L 30 50'       // 오른쪽 사선
+    ],
+    'ㅋ_cho': [
+      'M 15 20 L 45 20',      // 위 가로
+      'M 15 35 L 45 35',      // 중간 가로
+      'M 45 20 L 45 50'       // 세로
+    ],
+    'ㅌ_cho': [
+      'M 15 15 L 45 15',      // 1획
+      'M 15 15 L 15 50',      // 2획
+      'M 15 32 L 45 32',      // 3획
+      'M 15 50 L 45 50'       // 4획
+    ],
+    'ㅍ_cho': [
+      'M 15 20 L 15 50',      // 왼쪽 세로
+      'M 45 20 L 45 50',      // 오른쪽 세로
+      'M 10 35 L 50 35',      // 중간 가로
+      'M 15 50 L 45 50'       // 아래 가로
+    ],
+    'ㅎ_cho': [
+      'M 25 10 L 35 10',      // 점
+      'M 15 22 L 45 22',      // 가로
+      'M 30 30 A 10 12 0 1 1 30 50 A 10 12 0 1 1 30 30'  // 원
+    ],
+
+    // 중성 (오른쪽 영역: 세로모음 x:55-90, 가로모음 y:55-90)
+    'ㅏ_jung': [
+      'M 65 15 L 65 55',      // 세로
+      'M 65 35 L 85 35'       // 가로 (오른쪽)
+    ],
+    'ㅐ_jung': [
+      'M 60 15 L 60 55',      // 첫 세로
+      'M 60 35 L 75 35',      // 가로
+      'M 80 15 L 80 55'       // 둘째 세로
+    ],
+    'ㅑ_jung': [
+      'M 65 15 L 65 55',      // 세로
+      'M 65 25 L 85 25',      // 위 가로
+      'M 65 40 L 85 40'       // 아래 가로
+    ],
+    'ㅓ_jung': [
+      'M 85 15 L 85 55',      // 세로
+      'M 65 35 L 85 35'       // 가로 (왼쪽)
+    ],
+    'ㅔ_jung': [
+      'M 60 15 L 60 55',      // 첫 세로
+      'M 60 35 L 80 35',      // 가로
+      'M 85 15 L 85 55'       // 둘째 세로
+    ],
+    'ㅕ_jung': [
+      'M 85 15 L 85 55',      // 세로
+      'M 65 25 L 85 25',      // 위 가로
+      'M 65 40 L 85 40'       // 아래 가로
+    ],
+    'ㅗ_jung': [
+      'M 30 75 L 30 60',      // 세로 (위로)
+      'M 10 60 L 50 60'       // 가로
+    ],
+    'ㅛ_jung': [
+      'M 20 75 L 20 60',      // 왼쪽 세로
+      'M 40 75 L 40 60',      // 오른쪽 세로
+      'M 10 60 L 50 60'       // 가로
+    ],
+    'ㅜ_jung': [
+      'M 10 60 L 50 60',      // 가로
+      'M 30 60 L 30 75'       // 세로 (아래로)
+    ],
+    'ㅠ_jung': [
+      'M 10 60 L 50 60',      // 가로
+      'M 20 60 L 20 75',      // 왼쪽 세로
+      'M 40 60 L 40 75'       // 오른쪽 세로
+    ],
+    'ㅡ_jung': [
+      'M 10 67 L 50 67'       // 가로
+    ],
+    'ㅣ_jung': [
+      'M 75 15 L 75 55'       // 세로
+    ],
+
+    // 종성 (아래 영역: y:60-95)
+    'ㄱ_jong': [
+      'M 15 75 L 45 75',
+      'M 45 75 L 45 95'
+    ],
+    'ㄴ_jong': [
+      'M 15 75 L 15 95',
+      'M 15 95 L 45 95'
+    ],
+    'ㄷ_jong': [
+      'M 15 75 L 45 75',
+      'M 15 75 L 15 95',
+      'M 15 95 L 45 95'
+    ],
+    'ㄹ_jong': [
+      'M 15 72 L 45 72',
+      'M 45 72 L 45 80',
+      'M 45 80 L 15 80',
+      'M 15 80 L 15 88',
+      'M 15 88 L 45 88'
+    ],
+    'ㅁ_jong': [
+      'M 15 75 L 15 95',
+      'M 15 75 L 45 75',
+      'M 45 75 L 45 95',
+      'M 15 95 L 45 95'
+    ],
+    'ㅂ_jong': [
+      'M 15 75 L 15 95',
+      'M 45 75 L 45 95',
+      'M 15 85 L 45 85',
+      'M 15 95 L 45 95'
+    ],
+    'ㅅ_jong': [
+      'M 20 75 L 30 95',
+      'M 40 75 L 30 95'
+    ],
+    'ㅇ_jong': [
+      'M 30 75 A 12 10 0 1 1 30 93 A 12 10 0 1 1 30 75'
+    ],
+    'ㅈ_jong': [
+      'M 15 72 L 45 72',
+      'M 20 78 L 30 95',
+      'M 40 78 L 30 95'
+    ],
+    'ㅊ_jong': [
+      'M 30 68 L 30 73',
+      'M 15 76 L 45 76',
+      'M 20 82 L 30 95',
+      'M 40 82 L 30 95'
+    ],
+    'ㅋ_jong': [
+      'M 15 75 L 45 75',
+      'M 15 85 L 45 85',
+      'M 45 75 L 45 95'
+    ],
+    'ㅌ_jong': [
+      'M 15 72 L 45 72',
+      'M 15 72 L 15 95',
+      'M 15 83 L 45 83',
+      'M 15 95 L 45 95'
+    ],
+    'ㅍ_jong': [
+      'M 15 75 L 15 95',
+      'M 45 75 L 45 95',
+      'M 10 85 L 50 85',
+      'M 15 95 L 45 95'
+    ],
+    'ㅎ_jong': [
+      'M 25 70 L 35 70',
+      'M 15 77 L 45 77',
+      'M 30 82 A 8 7 0 1 1 30 94 A 8 7 0 1 1 30 82'
+    ]
   };
-  letterSpacing.oninput = function() {
-    document.getElementById('letterSpacingVal').textContent = letterSpacing.value + 'px';
-    updateText();
-  };
-  textColor.oninput = updateText;
 
-  document.querySelectorAll('.mask-type-btn').forEach(function(btn) {
-    btn.onclick = function() {
-      document.querySelectorAll('.mask-type-btn').forEach(function(b) { b.classList.remove('active'); });
-      btn.classList.add('active');
-      maskType = btn.dataset.type;
-      updateHelpText();
-    };
-  });
-
-  document.querySelectorAll('.bg-type-btn').forEach(function(btn) {
-    btn.onclick = function() {
-      document.querySelectorAll('.bg-type-btn').forEach(function(b) { b.classList.remove('active'); });
-      btn.classList.add('active');
-      exportBgColor = btn.dataset.bg;
-      canvasArea.style.background = exportBgColor;
-    };
-  });
-
-  playBtn.onclick = function() { play(); };
-  clearBtn.onclick = clearMask;
-  document.getElementById('mp4Btn').onclick = exportVideo;
-  document.getElementById('pngSeqBtn').onclick = exportPngSequence;
-
-  canvasArea.onmousedown = onMouseDown;
-  canvasArea.onmousemove = onMouseMove;
-  canvasArea.onmouseup = onMouseUp;
-  canvasArea.ondblclick = onDblClick;
-
-  window.onresize = resizeSvg;
-
-  // 초기화
-  updateText();
-  resizeSvg();
-  updateHelpText();
-
-  // ============================================
-  // 획순서 모드 (Zhang-Suen Thinning + 자모 분해)
-  // ============================================
-  
-  var strokeOrderBtn = document.getElementById('strokeOrderBtn');
-  var strokeOrderInfo = document.getElementById('strokeOrderInfo');
-  var strokeCanvas = document.createElement('canvas');
-  var strokeCtx = strokeCanvas.getContext('2d', { willReadFrequently: true });
-  
-  // 한글 자모 분해
-  function decomposeHangul(char) {
-    var code = char.charCodeAt(0);
-    if (code < 0xAC00 || code > 0xD7A3) return null; // 한글 아님
-    
-    var offset = code - 0xAC00;
-    var cho = Math.floor(offset / 588);
-    var jung = Math.floor((offset % 588) / 28);
-    var jong = offset % 28;
-    
-    var choList = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
-    var jungList = ['ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅗ','ㅘ','ㅙ','ㅚ','ㅛ','ㅜ','ㅝ','ㅞ','ㅟ','ㅠ','ㅡ','ㅢ','ㅣ'];
-    var jongList = ['','ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
-    
-    return {
-      cho: choList[cho],
-      jung: jungList[jung],
-      jong: jongList[jong] || null,
-      type: getJamoType(jungList[jung]) // 모음 유형으로 음절 구조 파악
-    };
-  }
-  
-  // 모음 유형 (배치 구조 결정)
-  function getJamoType(jung) {
-    var vertical = ['ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅣ']; // 세로 모음 (초성 왼쪽)
-    var horizontal = ['ㅗ','ㅛ','ㅜ','ㅠ','ㅡ']; // 가로 모음 (초성 위쪽)
-    var combined = ['ㅘ','ㅙ','ㅚ','ㅝ','ㅞ','ㅟ','ㅢ']; // 복합 모음
-    
+  // 모음 유형 판단 (배치 결정용)
+  function getJungType(jung) {
+    var vertical = ['ㅏ','ㅐ','ㅑ','ㅓ','ㅔ','ㅕ','ㅣ'];
+    var horizontal = ['ㅗ','ㅛ','ㅜ','ㅠ','ㅡ'];
     if (vertical.indexOf(jung) >= 0) return 'vertical';
     if (horizontal.indexOf(jung) >= 0) return 'horizontal';
     return 'combined';
   }
-  
-  // 자모별 획 수
-  var jamoStrokes = {
-    // 초성
-    'ㄱ': 2, 'ㄲ': 4, 'ㄴ': 2, 'ㄷ': 3, 'ㄸ': 6, 'ㄹ': 5, 'ㅁ': 4, 'ㅂ': 4, 'ㅃ': 8,
-    'ㅅ': 2, 'ㅆ': 4, 'ㅇ': 1, 'ㅈ': 3, 'ㅉ': 6, 'ㅊ': 4, 'ㅋ': 3, 'ㅌ': 4, 'ㅍ': 4, 'ㅎ': 3,
-    // 중성
-    'ㅏ': 2, 'ㅐ': 3, 'ㅑ': 3, 'ㅒ': 4, 'ㅓ': 2, 'ㅔ': 3, 'ㅕ': 3, 'ㅖ': 4,
-    'ㅗ': 2, 'ㅘ': 4, 'ㅙ': 5, 'ㅚ': 3, 'ㅛ': 3, 'ㅜ': 2, 'ㅝ': 4, 'ㅞ': 5, 'ㅟ': 3, 'ㅠ': 3,
-    'ㅡ': 1, 'ㅢ': 2, 'ㅣ': 1
-  };
-  
-  // Zhang-Suen Thinning 알고리즘
-  function zhangSuenThinning(imageData) {
-    var width = imageData.width;
-    var height = imageData.height;
-    var data = imageData.data;
+
+  // 한글 조합
+  function combineHangul(cho, jung, jong) {
+    if (!cho || !jung) return null;
+    var choIdx = choList.indexOf(cho);
+    var jungIdx = jungList.indexOf(jung);
+    var jongIdx = jongList.indexOf(jong || '');
+    if (choIdx < 0 || jungIdx < 0 || jongIdx < 0) return null;
     
-    // 이진화 (흑백)
-    var binary = new Uint8Array(width * height);
-    for (var i = 0; i < width * height; i++) {
-      var r = data[i * 4];
-      var g = data[i * 4 + 1];
-      var b = data[i * 4 + 2];
-      var a = data[i * 4 + 3];
-      // 글자 픽셀 (불투명하고 어두운 색)
-      binary[i] = (a > 128 && (r + g + b) < 384) ? 1 : 0;
-    }
-    
-    var changed = true;
-    var iteration = 0;
-    var maxIterations = 100; // 무한루프 방지
-    
-    while (changed && iteration < maxIterations) {
-      changed = false;
-      iteration++;
-      
-      // Step 1
-      var toRemove = [];
-      for (var y = 1; y < height - 1; y++) {
-        for (var x = 1; x < width - 1; x++) {
-          var idx = y * width + x;
-          if (binary[idx] !== 1) continue;
-          
-          var p = getNeighbors(binary, x, y, width);
-          var n = p[1] + p[2] + p[3] + p[4] + p[5] + p[6] + p[7] + p[8];
-          var s = transitions(p);
-          
-          if (n >= 2 && n <= 6 && s === 1 &&
-              p[2] * p[4] * p[6] === 0 &&
-              p[4] * p[6] * p[8] === 0) {
-            toRemove.push(idx);
-          }
-        }
-      }
-      for (var r = 0; r < toRemove.length; r++) {
-        binary[toRemove[r]] = 0;
-        changed = true;
-      }
-      
-      // Step 2
-      toRemove = [];
-      for (var y = 1; y < height - 1; y++) {
-        for (var x = 1; x < width - 1; x++) {
-          var idx = y * width + x;
-          if (binary[idx] !== 1) continue;
-          
-          var p = getNeighbors(binary, x, y, width);
-          var n = p[1] + p[2] + p[3] + p[4] + p[5] + p[6] + p[7] + p[8];
-          var s = transitions(p);
-          
-          if (n >= 2 && n <= 6 && s === 1 &&
-              p[2] * p[4] * p[8] === 0 &&
-              p[2] * p[6] * p[8] === 0) {
-            toRemove.push(idx);
-          }
-        }
-      }
-      for (var r = 0; r < toRemove.length; r++) {
-        binary[toRemove[r]] = 0;
-        changed = true;
-      }
-    }
-    
-    return binary;
+    // 확장 초성 인덱스로 변환
+    var extChoIdx = [0,2,3,5,6,7,9,11,12,14,15,16,17,18][choIdx];
+    var code = 0xAC00 + (extChoIdx * 588) + (jungIdx * 28) + jongIdx;
+    return String.fromCharCode(code);
   }
-  
-  function getNeighbors(binary, x, y, width) {
-    // P9 P2 P3
-    // P8 P1 P4
-    // P7 P6 P5
-    return [
-      binary[y * width + x],     // P1 (center)
-      binary[(y-1) * width + x],     // P2
-      binary[(y-1) * width + x+1],   // P3
-      binary[y * width + x+1],       // P4
-      binary[(y+1) * width + x+1],   // P5
-      binary[(y+1) * width + x],     // P6
-      binary[(y+1) * width + x-1],   // P7
-      binary[y * width + x-1],       // P8
-      binary[(y-1) * width + x-1]    // P9
-    ];
-  }
-  
-  function transitions(p) {
-    // P2→P3→P4→P5→P6→P7→P8→P9→P2 에서 0→1 전환 횟수
-    var count = 0;
-    var seq = [p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[1]];
-    for (var i = 0; i < 8; i++) {
-      if (seq[i] === 0 && seq[i+1] === 1) count++;
-    }
-    return count;
-  }
-  
-  // 스켈레톤에서 끝점 찾기 (획 끝)
-  function findEndpoints(skeleton, width, height) {
-    var endpoints = [];
-    for (var y = 1; y < height - 1; y++) {
-      for (var x = 1; x < width - 1; x++) {
-        if (skeleton[y * width + x] !== 1) continue;
-        
-        var p = getNeighbors(skeleton, x, y, width);
-        var neighborCount = p[1] + p[2] + p[3] + p[4] + p[5] + p[6] + p[7] + p[8];
-        
-        // 끝점: 이웃이 1개뿐
-        if (neighborCount === 1) {
-          endpoints.push({ x: x, y: y });
-        }
-      }
-    }
-    return endpoints;
-  }
-  
-  // 분기점 찾기 (획이 만나는 곳)
-  function findJunctions(skeleton, width, height) {
-    var junctions = [];
-    for (var y = 1; y < height - 1; y++) {
-      for (var x = 1; x < width - 1; x++) {
-        if (skeleton[y * width + x] !== 1) continue;
-        
-        var p = getNeighbors(skeleton, x, y, width);
-        var neighborCount = p[1] + p[2] + p[3] + p[4] + p[5] + p[6] + p[7] + p[8];
-        
-        // 분기점: 이웃이 3개 이상
-        if (neighborCount >= 3) {
-          junctions.push({ x: x, y: y });
-        }
-      }
-    }
-    return junctions;
-  }
-  
-  // 획 추적 (끝점에서 시작해서 분기점이나 다른 끝점까지)
-  function traceStroke(skeleton, startX, startY, width, height, visited) {
-    var path = [{ x: startX, y: startY }];
-    var current = { x: startX, y: startY };
-    visited[startY * width + startX] = true;
-    
-    while (true) {
-      var found = false;
-      var neighbors = [
-        { dx: 0, dy: -1 }, { dx: 1, dy: -1 }, { dx: 1, dy: 0 }, { dx: 1, dy: 1 },
-        { dx: 0, dy: 1 }, { dx: -1, dy: 1 }, { dx: -1, dy: 0 }, { dx: -1, dy: -1 }
-      ];
-      
-      for (var i = 0; i < neighbors.length; i++) {
-        var nx = current.x + neighbors[i].dx;
-        var ny = current.y + neighbors[i].dy;
-        var nIdx = ny * width + nx;
-        
-        if (nx >= 0 && nx < width && ny >= 0 && ny < height &&
-            skeleton[nIdx] === 1 && !visited[nIdx]) {
-          visited[nIdx] = true;
-          current = { x: nx, y: ny };
-          path.push(current);
-          found = true;
-          
-          // 분기점 도달하면 중단
-          var p = getNeighbors(skeleton, nx, ny, width);
-          var neighborCount = p[1] + p[2] + p[3] + p[4] + p[5] + p[6] + p[7] + p[8];
-          if (neighborCount >= 3) break;
-          
-          break;
-        }
-      }
-      
-      if (!found) break;
-    }
-    
-    return path;
-  }
-  
-  // 획 순서 정렬 (한글 규칙: 위→아래, 왼→오른, 초성→중성→종성)
-  function sortStrokes(strokes) {
-    return strokes.sort(function(a, b) {
-      var aStart = a[0];
-      var bStart = b[0];
-      
-      // Y 좌표 먼저 (위에서 아래로)
-      var yDiff = aStart.y - bStart.y;
-      if (Math.abs(yDiff) > 20) return yDiff;
-      
-      // X 좌표 (왼쪽에서 오른쪽으로)
-      return aStart.x - bStart.x;
+
+  // UI 생성
+  function createJamoButtons() {
+    var choGrid = document.getElementById('cho-grid');
+    var jungGrid = document.getElementById('jung-grid');
+    var jongGrid = document.getElementById('jong-grid');
+
+    choList.forEach(function(j) {
+      var btn = document.createElement('button');
+      btn.className = 'jamo-btn';
+      btn.textContent = j;
+      btn.onclick = function() { selectJamo('cho', j, btn); };
+      choGrid.appendChild(btn);
+    });
+
+    jungList.forEach(function(j) {
+      var btn = document.createElement('button');
+      btn.className = 'jamo-btn';
+      btn.textContent = j;
+      btn.onclick = function() { selectJamo('jung', j, btn); };
+      jungGrid.appendChild(btn);
+    });
+
+    jongList.forEach(function(j, i) {
+      var btn = document.createElement('button');
+      btn.className = 'jamo-btn';
+      btn.textContent = j || '없음';
+      if (i === 0) btn.classList.add('active');
+      btn.onclick = function() { selectJamo('jong', j, btn); };
+      jongGrid.appendChild(btn);
     });
   }
-  
-  // 스켈레톤을 SVG path로 변환
-  function strokeToSVGPath(stroke, scale) {
-    if (stroke.length < 2) return '';
-    
-    var d = 'M' + (stroke[0].x * scale) + ',' + (stroke[0].y * scale);
-    
-    // 곡선으로 부드럽게
-    for (var i = 1; i < stroke.length; i++) {
-      d += ' L' + (stroke[i].x * scale) + ',' + (stroke[i].y * scale);
-    }
-    
-    return d;
+
+  function selectJamo(type, jamo, btn) {
+    var grid = btn.parentElement;
+    grid.querySelectorAll('.jamo-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+
+    if (type === 'cho') selectedCho = jamo;
+    else if (type === 'jung') selectedJung = jamo;
+    else selectedJong = jamo;
+
+    updatePreview();
   }
-  
-  // 획순서 분석 및 애니메이션 실행
-  function analyzeStrokeOrder() {
-    var txt = textInput.value || '그림자';
-    var char = txt.charAt(0); // 첫 글자만 분석
+
+  // 미리보기 업데이트
+  function updatePreview() {
+    var resultChar = document.getElementById('result-char');
+    var svg = document.getElementById('preview-svg');
     
-    strokeOrderInfo.innerHTML = '분석 중...';
+    if (!selectedCho || !selectedJung) {
+      resultChar.textContent = '-';
+      svg.innerHTML = '<text x="200" y="220" text-anchor="middle" fill="#ddd" font-size="24">자소를 선택하세요</text>';
+      return;
+    }
+
+    var char = combineHangul(selectedCho, selectedJung, selectedJong);
+    resultChar.textContent = char || '-';
+
+    // 가이드 라인 (옅은 색으로 전체 획 표시)
+    var allStrokes = getStrokesForChar();
+    var guideSvg = '';
+    allStrokes.forEach(function(s) {
+      guideSvg += '<path class="stroke-guide" d="' + s.d + '"/>';
+    });
     
-    // Canvas에 글자 그리기
-    strokeCanvas.width = 200;
-    strokeCanvas.height = 200;
-    strokeCtx.fillStyle = '#ffffff';
-    strokeCtx.fillRect(0, 0, 200, 200);
-    strokeCtx.font = '150px CustomFont';
-    strokeCtx.fillStyle = '#000000';
-    strokeCtx.textBaseline = 'top';
-    strokeCtx.fillText(char, 25, 25);
-    
-    // 이미지 데이터 추출
-    var imageData = strokeCtx.getImageData(0, 0, 200, 200);
-    
-    // Zhang-Suen Thinning
-    var skeleton = zhangSuenThinning(imageData);
-    
-    // 끝점 찾기
-    var endpoints = findEndpoints(skeleton, 200, 200);
-    var junctions = findJunctions(skeleton, 200, 200);
-    
-    // 획 추적
-    var visited = new Uint8Array(200 * 200);
+    svg.innerHTML = guideSvg;
+  }
+
+  // 현재 글자의 모든 획 가져오기
+  function getStrokesForChar() {
     var strokes = [];
-    
-    for (var i = 0; i < endpoints.length; i++) {
-      var ep = endpoints[i];
-      if (visited[ep.y * 200 + ep.x]) continue;
+    var jungType = getJungType(selectedJung);
+    var hasJong = selectedJong && selectedJong !== '';
+    var scale = 4; // viewBox 100 -> 400
+
+    // 위치 조정 함수
+    function transformPath(pathD, offsetX, offsetY, scaleX, scaleY) {
+      return pathD.replace(/([ML])\s*([\d.]+)\s+([\d.]+)/g, function(match, cmd, x, y) {
+        var nx = (parseFloat(x) + offsetX) * scaleX;
+        var ny = (parseFloat(y) + offsetY) * scaleY;
+        return cmd + ' ' + nx.toFixed(1) + ' ' + ny.toFixed(1);
+      }).replace(/A\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/g, 
+        function(match, rx, ry, rot, large, sweep, x, y) {
+          var nrx = parseFloat(rx) * scaleX;
+          var nry = parseFloat(ry) * scaleY;
+          var nx = (parseFloat(x) + offsetX) * scaleX;
+          var ny = (parseFloat(y) + offsetY) * scaleY;
+          return 'A ' + nrx.toFixed(1) + ' ' + nry.toFixed(1) + ' ' + rot + ' ' + large + ' ' + sweep + ' ' + nx.toFixed(1) + ' ' + ny.toFixed(1);
+        });
+    }
+
+    // 초성 획
+    var choKey = selectedCho + '_cho';
+    if (jamoStrokes[choKey]) {
+      var choOffsetX = 0, choOffsetY = 0, choScaleX = scale, choScaleY = scale;
       
-      var stroke = traceStroke(skeleton, ep.x, ep.y, 200, 200, visited);
-      if (stroke.length > 5) { // 너무 짧은 획 무시
-        strokes.push(stroke);
+      // 모음 유형에 따라 초성 위치/크기 조정
+      if (jungType === 'vertical') {
+        // 세로 모음: 초성이 왼쪽 위
+        choOffsetX = -5;
+        choOffsetY = hasJong ? -5 : 0;
+        choScaleX = hasJong ? 3.5 : 4;
+        choScaleY = hasJong ? 3 : 3.5;
+      } else {
+        // 가로 모음: 초성이 위쪽 전체
+        choOffsetX = 10;
+        choOffsetY = hasJong ? -10 : -5;
+        choScaleX = hasJong ? 3.5 : 4;
+        choScaleY = hasJong ? 2.5 : 3;
       }
-    }
-    
-    // 획 순서 정렬
-    strokes = sortStrokes(strokes);
-    
-    // 자모 분해 정보
-    var jamo = decomposeHangul(char);
-    var jamoInfo = jamo ? 
-      '초성: ' + jamo.cho + ' / 중성: ' + jamo.jung + (jamo.jong ? ' / 종성: ' + jamo.jong : '') :
-      '한글 아님';
-    
-    strokeOrderInfo.innerHTML = 
-      '<strong>"' + char + '"</strong><br>' +
-      jamoInfo + '<br>' +
-      '감지된 획: ' + strokes.length + '개<br>' +
-      '끝점: ' + endpoints.length + '개 / 분기점: ' + junctions.length + '개';
-    
-    // 획순서 애니메이션 실행
-    if (strokes.length > 0) {
-      playStrokeAnimation(strokes, char);
-    }
-  }
-  
-  // 획순서 애니메이션
-  function playStrokeAnimation(strokes, char) {
-    // 기존 마스크 모드 숨기기
-    drawSvg.style.display = 'none';
-    mainText.style.opacity = '0.1';
-    revealTexts.forEach(function(rt) { rt.style.display = 'none'; });
-    
-    // 획 애니메이션용 SVG 생성
-    var animSvg = document.createElement('div');
-    animSvg.id = 'stroke-anim';
-    animSvg.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);';
-    
-    var scale = parseFloat(fontSize.value) / 150; // 캔버스 크기 대비 스케일
-    var svgContent = '<svg width="' + (200 * scale) + '" height="' + (200 * scale) + '" viewBox="0 0 ' + (200 * scale) + ' ' + (200 * scale) + '">';
-    
-    // 각 획을 path로 추가
-    for (var i = 0; i < strokes.length; i++) {
-      var d = strokeToSVGPath(strokes[i], scale);
-      var delay = i * 0.3; // 획 간 딜레이
-      var duration = 0.5; // 각 획 애니메이션 시간
       
-      svgContent += '<path d="' + d + '" fill="none" stroke="' + textColor.value + '" stroke-width="' + (8 * scale) + '" ' +
-        'stroke-linecap="round" stroke-linejoin="round" ' +
-        'style="stroke-dasharray:2000;stroke-dashoffset:2000;animation:drawStroke ' + duration + 's ease-out ' + delay + 's forwards;"/>';
+      jamoStrokes[choKey].forEach(function(d) {
+        strokes.push({ d: transformPath(d, choOffsetX, choOffsetY, choScaleX, choScaleY), type: 'cho' });
+      });
     }
-    
-    svgContent += '</svg>';
-    animSvg.innerHTML = svgContent;
-    
-    // 애니메이션 CSS
-    var style = document.createElement('style');
-    style.id = 'stroke-anim-style';
-    style.textContent = '@keyframes drawStroke { to { stroke-dashoffset: 0; } }';
-    document.head.appendChild(style);
-    
-    canvasArea.appendChild(animSvg);
-    
-    // 애니메이션 종료 후 정리
-    var totalTime = (strokes.length * 0.3 + 0.5) * 1000 + 500;
-    setTimeout(function() {
-      if (document.getElementById('stroke-anim')) {
-        document.getElementById('stroke-anim').remove();
+
+    // 중성 획
+    var jungKey = selectedJung + '_jung';
+    if (jamoStrokes[jungKey]) {
+      var jungOffsetX = 0, jungOffsetY = 0, jungScaleX = scale, jungScaleY = scale;
+      
+      if (jungType === 'vertical') {
+        jungOffsetX = hasJong ? -5 : 0;
+        jungOffsetY = hasJong ? -5 : 0;
+        jungScaleX = hasJong ? 3.5 : 4;
+        jungScaleY = hasJong ? 3 : 3.5;
+      } else {
+        jungOffsetX = hasJong ? 5 : 10;
+        jungOffsetY = hasJong ? 20 : 30;
+        jungScaleX = hasJong ? 3.5 : 4;
+        jungScaleY = hasJong ? 2.5 : 3;
       }
-      if (document.getElementById('stroke-anim-style')) {
-        document.getElementById('stroke-anim-style').remove();
+      
+      jamoStrokes[jungKey].forEach(function(d) {
+        strokes.push({ d: transformPath(d, jungOffsetX, jungOffsetY, jungScaleX, jungScaleY), type: 'jung' });
+      });
+    }
+
+    // 종성 획
+    if (hasJong) {
+      var jongKey = selectedJong + '_jong';
+      if (jamoStrokes[jongKey]) {
+        var jongOffsetX = 5, jongOffsetY = 50;
+        var jongScaleX = 4, jongScaleY = 3;
+        
+        jamoStrokes[jongKey].forEach(function(d) {
+          strokes.push({ d: transformPath(d, jongOffsetX, jongOffsetY, jongScaleX, jongScaleY), type: 'jong' });
+        });
       }
-      mainText.style.opacity = '1';
-      drawSvg.style.display = 'block';
-      revealTexts.forEach(function(rt) { rt.style.display = 'block'; });
-    }, totalTime);
+    }
+
+    return strokes;
   }
-  
-  strokeOrderBtn.onclick = analyzeStrokeOrder;
+
+  // 재생
+  function play() {
+    if (!selectedCho || !selectedJung) {
+      alert('초성과 중성을 선택해주세요!');
+      return;
+    }
+
+    var svg = document.getElementById('preview-svg');
+    var strokes = getStrokesForChar();
+    var strokeWidth = document.getElementById('strokeWidth').value;
+    var strokeSpeed = parseFloat(document.getElementById('strokeSpeed').value);
+    var strokeColor = document.getElementById('strokeColor').value;
+
+    var svgContent = '';
+    
+    // 가이드 라인
+    strokes.forEach(function(s) {
+      svgContent += '<path class="stroke-guide" d="' + s.d + '"/>';
+    });
+
+    // 애니메이션 획
+    var delay = 0;
+    strokes.forEach(function(s, i) {
+      var pathLen = 500; // 대략적인 경로 길이
+      svgContent += '<path class="stroke-path" d="' + s.d + '" ' +
+        'stroke="' + strokeColor + '" stroke-width="' + strokeWidth + '" ' +
+        'style="stroke-dasharray:' + pathLen + ';stroke-dashoffset:' + pathLen + ';' +
+        'animation:drawStroke ' + strokeSpeed + 's ease-out ' + delay + 's forwards;"/>';
+      delay += strokeSpeed * 0.7;
+    });
+
+    svg.innerHTML = svgContent;
+  }
+
+  // 리셋
+  function reset() {
+    updatePreview();
+  }
+
+  // MP4 내보내기
+  async function exportMP4() {
+    if (!selectedCho || !selectedJung) {
+      alert('초성과 중성을 선택해주세요!');
+      return;
+    }
+
+    var btn = document.getElementById('mp4Btn');
+    btn.textContent = '생성 중...';
+    btn.disabled = true;
+
+    var canvas = document.getElementById('recordCanvas');
+    var ctx = canvas.getContext('2d');
+    var size = 400;
+    canvas.width = size;
+    canvas.height = size;
+
+    var strokes = getStrokesForChar();
+    var strokeWidth = parseInt(document.getElementById('strokeWidth').value);
+    var strokeSpeed = parseFloat(document.getElementById('strokeSpeed').value);
+    var strokeColor = document.getElementById('strokeColor').value;
+
+    var fps = 30;
+    var totalDuration = strokes.length * strokeSpeed * 0.7 + strokeSpeed;
+    var totalFrames = Math.ceil(totalDuration * fps);
+
+    // WebCodecs 지원 확인
+    if (typeof VideoEncoder === 'undefined') {
+      alert('이 브라우저는 MP4 내보내기를 지원하지 않습니다. Chrome 최신 버전을 사용해주세요.');
+      btn.textContent = 'MP4';
+      btn.disabled = false;
+      return;
+    }
+
+    var muxer = new Mp4Muxer.Muxer({
+      target: new Mp4Muxer.ArrayBufferTarget(),
+      video: { codec: 'avc', width: size, height: size },
+      fastStart: 'in-memory'
+    });
+
+    var encoder = new VideoEncoder({
+      output: function(chunk, meta) { muxer.addVideoChunk(chunk, meta); },
+      error: function(e) { console.error(e); }
+    });
+
+    await encoder.configure({
+      codec: 'avc1.42001f',
+      width: size, height: size,
+      bitrate: 5000000, framerate: fps
+    });
+
+    // 프레임 생성
+    for (var f = 0; f <= totalFrames; f++) {
+      var time = f / fps;
+      
+      ctx.fillStyle = exportBgColor;
+      ctx.fillRect(0, 0, size, size);
+
+      // 가이드
+      ctx.strokeStyle = '#e0e0e0';
+      ctx.lineWidth = 8;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      strokes.forEach(function(s) {
+        var path = new Path2D(s.d);
+        ctx.stroke(path);
+      });
+
+      // 애니메이션 획
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = strokeWidth;
+      var delay = 0;
+      strokes.forEach(function(s) {
+        var progress = Math.max(0, Math.min(1, (time - delay) / strokeSpeed));
+        if (progress > 0) {
+          ctx.save();
+          ctx.beginPath();
+          // 간단한 진행률 표현 (전체 또는 미표시)
+          if (progress >= 1) {
+            var path = new Path2D(s.d);
+            ctx.stroke(path);
+          }
+          ctx.restore();
+        }
+        delay += strokeSpeed * 0.7;
+      });
+
+      var frame = new VideoFrame(canvas, { timestamp: f * (1000000 / fps) });
+      encoder.encode(frame, { keyFrame: f % 30 === 0 });
+      frame.close();
+
+      btn.textContent = 'MP4 ' + Math.round((f / totalFrames) * 100) + '%';
+    }
+
+    await encoder.flush();
+    encoder.close();
+    muxer.finalize();
+
+    var blob = new Blob([muxer.target.buffer], { type: 'video/mp4' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'hangul-stroke-' + Date.now() + '.mp4';
+    a.click();
+
+    btn.textContent = 'MP4';
+    btn.disabled = false;
+  }
+
+  // PNG 시퀀스 내보내기
+  function exportPNG() {
+    if (!selectedCho || !selectedJung) {
+      alert('초성과 중성을 선택해주세요!');
+      return;
+    }
+
+    var btn = document.getElementById('pngBtn');
+    btn.textContent = '생성 중...';
+    btn.disabled = true;
+
+    var canvas = document.getElementById('recordCanvas');
+    var ctx = canvas.getContext('2d');
+    var size = 400;
+    canvas.width = size;
+    canvas.height = size;
+
+    var strokes = getStrokesForChar();
+    var strokeWidth = parseInt(document.getElementById('strokeWidth').value);
+    var strokeSpeed = parseFloat(document.getElementById('strokeSpeed').value);
+    var strokeColor = document.getElementById('strokeColor').value;
+
+    var fps = 30;
+    var totalDuration = strokes.length * strokeSpeed * 0.7 + strokeSpeed;
+    var totalFrames = Math.ceil(totalDuration * fps);
+
+    var zip = new JSZip();
+
+    for (var f = 0; f <= totalFrames; f++) {
+      var time = f / fps;
+      
+      ctx.fillStyle = exportBgColor;
+      ctx.fillRect(0, 0, size, size);
+
+      // 가이드
+      ctx.strokeStyle = '#e0e0e0';
+      ctx.lineWidth = 8;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      strokes.forEach(function(s) {
+        var path = new Path2D(s.d);
+        ctx.stroke(path);
+      });
+
+      // 완료된 획만 그리기
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = strokeWidth;
+      var delay = 0;
+      strokes.forEach(function(s) {
+        var progress = Math.max(0, Math.min(1, (time - delay) / strokeSpeed));
+        if (progress >= 1) {
+          var path = new Path2D(s.d);
+          ctx.stroke(path);
+        }
+        delay += strokeSpeed * 0.7;
+      });
+
+      var dataUrl = canvas.toDataURL('image/png');
+      var base64 = dataUrl.split(',')[1];
+      zip.file('frame_' + String(f).padStart(4, '0') + '.png', base64, { base64: true });
+    }
+
+    btn.textContent = 'ZIP 압축...';
+    zip.generateAsync({ type: 'blob' }).then(function(content) {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(content);
+      a.download = 'hangul-stroke-' + Date.now() + '.zip';
+      a.click();
+      btn.textContent = 'PNG';
+      btn.disabled = false;
+    });
+  }
+
+  // 이벤트 바인딩
+  document.getElementById('playBtn').onclick = play;
+  document.getElementById('resetBtn').onclick = reset;
+  document.getElementById('mp4Btn').onclick = exportMP4;
+  document.getElementById('pngBtn').onclick = exportPNG;
+
+  document.getElementById('strokeWidth').oninput = function() {
+    document.getElementById('strokeWidthVal').textContent = this.value + 'px';
+  };
+  document.getElementById('strokeSpeed').oninput = function() {
+    document.getElementById('strokeSpeedVal').textContent = this.value + 's';
+  };
+
+  document.querySelectorAll('.bg-btn').forEach(function(btn) {
+    btn.onclick = function() {
+      document.querySelectorAll('.bg-btn').forEach(function(b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      exportBgColor = btn.dataset.bg;
+      document.getElementById('canvas-area').style.background = exportBgColor;
+    };
+  });
+
+  // 초기화
+  createJamoButtons();
+  updatePreview();
 })();
 </script>
 </body>
