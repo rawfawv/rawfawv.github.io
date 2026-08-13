@@ -373,6 +373,7 @@ const MAX_INSECTS = 12; // 최대 벌레 수 증가
 // 수집 상태 (1~13번 각각 수집 여부)
 let collectedTypes = new Set();
 let gameEnded = false;
+let escapeCount = 0; // 도망쳐 횟수
 
 // 엔딩 관련
 let fireworks = [];
@@ -636,7 +637,55 @@ function blowAwayClosestInsect(message) {
     closestInsect.vx = (Math.random() - 0.5) * 15;
     closestInsect.vy = -8 - Math.random() * 5;
     closestInsect.bubble = { text: message || '살았다!', born: performance.now() };
+    
+    // 도망쳐 카운트 증가
+    escapeCount++;
+    if (escapeCount >= 3) {
+      showStarvationEnding();
+    }
   }
+}
+
+// 굶어 죽음 엔딩
+function showStarvationEnding() {
+  gameEnded = true;
+  
+  const overlay = document.createElement('div');
+  overlay.id = 'starvation-ending';
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.9);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    color: #fff;
+    font-family: 'Apple SD Gothic Neo', sans-serif;
+    animation: fadeIn 1s ease;
+    cursor: default;
+  `;
+  
+  overlay.innerHTML = `
+    <div style="font-size: 80px; margin-bottom: 20px;">🕷️💀</div>
+    <h1 style="font-size: 36px; margin-bottom: 20px;">거미가 굶어 죽었어요</h1>
+    <p style="font-size: 18px; color: #888; margin-bottom: 40px;">벌레를 너무 많이 놓아줬어요...</p>
+    <button onclick="location.reload()" style="
+      padding: 15px 40px;
+      font-size: 16px;
+      background: #444;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    ">다시 시작</button>
+  `;
+  
+  document.body.appendChild(overlay);
 }
 
 // ─── 이벤트 ──────────────────────────────────────────────────────────────
