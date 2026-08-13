@@ -211,6 +211,12 @@
       </div>
     </div>
     <p class="help-text" id="helpText"><strong>드래그</strong>로 마스크를 그리세요 (최대 2개)</p>
+    
+    <div class="control-group" style="margin-top:16px; border-top: 1px solid #e0e0e0; padding-top: 16px;">
+      <label>획순서 모드 (실험적)</label>
+      <button class="btn btn-secondary" id="strokeOrderBtn">✏️ 획순서 분석</button>
+      <div id="strokeOrderInfo" style="margin-top:8px; font-size:11px; color:#666;"></div>
+    </div>
   </div>
 
   <div id="canvas-area">
@@ -1251,6 +1257,384 @@
   updateText();
   resizeSvg();
   updateHelpText();
+
+  // ============================================
+  // 획순서 모드 (Zhang-Suen Thinning + 자모 분해)
+  // ============================================
+  
+  var strokeOrderBtn = document.getElementById('strokeOrderBtn');
+  var strokeOrderInfo = document.getElementById('strokeOrderInfo');
+  var strokeCanvas = document.createElement('canvas');
+  var strokeCtx = strokeCanvas.getContext('2d', { willReadFrequently: true });
+  
+  // 한글 자모 분해
+  function decomposeHangul(char) {
+    var code = char.charCodeAt(0);
+    if (code < 0xAC00 || code > 0xD7A3) return null; // 한글 아님
+    
+    var offset = code - 0xAC00;
+    var cho = Math.floor(offset / 588);
+    var jung = Math.floor((offset % 588) / 28);
+    var jong = offset % 28;
+    
+    var choList = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+    var jungList = ['ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅗ','ㅘ','ㅙ','ㅚ','ㅛ','ㅜ','ㅝ','ㅞ','ㅟ','ㅠ','ㅡ','ㅢ','ㅣ'];
+    var jongList = ['','ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+    
+    return {
+      cho: choList[cho],
+      jung: jungList[jung],
+      jong: jongList[jong] || null,
+      type: getJamoType(jungList[jung]) // 모음 유형으로 음절 구조 파악
+    };
+  }
+  
+  // 모음 유형 (배치 구조 결정)
+  function getJamoType(jung) {
+    var vertical = ['ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅣ']; // 세로 모음 (초성 왼쪽)
+    var horizontal = ['ㅗ','ㅛ','ㅜ','ㅠ','ㅡ']; // 가로 모음 (초성 위쪽)
+    var combined = ['ㅘ','ㅙ','ㅚ','ㅝ','ㅞ','ㅟ','ㅢ']; // 복합 모음
+    
+    if (vertical.indexOf(jung) >= 0) return 'vertical';
+    if (horizontal.indexOf(jung) >= 0) return 'horizontal';
+    return 'combined';
+  }
+  
+  // 자모별 획 수
+  var jamoStrokes = {
+    // 초성
+    'ㄱ': 2, 'ㄲ': 4, 'ㄴ': 2, 'ㄷ': 3, 'ㄸ': 6, 'ㄹ': 5, 'ㅁ': 4, 'ㅂ': 4, 'ㅃ': 8,
+    'ㅅ': 2, 'ㅆ': 4, 'ㅇ': 1, 'ㅈ': 3, 'ㅉ': 6, 'ㅊ': 4, 'ㅋ': 3, 'ㅌ': 4, 'ㅍ': 4, 'ㅎ': 3,
+    // 중성
+    'ㅏ': 2, 'ㅐ': 3, 'ㅑ': 3, 'ㅒ': 4, 'ㅓ': 2, 'ㅔ': 3, 'ㅕ': 3, 'ㅖ': 4,
+    'ㅗ': 2, 'ㅘ': 4, 'ㅙ': 5, 'ㅚ': 3, 'ㅛ': 3, 'ㅜ': 2, 'ㅝ': 4, 'ㅞ': 5, 'ㅟ': 3, 'ㅠ': 3,
+    'ㅡ': 1, 'ㅢ': 2, 'ㅣ': 1
+  };
+  
+  // Zhang-Suen Thinning 알고리즘
+  function zhangSuenThinning(imageData) {
+    var width = imageData.width;
+    var height = imageData.height;
+    var data = imageData.data;
+    
+    // 이진화 (흑백)
+    var binary = new Uint8Array(width * height);
+    for (var i = 0; i < width * height; i++) {
+      var r = data[i * 4];
+      var g = data[i * 4 + 1];
+      var b = data[i * 4 + 2];
+      var a = data[i * 4 + 3];
+      // 글자 픽셀 (불투명하고 어두운 색)
+      binary[i] = (a > 128 && (r + g + b) < 384) ? 1 : 0;
+    }
+    
+    var changed = true;
+    var iteration = 0;
+    var maxIterations = 100; // 무한루프 방지
+    
+    while (changed && iteration < maxIterations) {
+      changed = false;
+      iteration++;
+      
+      // Step 1
+      var toRemove = [];
+      for (var y = 1; y < height - 1; y++) {
+        for (var x = 1; x < width - 1; x++) {
+          var idx = y * width + x;
+          if (binary[idx] !== 1) continue;
+          
+          var p = getNeighbors(binary, x, y, width);
+          var n = p[1] + p[2] + p[3] + p[4] + p[5] + p[6] + p[7] + p[8];
+          var s = transitions(p);
+          
+          if (n >= 2 && n <= 6 && s === 1 &&
+              p[2] * p[4] * p[6] === 0 &&
+              p[4] * p[6] * p[8] === 0) {
+            toRemove.push(idx);
+          }
+        }
+      }
+      for (var r = 0; r < toRemove.length; r++) {
+        binary[toRemove[r]] = 0;
+        changed = true;
+      }
+      
+      // Step 2
+      toRemove = [];
+      for (var y = 1; y < height - 1; y++) {
+        for (var x = 1; x < width - 1; x++) {
+          var idx = y * width + x;
+          if (binary[idx] !== 1) continue;
+          
+          var p = getNeighbors(binary, x, y, width);
+          var n = p[1] + p[2] + p[3] + p[4] + p[5] + p[6] + p[7] + p[8];
+          var s = transitions(p);
+          
+          if (n >= 2 && n <= 6 && s === 1 &&
+              p[2] * p[4] * p[8] === 0 &&
+              p[2] * p[6] * p[8] === 0) {
+            toRemove.push(idx);
+          }
+        }
+      }
+      for (var r = 0; r < toRemove.length; r++) {
+        binary[toRemove[r]] = 0;
+        changed = true;
+      }
+    }
+    
+    return binary;
+  }
+  
+  function getNeighbors(binary, x, y, width) {
+    // P9 P2 P3
+    // P8 P1 P4
+    // P7 P6 P5
+    return [
+      binary[y * width + x],     // P1 (center)
+      binary[(y-1) * width + x],     // P2
+      binary[(y-1) * width + x+1],   // P3
+      binary[y * width + x+1],       // P4
+      binary[(y+1) * width + x+1],   // P5
+      binary[(y+1) * width + x],     // P6
+      binary[(y+1) * width + x-1],   // P7
+      binary[y * width + x-1],       // P8
+      binary[(y-1) * width + x-1]    // P9
+    ];
+  }
+  
+  function transitions(p) {
+    // P2→P3→P4→P5→P6→P7→P8→P9→P2 에서 0→1 전환 횟수
+    var count = 0;
+    var seq = [p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[1]];
+    for (var i = 0; i < 8; i++) {
+      if (seq[i] === 0 && seq[i+1] === 1) count++;
+    }
+    return count;
+  }
+  
+  // 스켈레톤에서 끝점 찾기 (획 끝)
+  function findEndpoints(skeleton, width, height) {
+    var endpoints = [];
+    for (var y = 1; y < height - 1; y++) {
+      for (var x = 1; x < width - 1; x++) {
+        if (skeleton[y * width + x] !== 1) continue;
+        
+        var p = getNeighbors(skeleton, x, y, width);
+        var neighborCount = p[1] + p[2] + p[3] + p[4] + p[5] + p[6] + p[7] + p[8];
+        
+        // 끝점: 이웃이 1개뿐
+        if (neighborCount === 1) {
+          endpoints.push({ x: x, y: y });
+        }
+      }
+    }
+    return endpoints;
+  }
+  
+  // 분기점 찾기 (획이 만나는 곳)
+  function findJunctions(skeleton, width, height) {
+    var junctions = [];
+    for (var y = 1; y < height - 1; y++) {
+      for (var x = 1; x < width - 1; x++) {
+        if (skeleton[y * width + x] !== 1) continue;
+        
+        var p = getNeighbors(skeleton, x, y, width);
+        var neighborCount = p[1] + p[2] + p[3] + p[4] + p[5] + p[6] + p[7] + p[8];
+        
+        // 분기점: 이웃이 3개 이상
+        if (neighborCount >= 3) {
+          junctions.push({ x: x, y: y });
+        }
+      }
+    }
+    return junctions;
+  }
+  
+  // 획 추적 (끝점에서 시작해서 분기점이나 다른 끝점까지)
+  function traceStroke(skeleton, startX, startY, width, height, visited) {
+    var path = [{ x: startX, y: startY }];
+    var current = { x: startX, y: startY };
+    visited[startY * width + startX] = true;
+    
+    while (true) {
+      var found = false;
+      var neighbors = [
+        { dx: 0, dy: -1 }, { dx: 1, dy: -1 }, { dx: 1, dy: 0 }, { dx: 1, dy: 1 },
+        { dx: 0, dy: 1 }, { dx: -1, dy: 1 }, { dx: -1, dy: 0 }, { dx: -1, dy: -1 }
+      ];
+      
+      for (var i = 0; i < neighbors.length; i++) {
+        var nx = current.x + neighbors[i].dx;
+        var ny = current.y + neighbors[i].dy;
+        var nIdx = ny * width + nx;
+        
+        if (nx >= 0 && nx < width && ny >= 0 && ny < height &&
+            skeleton[nIdx] === 1 && !visited[nIdx]) {
+          visited[nIdx] = true;
+          current = { x: nx, y: ny };
+          path.push(current);
+          found = true;
+          
+          // 분기점 도달하면 중단
+          var p = getNeighbors(skeleton, nx, ny, width);
+          var neighborCount = p[1] + p[2] + p[3] + p[4] + p[5] + p[6] + p[7] + p[8];
+          if (neighborCount >= 3) break;
+          
+          break;
+        }
+      }
+      
+      if (!found) break;
+    }
+    
+    return path;
+  }
+  
+  // 획 순서 정렬 (한글 규칙: 위→아래, 왼→오른, 초성→중성→종성)
+  function sortStrokes(strokes) {
+    return strokes.sort(function(a, b) {
+      var aStart = a[0];
+      var bStart = b[0];
+      
+      // Y 좌표 먼저 (위에서 아래로)
+      var yDiff = aStart.y - bStart.y;
+      if (Math.abs(yDiff) > 20) return yDiff;
+      
+      // X 좌표 (왼쪽에서 오른쪽으로)
+      return aStart.x - bStart.x;
+    });
+  }
+  
+  // 스켈레톤을 SVG path로 변환
+  function strokeToSVGPath(stroke, scale) {
+    if (stroke.length < 2) return '';
+    
+    var d = 'M' + (stroke[0].x * scale) + ',' + (stroke[0].y * scale);
+    
+    // 곡선으로 부드럽게
+    for (var i = 1; i < stroke.length; i++) {
+      d += ' L' + (stroke[i].x * scale) + ',' + (stroke[i].y * scale);
+    }
+    
+    return d;
+  }
+  
+  // 획순서 분석 및 애니메이션 실행
+  function analyzeStrokeOrder() {
+    var txt = textInput.value || '그림자';
+    var char = txt.charAt(0); // 첫 글자만 분석
+    
+    strokeOrderInfo.innerHTML = '분석 중...';
+    
+    // Canvas에 글자 그리기
+    strokeCanvas.width = 200;
+    strokeCanvas.height = 200;
+    strokeCtx.fillStyle = '#ffffff';
+    strokeCtx.fillRect(0, 0, 200, 200);
+    strokeCtx.font = '150px CustomFont';
+    strokeCtx.fillStyle = '#000000';
+    strokeCtx.textBaseline = 'top';
+    strokeCtx.fillText(char, 25, 25);
+    
+    // 이미지 데이터 추출
+    var imageData = strokeCtx.getImageData(0, 0, 200, 200);
+    
+    // Zhang-Suen Thinning
+    var skeleton = zhangSuenThinning(imageData);
+    
+    // 끝점 찾기
+    var endpoints = findEndpoints(skeleton, 200, 200);
+    var junctions = findJunctions(skeleton, 200, 200);
+    
+    // 획 추적
+    var visited = new Uint8Array(200 * 200);
+    var strokes = [];
+    
+    for (var i = 0; i < endpoints.length; i++) {
+      var ep = endpoints[i];
+      if (visited[ep.y * 200 + ep.x]) continue;
+      
+      var stroke = traceStroke(skeleton, ep.x, ep.y, 200, 200, visited);
+      if (stroke.length > 5) { // 너무 짧은 획 무시
+        strokes.push(stroke);
+      }
+    }
+    
+    // 획 순서 정렬
+    strokes = sortStrokes(strokes);
+    
+    // 자모 분해 정보
+    var jamo = decomposeHangul(char);
+    var jamoInfo = jamo ? 
+      '초성: ' + jamo.cho + ' / 중성: ' + jamo.jung + (jamo.jong ? ' / 종성: ' + jamo.jong : '') :
+      '한글 아님';
+    
+    strokeOrderInfo.innerHTML = 
+      '<strong>"' + char + '"</strong><br>' +
+      jamoInfo + '<br>' +
+      '감지된 획: ' + strokes.length + '개<br>' +
+      '끝점: ' + endpoints.length + '개 / 분기점: ' + junctions.length + '개';
+    
+    // 획순서 애니메이션 실행
+    if (strokes.length > 0) {
+      playStrokeAnimation(strokes, char);
+    }
+  }
+  
+  // 획순서 애니메이션
+  function playStrokeAnimation(strokes, char) {
+    // 기존 마스크 모드 숨기기
+    drawSvg.style.display = 'none';
+    mainText.style.opacity = '0.1';
+    revealTexts.forEach(function(rt) { rt.style.display = 'none'; });
+    
+    // 획 애니메이션용 SVG 생성
+    var animSvg = document.createElement('div');
+    animSvg.id = 'stroke-anim';
+    animSvg.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);';
+    
+    var scale = parseFloat(fontSize.value) / 150; // 캔버스 크기 대비 스케일
+    var svgContent = '<svg width="' + (200 * scale) + '" height="' + (200 * scale) + '" viewBox="0 0 ' + (200 * scale) + ' ' + (200 * scale) + '">';
+    
+    // 각 획을 path로 추가
+    for (var i = 0; i < strokes.length; i++) {
+      var d = strokeToSVGPath(strokes[i], scale);
+      var delay = i * 0.3; // 획 간 딜레이
+      var duration = 0.5; // 각 획 애니메이션 시간
+      
+      svgContent += '<path d="' + d + '" fill="none" stroke="' + textColor.value + '" stroke-width="' + (8 * scale) + '" ' +
+        'stroke-linecap="round" stroke-linejoin="round" ' +
+        'style="stroke-dasharray:2000;stroke-dashoffset:2000;animation:drawStroke ' + duration + 's ease-out ' + delay + 's forwards;"/>';
+    }
+    
+    svgContent += '</svg>';
+    animSvg.innerHTML = svgContent;
+    
+    // 애니메이션 CSS
+    var style = document.createElement('style');
+    style.id = 'stroke-anim-style';
+    style.textContent = '@keyframes drawStroke { to { stroke-dashoffset: 0; } }';
+    document.head.appendChild(style);
+    
+    canvasArea.appendChild(animSvg);
+    
+    // 애니메이션 종료 후 정리
+    var totalTime = (strokes.length * 0.3 + 0.5) * 1000 + 500;
+    setTimeout(function() {
+      if (document.getElementById('stroke-anim')) {
+        document.getElementById('stroke-anim').remove();
+      }
+      if (document.getElementById('stroke-anim-style')) {
+        document.getElementById('stroke-anim-style').remove();
+      }
+      mainText.style.opacity = '1';
+      drawSvg.style.display = 'block';
+      revealTexts.forEach(function(rt) { rt.style.display = 'block'; });
+    }, totalTime);
+  }
+  
+  strokeOrderBtn.onclick = analyzeStrokeOrder;
 })();
 </script>
 </body>
