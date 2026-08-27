@@ -5,828 +5,894 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>붓 - 한글 획순서 애니메이션</title>
   <style>
-    @font-face {
-      font-family: 'CustomFont';
-      src: url('BAEMINWORK.otf') format('opentype');
-    }
+    @font-face { font-family: 'CustomFont'; src: url('BAEMINWORK.otf') format('opentype'); }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      min-height: 100vh;
-      background: #f5f5f5;
-      font-family: 'Apple SD Gothic Neo', sans-serif;
-      color: #333;
-      display: flex;
-      overflow: hidden;
-    }
-    a#home-btn {
-      position: fixed; top: 20px; left: 20px; z-index: 500;
-      font-size: 28px; color: #333; text-decoration: none; opacity: 0.7;
-    }
+    body { min-height: 100vh; background: #1a1a2e; font-family: 'Apple SD Gothic Neo', sans-serif; color: #e0e0e0; display: flex; overflow: hidden; }
+    a#home-btn { position: fixed; top: 20px; left: 20px; z-index: 500; font-size: 28px; color: #e0e0e0; text-decoration: none; opacity: 0.7; }
     a#home-btn:hover { opacity: 1; }
-
-    #controls {
-      width: 320px; min-height: 100vh; max-height: 100vh; background: #ffffff;
-      padding: 80px 24px 24px; display: flex; flex-direction: column; gap: 14px;
-      border-right: 1px solid #e0e0e0;
-      overflow-y: auto;
-      flex-shrink: 0;
-    }
+    #controls { width: 340px; min-height: 100vh; background: #16213e; padding: 70px 20px 20px; display: flex; flex-direction: column; gap: 12px; border-right: 1px solid #0f3460; overflow-y: auto; }
     .control-group { display: flex; flex-direction: column; gap: 6px; }
-    .control-group label { font-size: 11px; color: #666; text-transform: uppercase; font-weight: 600; }
-    .control-row { display: flex; align-items: center; gap: 10px; }
-    .range-value { font-size: 12px; color: #666; min-width: 45px; text-align: right; }
-    .control-group input[type="range"] { width: 100%; accent-color: #4ade80; }
-    .control-group input[type="color"] { width: 50px; height: 32px; border: 1px solid #ddd; border-radius: 4px; }
-
-    /* 자소 선택 버튼 */
-    .jamo-section { margin-bottom: 12px; }
-    .jamo-section-title { font-size: 12px; color: #888; margin-bottom: 6px; }
-    .jamo-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 4px;
-    }
-    .jamo-btn {
-      padding: 8px 4px;
-      background: #f9f9f9;
-      border: 2px solid #e0e0e0;
-      border-radius: 6px;
-      font-size: 16px;
-      font-family: 'CustomFont', sans-serif;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    .jamo-btn:hover { border-color: #4ade80; background: #f0fdf4; }
-    .jamo-btn.active { border-color: #4ade80; background: #4ade80; color: #fff; }
-    .jamo-btn.disabled { opacity: 0.3; cursor: not-allowed; }
-
-    .btn-group { display: flex; gap: 8px; margin-top: 8px; }
-    .btn {
-      flex: 1; padding: 12px; border: none; border-radius: 8px;
-      font-size: 13px; font-weight: 600; cursor: pointer;
-    }
-    .btn-primary { background: #4ade80; color: #000; }
-    .btn-secondary { background: #e5e5e5; color: #333; }
-
+    .control-group label { font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 600; }
+    .jamo-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+    .jamo-btn { padding: 6px 2px; background: #1a1a2e; border: 2px solid #0f3460; border-radius: 6px; font-size: 14px; font-family: 'CustomFont', sans-serif; color: #e0e0e0; cursor: pointer; }
+    .jamo-btn:hover { border-color: #e94560; }
+    .jamo-btn.active { border-color: #e94560; background: #e94560; color: #fff; }
+    .btn-group { display: flex; gap: 8px; margin-top: 4px; }
+    .btn { flex: 1; padding: 10px; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-primary { background: #e94560; color: #fff; }
+    .btn-primary:hover { background: #f05a76; }
+    .btn-secondary { background: #0f3460; color: #e0e0e0; }
     .bg-btns { display: flex; gap: 6px; }
-    .bg-btn {
-      flex: 1; padding: 8px; background: #f9f9f9; border: 2px solid #ddd;
-      border-radius: 6px; font-size: 11px; cursor: pointer; text-align: center;
-    }
-    .bg-btn:hover { border-color: #bbb; }
-    .bg-btn.active { border-color: #4ade80; background: #f0fdf4; color: #16a34a; }
-
-    .info-box {
-      padding: 10px; background: #f0fdf4; border: 1px solid #4ade80;
-      border-radius: 6px; font-size: 12px; color: #16a34a;
-    }
-
-    /* 캔버스 영역 */
-    #canvas-area {
-      flex: 1; position: relative;
-      display: flex; align-items: center; justify-content: center;
-      background: #ffffff;
-      overflow: hidden;
-    }
-    #preview-svg {
-      width: 400px; height: 400px;
-    }
-    .stroke-path {
-      fill: none;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-    }
-    .stroke-guide {
-      fill: none;
-      stroke: #e0e0e0;
-      stroke-width: 8;
-      stroke-linecap: round;
-    }
-    @keyframes drawStroke {
-      to { stroke-dashoffset: 0; }
-    }
+    .bg-btn { flex: 1; padding: 6px; background: #1a1a2e; border: 2px solid #0f3460; border-radius: 6px; font-size: 10px; cursor: pointer; text-align: center; color: #94a3b8; }
+    .bg-btn.active { border-color: #e94560; background: #e94560; color: #fff; }
+    .section-title { font-size: 11px; color: #e94560; font-weight: 700; margin: 8px 0 6px; padding-bottom: 4px; border-bottom: 1px solid #0f3460; }
+    .param-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .param-item { background: #1a1a2e; padding: 8px; border-radius: 6px; border: 1px solid #0f3460; }
+    .param-item label { display: block; font-size: 9px; color: #64748b; margin-bottom: 4px; }
+    .param-item input[type="range"] { width: 100%; accent-color: #e94560; }
+    .param-item .value { font-size: 10px; color: #e94560; text-align: right; font-family: monospace; }
+    #canvas-area { flex: 1; display: flex; align-items: center; justify-content: center; background: #1a1a2e; }
+    #preview-canvas { border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+    #loading-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(26, 26, 46, 0.95); display: flex; align-items: center; justify-content: center; z-index: 9999; flex-direction: column; gap: 16px; }
+    #loading-overlay.hidden { display: none; }
+    .loader { width: 48px; height: 48px; border: 4px solid #0f3460; border-top-color: #e94560; border-radius: 50%; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 <body>
+  <div id="loading-overlay"><div class="loader"></div><div style="color:#e94560;">폰트 로딩 중...</div></div>
   <a href="../index.html" id="home-btn">←</a>
-
   <div id="controls">
-    <div class="info-box">
-      <strong>사용법:</strong> 자소를 선택하고 재생 버튼을 누르면 획 순서대로 글자가 써집니다.
+    <div class="control-group"><label>초성</label><div class="jamo-grid" id="cho-grid"></div></div>
+    <div class="control-group"><label>중성</label><div class="jamo-grid" id="jung-grid"></div></div>
+    <div class="control-group"><label>종성 (선택)</label><div class="jamo-grid" id="jong-grid"></div></div>
+    <div class="control-group"><label>조합 결과</label><div id="result-char" style="font-size:42px; font-family:'CustomFont'; text-align:center; padding:8px; color:#fff;">-</div></div>
+    <div class="section-title">애니메이션</div>
+    <div class="param-grid">
+      <div class="param-item"><label>획 속도</label><input type="range" id="strokeSpeed" min="0.5" max="4" step="0.1" value="1.5"><div class="value" id="strokeSpeedVal">1.5s</div></div>
+      <div class="param-item"><label>글자 색상</label><input type="color" id="strokeColor" value="#1a1a2e" style="width:100%; height:24px;"></div>
     </div>
-
-    <div class="control-group">
-      <label>초성 선택</label>
-      <div class="jamo-grid" id="cho-grid"></div>
-    </div>
-
-    <div class="control-group">
-      <label>중성 선택</label>
-      <div class="jamo-grid" id="jung-grid"></div>
-    </div>
-
-    <div class="control-group">
-      <label>종성 선택 (선택사항)</label>
-      <div class="jamo-grid" id="jong-grid"></div>
-    </div>
-
-    <div class="control-group">
-      <label>조합 결과</label>
-      <div id="result-char" style="font-size:48px; font-family:'CustomFont'; text-align:center; padding:10px;">-</div>
-    </div>
-
-    <div class="control-group">
-      <label>획 굵기</label>
-      <div class="control-row">
-        <input type="range" id="strokeWidth" min="4" max="20" value="10">
-        <span class="range-value" id="strokeWidthVal">10px</span>
-      </div>
-    </div>
-
-    <div class="control-group">
-      <label>획 속도</label>
-      <div class="control-row">
-        <input type="range" id="strokeSpeed" min="0.1" max="1" step="0.1" value="0.4">
-        <span class="range-value" id="strokeSpeedVal">0.4s</span>
-      </div>
-    </div>
-
-    <div class="control-group">
-      <label>글자 색상</label>
-      <input type="color" id="strokeColor" value="#000000">
-    </div>
-
-    <div class="control-group">
-      <label>배경색 (내보내기용)</label>
-      <div class="bg-btns">
-        <button class="bg-btn active" data-bg="#ffffff">화이트</button>
-        <button class="bg-btn" data-bg="#03ff00">그린스크린</button>
-      </div>
-    </div>
-
-    <div class="btn-group">
-      <button class="btn btn-primary" id="playBtn">▶ 재생</button>
-      <button class="btn btn-secondary" id="resetBtn">↺ 리셋</button>
-    </div>
-
-    <div class="control-group" style="margin-top:8px;">
-      <label>내보내기</label>
-      <div class="btn-group">
-        <button class="btn" id="mp4Btn" style="background:#888; color:#fff;">MP4</button>
-        <button class="btn" id="pngBtn" style="background:#888; color:#fff;">PNG</button>
-      </div>
-    </div>
+    <div class="control-group"><label>배경색</label><div class="bg-btns"><button class="bg-btn" data-bg="#1a1a2e">다크</button><button class="bg-btn active" data-bg="#ffffff">화이트</button><button class="bg-btn" data-bg="#03ff00">그린</button></div></div>
+    <div class="btn-group"><button class="btn btn-primary" id="playBtn">▶ 재생</button><button class="btn btn-secondary" id="resetBtn">↺ 리셋</button></div>
+    <div class="control-group" style="margin-top:4px;"><label>내보내기</label><div class="btn-group"><button class="btn" id="mp4Btn" style="background:#0f3460; color:#e0e0e0;">MP4</button><button class="btn" id="pngBtn" style="background:#0f3460; color:#e0e0e0;">PNG</button></div></div>
   </div>
-
-  <div id="canvas-area">
-    <svg id="preview-svg" viewBox="0 0 400 400"></svg>
-  </div>
-
+  <div id="canvas-area"><canvas id="preview-canvas" width="500" height="500"></canvas></div>
   <canvas id="recordCanvas" style="display:none;"></canvas>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.1.3/build/mp4-muxer.min.js"></script>
+  <script src="https://unpkg.com/opentype.js@1.3.4/dist/opentype.min.js"></script>
 
 <script>
 (function() {
-  // 자소 목록
-  var choList = ['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
-  var jungList = ['ㅏ','ㅐ','ㅑ','ㅓ','ㅔ','ㅕ','ㅗ','ㅛ','ㅜ','ㅠ','ㅡ','ㅣ'];
-  var jongList = ['','ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+  // ========================================
+  // v2 전략: 자모별 획 좌표 직접 정의
+  // 참고: 플레이체 AI 애니메이터 v2 개발 리포트
+  // "추출을 포기하고, 직접 정의한다"
+  // ========================================
 
-  // 현재 선택
-  var selectedCho = null;
-  var selectedJung = null;
-  var selectedJong = '';
-  var exportBgColor = '#ffffff';
-
-  // 자소별 획순서 SVG path 데이터 (viewBox 0 0 100 100 기준)
-  // 각 획은 배열로, 순서대로 그려짐
-  var jamoStrokes = {
-    // 초성 (왼쪽 위 영역: 대략 x:10-50, y:10-55)
-    'ㄱ_cho': [
-      'M 15 20 L 45 20',      // 가로획
-      'M 45 20 L 45 50'       // 세로획
+  // 자모별 획 데이터 (정규화된 좌표 0~1, 한글 정자체 획순서대로 정의)
+  // BAEMINWORK 폰트용 - 두꺼운 고딕 + 붓글씨 끝처리
+  // ㄱ 같은 자음은 끝이 둥글게 말린 형태
+  var JAMO_STROKES = {
+    // === 초성 (자음) - BAEMINWORK 스타일 ===
+    // 실제 BAEMINWORK 렌더링에서 y슬라이스별 잉크 범위를 측정해 좌표를 보정함 (2026-02 재보정)
+    'ㄱ': [
+      [[0.1, 0.2], [0.95, 0.2]],  // 1획: 가로획
+      [[0.85, 0.28], [0.61, 0.5], [0.47, 0.65], [0.33, 0.78], [0.29, 0.92]]  // 2획: 실측 곡선 경로
     ],
-    'ㄴ_cho': [
-      'M 15 20 L 15 50',      // 세로획
-      'M 15 50 L 45 50'       // 가로획
+    'ㄴ': [
+      [[0.2, 0.1], [0.2, 0.85]],   // 1획: 세로획
+      [[0.2, 0.8], [0.9, 0.8]]     // 2획: 가로획
     ],
-    'ㄷ_cho': [
-      'M 15 20 L 45 20',      // 위 가로
-      'M 15 20 L 15 50',      // 세로
-      'M 15 50 L 45 50'       // 아래 가로
+    'ㄷ': [
+      [[0.15, 0.2], [0.85, 0.2]],  // 1획: 위 가로획
+      [[0.2, 0.2], [0.2, 0.85]],   // 2획: 세로획
+      [[0.15, 0.8], [0.85, 0.8]]   // 3획: 아래 가로획
     ],
-    'ㄹ_cho': [
-      'M 15 15 L 45 15',      // 1획
-      'M 45 15 L 45 28',      // 2획
-      'M 45 28 L 15 28',      // 3획
-      'M 15 28 L 15 42',      // 4획
-      'M 15 42 L 45 42'       // 5획
+    'ㄹ': [
+      [[0.08, 0.17], [0.9, 0.17], [0.8, 0.37]],   // 1획: 위 가로 + 오른쪽 연결 (실제 표준 3획 구조)
+      [[0.8, 0.5], [0.08, 0.5], [0.2, 0.7]],      // 2획: 중간 가로 + 왼쪽 연결
+      [[0.08, 0.83], [0.93, 0.83]]                // 3획: 아래 가로
     ],
-    'ㅁ_cho': [
-      'M 15 20 L 15 50',      // 왼쪽 세로
-      'M 15 20 L 45 20',      // 위 가로
-      'M 45 20 L 45 50',      // 오른쪽 세로
-      'M 15 50 L 45 50'       // 아래 가로
+    'ㅁ': [
+      [[0.15, 0.1], [0.15, 0.9]],  // 1획: 왼쪽 세로
+      [[0.15, 0.15], [0.85, 0.15]],// 2획: 위 가로
+      [[0.85, 0.1], [0.85, 0.9]],  // 3획: 오른쪽 세로
+      [[0.15, 0.85], [0.85, 0.85]] // 4획: 아래 가로
     ],
-    'ㅂ_cho': [
-      'M 15 20 L 15 50',      // 왼쪽 세로
-      'M 45 20 L 45 50',      // 오른쪽 세로
-      'M 15 35 L 45 35',      // 중간 가로
-      'M 15 50 L 45 50'       // 아래 가로
+    'ㅂ': [
+      [[0.2, 0.1], [0.2, 0.9]],    // 1획
+      [[0.8, 0.1], [0.8, 0.9]],    // 2획
+      [[0.2, 0.5], [0.8, 0.5]],    // 3획
+      [[0.2, 0.85], [0.8, 0.85]]   // 4획
     ],
-    'ㅅ_cho': [
-      'M 20 20 L 30 45',      // 왼쪽 사선
-      'M 40 20 L 30 45'       // 오른쪽 사선
+    'ㅅ': [
+      [[0.5, 0.1], [0.15, 0.9]],   // 1획
+      [[0.5, 0.1], [0.85, 0.9]]    // 2획
     ],
-    'ㅇ_cho': [
-      'M 30 15 A 15 17 0 1 1 30 49 A 15 17 0 1 1 30 15'  // 원
+    'ㅇ': [
+      [[0.5, 0.1], [0.85, 0.25], [0.85, 0.75], [0.5, 0.9], [0.15, 0.75], [0.15, 0.25], [0.5, 0.1]]
     ],
-    'ㅈ_cho': [
-      'M 15 15 L 45 15',      // 위 가로
-      'M 20 25 L 30 48',      // 왼쪽 사선
-      'M 40 25 L 30 48'       // 오른쪽 사선
+    'ㅈ': [
+      [[0.16, 0.2], [0.93, 0.2]],                       // 1획: 가로획
+      [[0.53, 0.3], [0.5, 0.5], [0.35, 0.7], [0.28, 0.9]],  // 2획: 왼쪽 다리 (줄기+분기)
+      [[0.53, 0.3], [0.5, 0.5], [0.65, 0.7], [0.77, 0.9]]   // 3획: 오른쪽 다리
     ],
-    'ㅊ_cho': [
-      'M 30 10 L 30 18',      // 점
-      'M 15 22 L 45 22',      // 가로
-      'M 20 30 L 30 50',      // 왼쪽 사선
-      'M 40 30 L 30 50'       // 오른쪽 사선
+    'ㅊ': [
+      [[0.42, 0.05], [0.7, 0.13]],                      // 1획: 점
+      [[0.16, 0.32], [0.93, 0.32]],                     // 2획: 가로획
+      [[0.5, 0.42], [0.47, 0.58], [0.33, 0.78], [0.26, 0.92]], // 3획: 왼쪽 다리
+      [[0.5, 0.42], [0.47, 0.58], [0.63, 0.78], [0.77, 0.92]]  // 4획: 오른쪽 다리
     ],
-    'ㅋ_cho': [
-      'M 15 20 L 45 20',      // 위 가로
-      'M 15 35 L 45 35',      // 중간 가로
-      'M 45 20 L 45 50'       // 세로
+    'ㅋ': [
+      [[0.1, 0.18], [0.92, 0.18]],  // 1획: 가로획
+      [[0.85, 0.28], [0.6, 0.5], [0.48, 0.65], [0.32, 0.78], [0.29, 0.92]], // 2획: 실측 곡선 경로 (ㄱ과 동일 형태)
+      [[0.14, 0.45], [0.87, 0.45]]  // 3획: 중간 가로획
     ],
-    'ㅌ_cho': [
-      'M 15 15 L 45 15',      // 1획
-      'M 15 15 L 15 50',      // 2획
-      'M 15 32 L 45 32',      // 3획
-      'M 15 50 L 45 50'       // 4획
+    'ㅌ': [
+      [[0.1, 0.15], [0.9, 0.15]],  // 1획
+      [[0.15, 0.15], [0.15, 0.9]], // 2획
+      [[0.15, 0.5], [0.9, 0.5]],   // 3획
+      [[0.15, 0.85], [0.9, 0.85]]  // 4획
     ],
-    'ㅍ_cho': [
-      'M 15 20 L 15 50',      // 왼쪽 세로
-      'M 45 20 L 45 50',      // 오른쪽 세로
-      'M 10 35 L 50 35',      // 중간 가로
-      'M 15 50 L 45 50'       // 아래 가로
+    'ㅍ': [
+      [[0.1, 0.15], [0.9, 0.15]],  // 1획
+      [[0.25, 0.15], [0.25, 0.9]], // 2획
+      [[0.75, 0.15], [0.75, 0.9]], // 3획
+      [[0.25, 0.5], [0.75, 0.5]]   // 4획
     ],
-    'ㅎ_cho': [
-      'M 25 10 L 35 10',      // 점
-      'M 15 22 L 45 22',      // 가로
-      'M 30 30 A 10 12 0 1 1 30 50 A 10 12 0 1 1 30 30'  // 원
+    'ㅎ': [
+      [[0.45, 0.0], [0.55, 0.1]],  // 1획
+      [[0.15, 0.2], [0.85, 0.2]],  // 2획
+      [[0.5, 0.35], [0.75, 0.45], [0.75, 0.75], [0.5, 0.9], [0.25, 0.75], [0.25, 0.45], [0.5, 0.35]]
     ],
 
-    // 중성 (오른쪽 영역: 세로모음 x:55-90, 가로모음 y:55-90)
-    'ㅏ_jung': [
-      'M 65 15 L 65 55',      // 세로
-      'M 65 35 L 85 35'       // 가로 (오른쪽)
+    // === 중성 (모음) ===
+    'ㅏ': [
+      [[0.3, 0.05], [0.3, 0.95]],   // 1획: 세로
+      [[0.3, 0.46], [0.95, 0.46]]   // 2획: 가로 (실측 결과 중심이 0.5보다 살짝 위쪽이라 보정)
     ],
-    'ㅐ_jung': [
-      'M 60 15 L 60 55',      // 첫 세로
-      'M 60 35 L 75 35',      // 가로
-      'M 80 15 L 80 55'       // 둘째 세로
+    'ㅐ': [
+      [[0.15, 0.05], [0.15, 0.95]],// 1획
+      [[0.15, 0.5], [0.5, 0.5]],   // 2획
+      [[0.8, 0.05], [0.8, 0.95]]   // 3획
     ],
-    'ㅑ_jung': [
-      'M 65 15 L 65 55',      // 세로
-      'M 65 25 L 85 25',      // 위 가로
-      'M 65 40 L 85 40'       // 아래 가로
+    'ㅑ': [
+      [[0.25, 0.05], [0.25, 0.95]],// 1획
+      [[0.25, 0.35], [0.95, 0.35]],// 2획
+      [[0.25, 0.65], [0.95, 0.65]] // 3획
     ],
-    'ㅓ_jung': [
-      'M 85 15 L 85 55',      // 세로
-      'M 65 35 L 85 35'       // 가로 (왼쪽)
+    'ㅓ': [
+      [[0.05, 0.5], [0.7, 0.5]],   // 1획
+      [[0.7, 0.05], [0.7, 0.95]]   // 2획
     ],
-    'ㅔ_jung': [
-      'M 60 15 L 60 55',      // 첫 세로
-      'M 60 35 L 80 35',      // 가로
-      'M 85 15 L 85 55'       // 둘째 세로
+    'ㅔ': [
+      [[0.2, 0.05], [0.2, 0.95]],  // 1획
+      [[0.2, 0.5], [0.5, 0.5]],    // 2획
+      [[0.85, 0.05], [0.85, 0.95]] // 3획
     ],
-    'ㅕ_jung': [
-      'M 85 15 L 85 55',      // 세로
-      'M 65 25 L 85 25',      // 위 가로
-      'M 65 40 L 85 40'       // 아래 가로
+    'ㅕ': [
+      [[0.05, 0.35], [0.75, 0.35]],// 1획
+      [[0.05, 0.65], [0.75, 0.65]],// 2획
+      [[0.75, 0.05], [0.75, 0.95]] // 3획
     ],
-    'ㅗ_jung': [
-      'M 30 75 L 30 60',      // 세로 (위로)
-      'M 10 60 L 50 60'       // 가로
+    'ㅗ': [
+      [[0.5, 0.2], [0.5, 0.6]],    // 1획
+      [[0.05, 0.6], [0.95, 0.6]]   // 2획
     ],
-    'ㅛ_jung': [
-      'M 20 75 L 20 60',      // 왼쪽 세로
-      'M 40 75 L 40 60',      // 오른쪽 세로
-      'M 10 60 L 50 60'       // 가로
+    'ㅛ': [
+      [[0.35, 0.2], [0.35, 0.6]],  // 1획
+      [[0.65, 0.2], [0.65, 0.6]],  // 2획
+      [[0.05, 0.6], [0.95, 0.6]]   // 3획
     ],
-    'ㅜ_jung': [
-      'M 10 60 L 50 60',      // 가로
-      'M 30 60 L 30 75'       // 세로 (아래로)
+    'ㅜ': [
+      [[0.05, 0.4], [0.95, 0.4]],  // 1획
+      [[0.5, 0.4], [0.5, 0.8]]     // 2획
     ],
-    'ㅠ_jung': [
-      'M 10 60 L 50 60',      // 가로
-      'M 20 60 L 20 75',      // 왼쪽 세로
-      'M 40 60 L 40 75'       // 오른쪽 세로
+    'ㅠ': [
+      [[0.05, 0.4], [0.95, 0.4]],  // 1획
+      [[0.35, 0.4], [0.35, 0.8]],  // 2획
+      [[0.65, 0.4], [0.65, 0.8]]   // 3획
     ],
-    'ㅡ_jung': [
-      'M 10 67 L 50 67'       // 가로
+    'ㅡ': [
+      [[0.05, 0.5], [0.95, 0.5]]   // 1획
     ],
-    'ㅣ_jung': [
-      'M 75 15 L 75 55'       // 세로
-    ],
-
-    // 종성 (아래 영역: y:60-95)
-    'ㄱ_jong': [
-      'M 15 75 L 45 75',
-      'M 45 75 L 45 95'
-    ],
-    'ㄴ_jong': [
-      'M 15 75 L 15 95',
-      'M 15 95 L 45 95'
-    ],
-    'ㄷ_jong': [
-      'M 15 75 L 45 75',
-      'M 15 75 L 15 95',
-      'M 15 95 L 45 95'
-    ],
-    'ㄹ_jong': [
-      'M 15 72 L 45 72',
-      'M 45 72 L 45 80',
-      'M 45 80 L 15 80',
-      'M 15 80 L 15 88',
-      'M 15 88 L 45 88'
-    ],
-    'ㅁ_jong': [
-      'M 15 75 L 15 95',
-      'M 15 75 L 45 75',
-      'M 45 75 L 45 95',
-      'M 15 95 L 45 95'
-    ],
-    'ㅂ_jong': [
-      'M 15 75 L 15 95',
-      'M 45 75 L 45 95',
-      'M 15 85 L 45 85',
-      'M 15 95 L 45 95'
-    ],
-    'ㅅ_jong': [
-      'M 20 75 L 30 95',
-      'M 40 75 L 30 95'
-    ],
-    'ㅇ_jong': [
-      'M 30 75 A 12 10 0 1 1 30 93 A 12 10 0 1 1 30 75'
-    ],
-    'ㅈ_jong': [
-      'M 15 72 L 45 72',
-      'M 20 78 L 30 95',
-      'M 40 78 L 30 95'
-    ],
-    'ㅊ_jong': [
-      'M 30 68 L 30 73',
-      'M 15 76 L 45 76',
-      'M 20 82 L 30 95',
-      'M 40 82 L 30 95'
-    ],
-    'ㅋ_jong': [
-      'M 15 75 L 45 75',
-      'M 15 85 L 45 85',
-      'M 45 75 L 45 95'
-    ],
-    'ㅌ_jong': [
-      'M 15 72 L 45 72',
-      'M 15 72 L 15 95',
-      'M 15 83 L 45 83',
-      'M 15 95 L 45 95'
-    ],
-    'ㅍ_jong': [
-      'M 15 75 L 15 95',
-      'M 45 75 L 45 95',
-      'M 10 85 L 50 85',
-      'M 15 95 L 45 95'
-    ],
-    'ㅎ_jong': [
-      'M 25 70 L 35 70',
-      'M 15 77 L 45 77',
-      'M 30 82 A 8 7 0 1 1 30 94 A 8 7 0 1 1 30 82'
+    'ㅣ': [
+      [[0.5, 0.05], [0.5, 0.95]]   // 1획
     ]
   };
 
-  // 모음 유형 판단 (배치 결정용)
-  function getJungType(jung) {
-    var vertical = ['ㅏ','ㅐ','ㅑ','ㅓ','ㅔ','ㅕ','ㅣ'];
-    var horizontal = ['ㅗ','ㅛ','ㅜ','ㅠ','ㅡ'];
-    if (vertical.indexOf(jung) >= 0) return 'vertical';
-    if (horizontal.indexOf(jung) >= 0) return 'horizontal';
-    return 'combined';
+  // 자모 기본 두께만으로는 안 맞는 특정 획에 대한 보정 배율 (자모 → [획 인덱스별 배율])
+  // ㅏ의 세로획처럼, 다른 획이 자기 중간 지점에서 가지처럼 뻗어 나가는 "몸통" 역할의 획은
+  // 기본 두께 그대로 쓰면 그 가지 획이 자기 차례 되기도 전에 살짝 비쳐 보인다. 그렇다고
+  // 전체 기본 두께를 낮추면 이번엔 ㅠ의 가로획처럼 다리와 만나는 자리에 흰 틈이 생긴다.
+  // 그래서 문제가 되는 "몸통" 획만 개별적으로 얇게 보정한다.
+  // ("몸통" 역할 획 = 다른 획이 자기 차례가 되기 전 먼저 그려지며, 다음 획이 거기서 갈라져
+  // 나가는 획. ㅏ/ㅐ/ㅑ는 세로획이 먼저(0번), ㅓ는 가로획이 먼저(0번)지만 세로 몸통 쪽으로
+  // 다음 획이 이어지고, ㅕ는 두 번째 가로획(1번) 다음에 세로 몸통이 이어진다.)
+  var STROKE_THICKNESS_MUL = {
+    'ㅏ': [0.72, 1], 'ㅐ': [0.72, 1, 1], 'ㅑ': [0.72, 1, 1],
+    'ㅓ': [0.72, 1], 'ㅔ': [0.72, 1, 1], 'ㅕ': [1, 0.72, 1]
+  };
+
+  // 한글 조합 레이아웃 타입
+  // 중성에 따라 초성/중성/종성 배치 영역이 달라짐
+  function getLayoutType(jung) {
+    // 세로 모음: ㅏㅐㅑㅓㅔㅕㅣ -> 좌우 배치
+    // 가로 모음: ㅗㅛㅜㅠㅡ -> 상하 배치
+    var verticalVowels = ['ㅏ','ㅐ','ㅑ','ㅓ','ㅔ','ㅕ','ㅣ'];
+    var horizontalVowels = ['ㅗ','ㅛ','ㅜ','ㅠ','ㅡ'];
+    if (verticalVowels.indexOf(jung) >= 0) return 'LR'; // 좌우
+    if (horizontalVowels.indexOf(jung) >= 0) return 'TB'; // 상하
+    return 'LR';
   }
 
-  // 한글 조합
+  // 자모 획 좌표를 실제 캔버스 좌표로 변환
+  function transformStrokes(strokes, x, y, w, h) {
+    return strokes.map(function(stroke) {
+      return stroke.map(function(pt) {
+        return [x + pt[0] * w, y + pt[1] * h];
+      });
+    });
+  }
+
+  // 글자의 모든 획 데이터 생성 (초성 + 중성 + 종성 조합)
+  // opentype.js로 폰트의 실제 path를 분석하여 정확한 획 좌표 추출
+  function getCharacterStrokes(cho, jung, jong, canvasSize, char) {
+    var allStrokes = [];
+    var layout = getLayoutType(jung);
+    var hasJong = jong && jong !== '';
+    
+    var fontSize = 320;
+    var fontX = 90, fontY = 380;
+    
+    if (!loadedFont || !char) return allStrokes;
+    
+    // 전체 글자의 바운딩 박스
+    var path = loadedFont.getPath(char, fontX, fontY, fontSize);
+    var bbox = path.getBoundingBox();
+    var commands = path.commands;
+    
+    // 바운딩 박스 기반
+    var bboxX = bbox.x1;
+    var bboxY = bbox.y1;
+    var bboxW = bbox.x2 - bbox.x1;
+    var bboxH = bbox.y2 - bbox.y1;
+    
+    // 폰트 path에서 subpath들을 분리 (M으로 시작, Z로 끝나는 단위)
+    var subpaths = [];
+    var currentSubpath = [];
+    commands.forEach(function(cmd) {
+      if (cmd.type === 'M') {
+        if (currentSubpath.length > 0) {
+          subpaths.push(currentSubpath);
+        }
+        currentSubpath = [cmd];
+      } else {
+        currentSubpath.push(cmd);
+      }
+    });
+    if (currentSubpath.length > 0) {
+      subpaths.push(currentSubpath);
+    }
+    
+    // 각 subpath의 바운딩 박스 계산
+    var subpathBboxes = subpaths.map(function(sp) {
+      var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      sp.forEach(function(cmd) {
+        if (cmd.x !== undefined) { minX = Math.min(minX, cmd.x); maxX = Math.max(maxX, cmd.x); }
+        if (cmd.y !== undefined) { minY = Math.min(minY, cmd.y); maxY = Math.max(maxY, cmd.y); }
+        if (cmd.x1 !== undefined) { minX = Math.min(minX, cmd.x1); maxX = Math.max(maxX, cmd.x1); }
+        if (cmd.y1 !== undefined) { minY = Math.min(minY, cmd.y1); maxY = Math.max(maxY, cmd.y1); }
+        if (cmd.x2 !== undefined) { minX = Math.min(minX, cmd.x2); maxX = Math.max(maxX, cmd.x2); }
+        if (cmd.y2 !== undefined) { minY = Math.min(minY, cmd.y2); maxY = Math.max(maxY, cmd.y2); }
+      });
+      return { x: minX, y: minY, w: maxX - minX, h: maxY - minY, cx: (minX + maxX) / 2, cy: (minY + maxY) / 2 };
+    });
+    
+    // subpath를 자소별로 분류 (위치 기반)
+    var midX = bboxX + bboxW * 0.5;
+    var midY = bboxY + bboxH * 0.55;
+    
+    var choSubpaths = [], jungSubpaths = [], jongSubpaths = [];
+    
+    subpathBboxes.forEach(function(spb, idx) {
+      if (layout === 'LR') {
+        // 좌우 배치
+        if (hasJong && spb.cy > midY) {
+          jongSubpaths.push({ bbox: spb, idx: idx });
+        } else if (spb.cx < midX) {
+          choSubpaths.push({ bbox: spb, idx: idx });
+        } else {
+          jungSubpaths.push({ bbox: spb, idx: idx });
+        }
+      } else {
+        // 상하 배치
+        var upperMid = bboxY + bboxH * 0.4;
+        var lowerMid = bboxY + bboxH * 0.65;
+        if (hasJong && spb.cy > lowerMid) {
+          jongSubpaths.push({ bbox: spb, idx: idx });
+        } else if (spb.cy < upperMid) {
+          choSubpaths.push({ bbox: spb, idx: idx });
+        } else {
+          jungSubpaths.push({ bbox: spb, idx: idx });
+        }
+      }
+    });
+    
+    // 각 자소 영역의 실제 바운딩 박스 계산
+    function getMergedBbox(sps) {
+      if (sps.length === 0) return null;
+      var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      sps.forEach(function(sp) {
+        minX = Math.min(minX, sp.bbox.x);
+        minY = Math.min(minY, sp.bbox.y);
+        maxX = Math.max(maxX, sp.bbox.x + sp.bbox.w);
+        maxY = Math.max(maxY, sp.bbox.y + sp.bbox.h);
+      });
+      return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+    }
+    
+    var choBbox = getMergedBbox(choSubpaths);
+    var jungBbox = getMergedBbox(jungSubpaths);
+    var jongBbox = getMergedBbox(jongSubpaths);
+    
+    // 획 두께 = 폰트 subpath 크기 기반으로 계산
+    var strokeWidth = bboxW * 0.25;
+    
+    // 각 자소의 획을 실제 폰트 위치에 맞게 변환
+    var choStrokes = JAMO_STROKES[cho];
+    var jungStrokes = JAMO_STROKES[jung];
+    var jongStrokes = jong ? JAMO_STROKES[jong] : null;
+    
+    if (choStrokes && choBbox) {
+      var transformed = transformStrokes(choStrokes, choBbox.x, choBbox.y, choBbox.w, choBbox.h);
+      transformed.forEach(function(s) { 
+        s.strokeWidth = strokeWidth;
+      });
+      allStrokes = allStrokes.concat(transformed);
+    }
+    if (jungStrokes && jungBbox) {
+      var transformed = transformStrokes(jungStrokes, jungBbox.x, jungBbox.y, jungBbox.w, jungBbox.h);
+      transformed.forEach(function(s) { 
+        s.strokeWidth = strokeWidth * 0.7;
+      });
+      allStrokes = allStrokes.concat(transformed);
+    }
+    if (jongStrokes && jongBbox) {
+      var transformed = transformStrokes(jongStrokes, jongBbox.x, jongBbox.y, jongBbox.w, jongBbox.h);
+      transformed.forEach(function(s) { 
+        s.strokeWidth = strokeWidth;
+      });
+      allStrokes = allStrokes.concat(transformed);
+    }
+
+    return allStrokes;
+  }
+
+  var choList = ['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+  var jungList = ['ㅏ','ㅐ','ㅑ','ㅓ','ㅔ','ㅕ','ㅗ','ㅛ','ㅜ','ㅠ','ㅡ','ㅣ'];
+  var jongList = ['','ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+  var selectedCho = null, selectedJung = null, selectedJong = '';
+  var exportBgColor = '#ffffff', loadedFont = null;
+  var canvas = document.getElementById('preview-canvas');
+  var ctx = canvas.getContext('2d');
+  var animationId = null, isPlaying = false;
+
+  // 폰트 로드
+  var fontLoader = new FontFace('CustomFont', 'url(BAEMINWORK.otf)');
+  fontLoader.load().then(function(f) {
+    document.fonts.add(f);
+    opentype.load('BAEMINWORK.otf', function(err, font) {
+      document.getElementById('loading-overlay').classList.add('hidden');
+      if (err) { console.error('Font load error:', err); }
+      loadedFont = font;
+      console.log('Font loaded:', !!loadedFont);
+      createJamoButtons();
+      setupEventListeners();
+      updatePreview();
+    });
+  }).catch(function(e) {
+    console.error('FontFace load error:', e);
+    document.getElementById('loading-overlay').classList.add('hidden');
+    createJamoButtons();
+    setupEventListeners();
+  });
+
+  function setupEventListeners() {
+    document.getElementById('playBtn').onclick = play;
+    document.getElementById('resetBtn').onclick = reset;
+    document.getElementById('mp4Btn').onclick = exportMP4;
+    document.getElementById('pngBtn').onclick = exportPNG;
+    document.getElementById('strokeSpeed').oninput = function() { document.getElementById('strokeSpeedVal').textContent = this.value + 's'; };
+    document.getElementById('strokeColor').oninput = function() { if (!isPlaying) updatePreview(); };
+    document.querySelectorAll('.bg-btn').forEach(function(btn) {
+      btn.onclick = function() {
+        document.querySelectorAll('.bg-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        exportBgColor = btn.dataset.bg;
+        document.getElementById('canvas-area').style.background = exportBgColor === '#ffffff' ? '#1a1a2e' : exportBgColor;
+        if (!isPlaying) updatePreview();
+      };
+    });
+    console.log('Event listeners set up');
+  }
+
+  // 유니코드 한글 조합 공식은 초성 19개/중성 21개/종성 28개 전체 슬롯 기준 인덱스를 요구하는데,
+  // 이 도구는 그중 자주 쓰는 자모만 다뤄서 겹자음/이중모음이 빠진 간략 목록을 쓴다.
+  // 그래서 목록상의 순번을 실제 유니코드 인덱스로 변환하는 매핑이 꼭 필요함
+  // (예: 종성 목록의 'ㅇ'은 8번째지만 실제 유니코드 종성 인덱스는 21).
+  var EXT_CHO_IDX = [0,2,3,5,6,7,9,11,12,14,15,16,17,18];
+  var EXT_JUNG_IDX = [0,1,2,4,5,6,8,12,13,17,18,20];
+  var EXT_JONG_IDX = [0,1,4,7,8,16,17,19,21,22,23,24,25,26,27];
+
   function combineHangul(cho, jung, jong) {
     if (!cho || !jung) return null;
-    var choIdx = choList.indexOf(cho);
-    var jungIdx = jungList.indexOf(jung);
-    var jongIdx = jongList.indexOf(jong || '');
+    var choIdx = choList.indexOf(cho), jungIdx = jungList.indexOf(jung), jongIdx = jongList.indexOf(jong || '');
     if (choIdx < 0 || jungIdx < 0 || jongIdx < 0) return null;
-    
-    // 확장 초성 인덱스로 변환
-    var extChoIdx = [0,2,3,5,6,7,9,11,12,14,15,16,17,18][choIdx];
-    var code = 0xAC00 + (extChoIdx * 588) + (jungIdx * 28) + jongIdx;
-    return String.fromCharCode(code);
+    var extChoIdx = EXT_CHO_IDX[choIdx];
+    var extJungIdx = EXT_JUNG_IDX[jungIdx];
+    var extJongIdx = EXT_JONG_IDX[jongIdx];
+    return String.fromCharCode(0xAC00 + (extChoIdx * 588) + (extJungIdx * 28) + extJongIdx);
   }
 
-  // UI 생성
+  function getParams() {
+    return { strokeSpeed: parseFloat(document.getElementById('strokeSpeed').value), color: document.getElementById('strokeColor').value };
+  }
+
+  // === 획순서대로 글씨 써지는 애니메이션 (v8 방식) ===
+  // Work체 폰트의 실제 path를 분석하여 자소별 정확한 영역 측정
+  // 그 영역을 기반으로 마스크를 생성하여 순차 드러내기
+  function renderStrokeAnimation(progress, cho, jung, jong, params) {
+    ctx.fillStyle = exportBgColor;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    if (!cho || !jung || !loadedFont) {
+      return;
+    }
+
+    var color = params.color;
+    if (exportBgColor === '#ffffff' && color === '#ffffff') color = '#1a1a2e';
+    else if (exportBgColor === '#1a1a2e' && color === '#1a1a2e') color = '#ffffff';
+
+    var char = combineHangul(cho, jung, jong);
+    if (!char) return;
+
+    var fontSize = 320;
+    var fontX = 90, fontY = 380;
+    
+    var path = loadedFont.getPath(char, fontX, fontY, fontSize);
+    var commands = path.commands;
+    var bbox = path.getBoundingBox();
+    
+    var bboxX = bbox.x1, bboxY = bbox.y1;
+    var bboxW = bbox.x2 - bbox.x1, bboxH = bbox.y2 - bbox.y1;
+    
+    // Work체 폰트의 실제 path를 분석하여 자소별 영역 추출
+    // subpath들을 위치 기반으로 분류
+    var layout = getLayoutType(jung);
+    var hasJong = jong && jong !== '';
+    
+    // 폰트 path에서 subpath들을 분리
+    var subpaths = [];
+    var currentSubpath = [];
+    commands.forEach(function(cmd) {
+      if (cmd.type === 'M') {
+        if (currentSubpath.length > 0) subpaths.push(currentSubpath);
+        currentSubpath = [cmd];
+      } else {
+        currentSubpath.push(cmd);
+      }
+    });
+    if (currentSubpath.length > 0) subpaths.push(currentSubpath);
+    
+    // 각 subpath의 바운딩 박스 계산
+    function getSubpathBbox(sp) {
+      var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      sp.forEach(function(cmd) {
+        if (cmd.x !== undefined) { minX = Math.min(minX, cmd.x); maxX = Math.max(maxX, cmd.x); }
+        if (cmd.y !== undefined) { minY = Math.min(minY, cmd.y); maxY = Math.max(maxY, cmd.y); }
+        if (cmd.x1 !== undefined) { minX = Math.min(minX, cmd.x1); maxX = Math.max(maxX, cmd.x1); }
+        if (cmd.y1 !== undefined) { minY = Math.min(minY, cmd.y1); maxY = Math.max(maxY, cmd.y1); }
+        if (cmd.x2 !== undefined) { minX = Math.min(minX, cmd.x2); maxX = Math.max(maxX, cmd.x2); }
+        if (cmd.y2 !== undefined) { minY = Math.min(minY, cmd.y2); maxY = Math.max(maxY, cmd.y2); }
+      });
+      return { x: minX, y: minY, w: maxX - minX, h: maxY - minY, cx: (minX + maxX) / 2, cy: (minY + maxY) / 2 };
+    }
+    
+    var subpathBboxes = subpaths.map(getSubpathBbox);
+    
+    // subpath를 자소별로 분류 (위치 기반)
+    var midX = bboxX + bboxW * 0.5;
+    var midY = bboxY + bboxH * 0.55;
+    
+    var choSubpaths = [], jungSubpaths = [], jongSubpaths = [];
+    
+    subpathBboxes.forEach(function(spb, idx) {
+      if (layout === 'LR') {
+        if (hasJong && spb.cy > midY) {
+          jongSubpaths.push(spb);
+        } else if (spb.cx < midX) {
+          choSubpaths.push(spb);
+        } else {
+          jungSubpaths.push(spb);
+        }
+      } else {
+        var upperMid = bboxY + bboxH * 0.4;
+        var lowerMid = bboxY + bboxH * 0.65;
+        if (hasJong && spb.cy > lowerMid) {
+          jongSubpaths.push(spb);
+        } else if (spb.cy < upperMid) {
+          choSubpaths.push(spb);
+        } else {
+          jungSubpaths.push(spb);
+        }
+      }
+    });
+    
+    // 자소별 실제 영역 계산 (subpath들의 merged bbox)
+    function getMergedBbox(sps) {
+      if (sps.length === 0) return null;
+      var minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      sps.forEach(function(sp) {
+        minX = Math.min(minX, sp.x);
+        minY = Math.min(minY, sp.y);
+        maxX = Math.max(maxX, sp.x + sp.w);
+        maxY = Math.max(maxY, sp.y + sp.h);
+      });
+      return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
+    }
+    
+    // Work체 실제 자소 영역 (여유있게 확장)
+    var choAreaRaw = getMergedBbox(choSubpaths);
+    var jungAreaRaw = getMergedBbox(jungSubpaths);
+    var jongAreaRaw = hasJong ? getMergedBbox(jongSubpaths) : null;
+
+    // 자소 영역이 없으면 기본값 사용, 있으면 여유 마진 추가
+    var areaMargin = 15;
+    var choArea, jungArea, jongArea;
+    if (!choAreaRaw) {
+      choArea = layout === 'LR'
+        ? { x: bboxX, y: bboxY, w: bboxW * 0.5, h: bboxH }
+        : { x: bboxX, y: bboxY, w: bboxW, h: bboxH * 0.5 };
+    } else {
+      choArea = { x: choAreaRaw.x - areaMargin, y: choAreaRaw.y - areaMargin, w: choAreaRaw.w + areaMargin * 2, h: choAreaRaw.h + areaMargin * 2 };
+    }
+
+    if (!jungAreaRaw) {
+      jungArea = layout === 'LR'
+        ? { x: bboxX + bboxW * 0.5, y: bboxY, w: bboxW * 0.5, h: bboxH }
+        : { x: bboxX, y: bboxY + bboxH * 0.5, w: bboxW, h: bboxH * 0.5 };
+    } else {
+      jungArea = { x: jungAreaRaw.x - areaMargin, y: jungAreaRaw.y - areaMargin, w: jungAreaRaw.w + areaMargin * 2, h: jungAreaRaw.h + areaMargin * 2 };
+    }
+
+    if (jongAreaRaw) {
+      jongArea = { x: jongAreaRaw.x - areaMargin, y: jongAreaRaw.y - areaMargin, w: jongAreaRaw.w + areaMargin * 2, h: jongAreaRaw.h + areaMargin * 2 };
+    } else {
+      jongArea = null;
+    }
+
+    // 마진 확장으로 옆 자소 영역과 겹치면(실제 글자 사이 간격이 좁을 때) 절대 안 된다 —
+    // 겹친 영역의 획이 아직 그릴 차례가 안 된 옆 자소를 미리 드러내 버리기 때문.
+    // 실제(마진 적용 전) bbox끼리의 중간 지점을 경계로 삼아 서로의 마진이 그 선을 넘지 않게 자른다.
+    function splitX(areaLeft, rawLeft, areaRight, rawRight) {
+      if (!rawLeft || !rawRight) return;
+      var boundary = ((rawLeft.x + rawLeft.w) + rawRight.x) / 2;
+      if (areaLeft.x + areaLeft.w > boundary) areaLeft.w = boundary - areaLeft.x;
+      if (areaRight.x < boundary) { areaRight.w += areaRight.x - boundary; areaRight.x = boundary; }
+    }
+    function splitY(areaTop, rawTop, areaBottom, rawBottom) {
+      if (!rawTop || !rawBottom) return;
+      var boundary = ((rawTop.y + rawTop.h) + rawBottom.y) / 2;
+      if (areaTop.y + areaTop.h > boundary) areaTop.h = boundary - areaTop.y;
+      if (areaBottom.y < boundary) { areaBottom.h += areaBottom.y - boundary; areaBottom.y = boundary; }
+    }
+    if (layout === 'LR') {
+      splitX(choArea, choAreaRaw, jungArea, jungAreaRaw);
+    } else {
+      splitY(choArea, choAreaRaw, jungArea, jungAreaRaw);
+    }
+    if (jongArea) {
+      splitY(choArea, choAreaRaw, jongArea, jongAreaRaw);
+      splitY(jungArea, jungAreaRaw, jongArea, jongAreaRaw);
+    }
+
+    // 모든 획 정보 생성 (JAMO_STROKES 기반, 실제 자소 영역에 맞춰 폴리라인 좌표로 변환)
+    // cho → jung → jong 순서 그대로 쭉 나열한다
+    var allStrokes = [];
+    function collectStrokes(jamo, targetArea, thickness) {
+      var strokes = JAMO_STROKES[jamo];
+      if (!strokes || !targetArea) return;
+      // 이 자모 안의 모든 획의 폴리라인 + bbox를 먼저 구한다 (다음 획과의 경계를 정하기 위해)
+      var thicknessMuls = STROKE_THICKNESS_MUL[jamo];
+      var jamoStrokes = strokes.map(function(stroke, idx) {
+        var pts = stroke.map(function(pt) {
+          return { x: targetArea.x + pt[0] * targetArea.w, y: targetArea.y + pt[1] * targetArea.h };
+        });
+        var xs = pts.map(function(p) { return p.x; }), ys = pts.map(function(p) { return p.y; });
+        var mul = thicknessMuls && thicknessMuls[idx] !== undefined ? thicknessMuls[idx] : 1;
+        return {
+          pts: pts, thickness: thickness * mul, jamo: jamo, area: targetArea,
+          x: Math.min.apply(null, xs), y: Math.min.apply(null, ys),
+          w: Math.max.apply(null, xs) - Math.min.apply(null, xs),
+          h: Math.max.apply(null, ys) - Math.min.apply(null, ys)
+        };
+      });
+      // 같은 자모 안에서도 바로 다음 획과 맞닿아 있으면(예: ㄱ의 가로획 → 세로+곡선 획), 다음 획이
+      // 아직 그릴 차례가 안 됐는데 두께 때문에 미리 드러나 버릴 수 있다. 두 획 bbox의 경계선 중
+      // 더 뚜렷하게 떨어져 있는 축(가로 or 세로)을 골라 그 중간 지점을 넘지 않도록 자른다.
+      // 정확히 절반씩 나누면(가운데 지점) 두 획이 실제로 이어지는 지점에서 이가 빠진 것처럼
+      // 살짝 패인 틈이 생긴다. 그래서 딱 중간이 아니라 다음 획 쪽으로 조금 더(65%) 여유를 준다
+      // — 다음 획 쪽 살짝 겹치는 건 이어지는 지점이라 자연스럽지만, 못 미치면 틈이 눈에 띈다.
+      var SPLIT_TOWARD_NEXT = 0.95;
+      var MIN_GAP_TO_SPLIT = 6; // 이만큼도 안 떨어져 있으면(예: 박스형 자모의 맞닿은 모서리) 자르지 않음 —
+                                 // 어차피 거의 겹쳐 있는 bbox라 경계 계산이 오히려 자기 자신을 잘라버릴 수 있음
+      for (var si2 = 0; si2 < jamoStrokes.length - 1; si2++) {
+        var cur = jamoStrokes[si2], next = jamoStrokes[si2 + 1];
+        var gapX = Math.max(0, Math.max(cur.x - (next.x + next.w), next.x - (cur.x + cur.w)));
+        var gapY = Math.max(0, Math.max(cur.y - (next.y + next.h), next.y - (cur.y + cur.h)));
+        if (gapX < MIN_GAP_TO_SPLIT && gapY < MIN_GAP_TO_SPLIT) continue;
+        var clip = { x: cur.area.x, y: cur.area.y, w: cur.area.w, h: cur.area.h };
+        if (gapY >= gapX) {
+          // 세로(위/아래)로 더 뚜렷하게 떨어져 있음 → y축 기준으로 자름
+          // (자기 자신의 bbox 경계보다 안쪽으로는 절대 안 자르도록 clamp)
+          var boundaryY = cur.y < next.y
+            ? Math.max(cur.y + cur.h, Math.min(cur.area.y + cur.area.h, (cur.y + cur.h) + gapY * SPLIT_TOWARD_NEXT))
+            : Math.min(cur.y, Math.max(cur.area.y, cur.y - gapY * SPLIT_TOWARD_NEXT));
+          if (cur.y < next.y) clip.h = boundaryY - clip.y;
+          else { clip.h += clip.y - boundaryY; clip.y = boundaryY; }
+        } else {
+          var boundaryX = cur.x < next.x
+            ? Math.max(cur.x + cur.w, Math.min(cur.area.x + cur.area.w, (cur.x + cur.w) + gapX * SPLIT_TOWARD_NEXT))
+            : Math.min(cur.x, Math.max(cur.area.x, cur.x - gapX * SPLIT_TOWARD_NEXT));
+          if (cur.x < next.x) clip.w = boundaryX - clip.x;
+          else { clip.w += clip.x - boundaryX; clip.x = boundaryX; }
+        }
+        cur.area = clip; // 이 획은 다음 획 쪽으로는 이 경계까지만 클립됨
+      }
+      jamoStrokes.forEach(function(s) { allStrokes.push(s); });
+    }
+    collectStrokes(cho, choArea, fontSize * 0.32);
+    collectStrokes(jung, jungArea, fontSize * 0.36);
+    if (jong && jongArea) collectStrokes(jong, jongArea, fontSize * 0.32);
+
+    var totalStrokes = allStrokes.length;
+    if (totalStrokes === 0) return;
+
+    // easy in / easy out — 획이 시작할 땐 천천히 붙기 시작해서 중간에 빨라졌다가 끝날 때 다시
+    // 천천히 멈추는 느낌 (일정한 속도로 쭉 긋는 게 아니라 실제 붓글씨처럼 자연스럽게)
+    function easeInOutCubic(t) {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    // 획 경로(폴리라인)를 실제 길이(arc length) 기준으로 t지점까지 잘라낸 부분 경로 반환
+    function partialPolyline(pts, t) {
+      if (pts.length < 2) return pts.slice();
+      if (t <= 0) return [pts[0]];
+      var segLens = [], total = 0;
+      for (var i = 1; i < pts.length; i++) {
+        var dx = pts[i].x - pts[i - 1].x, dy = pts[i].y - pts[i - 1].y;
+        var l = Math.sqrt(dx * dx + dy * dy);
+        segLens.push(l);
+        total += l;
+      }
+      if (total === 0) return pts.slice();
+      var target = total * Math.min(1, t);
+      var acc = 0, out = [pts[0]];
+      for (var i = 0; i < segLens.length; i++) {
+        if (acc + segLens[i] >= target) {
+          var frac = segLens[i] === 0 ? 0 : (target - acc) / segLens[i];
+          out.push({
+            x: pts[i].x + (pts[i + 1].x - pts[i].x) * frac,
+            y: pts[i].y + (pts[i + 1].y - pts[i].y) * frac
+          });
+          return out;
+        }
+        acc += segLens[i];
+        out.push(pts[i + 1]);
+      }
+      return pts.slice();
+    }
+
+    // 폴리라인을 마스크에 드러냄 — 세그먼트마다 그 방향으로 회전시킨 사각형을 채워서 그림.
+    // (이전엔 굵은 lineWidth + square 캡으로 처리했는데, 캡이 길이 방향으로도 lineWidth의 절반만큼
+    // 늘어나는 바람에 두께를 두껍게 줄수록 획이 진행률과 상관없이 거의 즉시 꽉 차버려서
+    // "서서히 써지는" 게 아니라 "툭툭 끊겨 나타나는" 것처럼 보였음. 세그먼트별 회전 사각형은
+    // 길이(진행률) 방향과 두께 방향을 분리해서 다루므로 이 문제가 없고, 끝도 각지게(사각) 떨어짐.)
+    function revealStroke(mCtx, pts, thickness, tipRamp) {
+      if (!pts || pts.length === 0) return;
+      // 시작 끝점 여유(tipExtend)를 진행률 0부터 바로 100% 적용하면, 획이 시작되자마자 그
+      // 여유만큼 훅 뛰어 보여서 easing이 안 느껴진다. 그래서 획 시작 초반에는 여유를 0에서
+      // 점점 늘려가고(tipRamp), 어느 정도 진행되면 원래 여유만큼 다 적용한다.
+      if (tipRamp === undefined) tipRamp = 1;
+      mCtx.fillStyle = '#fff';
+      if (pts.length === 1) {
+        var s = thickness * tipRamp;
+        mCtx.fillRect(pts[0].x - s / 2, pts[0].y - s / 2, s, s);
+        return;
+      }
+      var half = thickness / 2;
+      var joint = thickness * 0.55;               // 세그먼트 이음매(꺾이는 지점)에서 틈이 안 보이도록 살짝 겹침
+      var tipExtend = thickness * 0.5 * tipRamp;   // 획의 진짜 시작점/현재 그려지는 끝점에서 살짝 더 뻗어서
+                                                    // 좌표가 실제 폰트 잉크 끝점과 정확히 안 맞아도 잘려 보이지 않게 함
+      for (var i = 1; i < pts.length; i++) {
+        var a = pts[i - 1], b = pts[i];
+        var dx = b.x - a.x, dy = b.y - a.y;
+        var len = Math.sqrt(dx * dx + dy * dy);
+        if (len < 0.01) continue;
+        var angle = Math.atan2(dy, dx);
+        var backExtend = (i === 1) ? tipExtend : joint;              // 획의 진짜 시작점
+        var fwdExtend = (i === pts.length - 1) ? tipExtend : 0;      // 지금 그려지는 중인 끝점(성장하는 붓끝)
+        mCtx.save();
+        mCtx.translate(a.x, a.y);
+        mCtx.rotate(angle);
+        mCtx.fillRect(-backExtend, -half, len + backExtend + fwdExtend, thickness);
+        mCtx.restore();
+      }
+    }
+
+    // 마스크 캔버스: 획순서대로, 실제 경로(polyline)를 따라 서서히 드러남
+    var maskCanvas = document.createElement('canvas');
+    maskCanvas.width = canvas.width;
+    maskCanvas.height = canvas.height;
+    var maskCtx = maskCanvas.getContext('2d');
+
+    for (var si = 0; si < totalStrokes; si++) {
+      var stroke = allStrokes[si];
+      var strokeStart = si / totalStrokes;
+      var strokeEnd = (si + 1) / totalStrokes;
+
+      if (progress <= strokeStart) break; // 아직 시작 안 한 획 — 이후 획도 순서상 모두 대기
+
+      var localProgress = Math.min(1, (progress - strokeStart) / (strokeEnd - strokeStart));
+      var pts = localProgress >= 1 ? stroke.pts : partialPolyline(stroke.pts, easeInOutCubic(localProgress));
+      var tipRamp = Math.min(1, localProgress / 0.2); // 획 시작 초반 20% 구간에서 0→1로 빠르게 램프업
+
+      // 이 자소(cho/jung/jong) 영역으로 클립 — 끝점 여유(tipExtend)가 옆 자소로 번지는 것을 막는다.
+      maskCtx.save();
+      if (stroke.area) {
+        maskCtx.beginPath();
+        maskCtx.rect(stroke.area.x, stroke.area.y, stroke.area.w, stroke.area.h);
+        maskCtx.clip();
+      }
+      revealStroke(maskCtx, pts, stroke.thickness, tipRamp);
+      maskCtx.restore();
+    }
+
+    // 폰트 캔버스: 실제 Work체 글리프를 채우고, 위 마스크로 destination-in 클리핑
+    var fontCanvas = document.createElement('canvas');
+    fontCanvas.width = canvas.width;
+    fontCanvas.height = canvas.height;
+    var fontCtx = fontCanvas.getContext('2d');
+
+    fontCtx.fillStyle = color;
+    fontCtx.beginPath();
+    commands.forEach(function(cmd) {
+      if (cmd.type === 'M') fontCtx.moveTo(cmd.x, cmd.y);
+      else if (cmd.type === 'L') fontCtx.lineTo(cmd.x, cmd.y);
+      else if (cmd.type === 'C') fontCtx.bezierCurveTo(cmd.x1, cmd.y1, cmd.x2, cmd.y2, cmd.x, cmd.y);
+      else if (cmd.type === 'Q') fontCtx.quadraticCurveTo(cmd.x1, cmd.y1, cmd.x, cmd.y);
+      else if (cmd.type === 'Z') fontCtx.closePath();
+    });
+    fontCtx.fill();
+
+    fontCtx.globalCompositeOperation = 'destination-in';
+    fontCtx.drawImage(maskCanvas, 0, 0);
+
+    ctx.drawImage(fontCanvas, 0, 0);
+  }
+
+  function play() {
+    if (!selectedCho || !selectedJung) { alert('초성과 중성을 선택해주세요!'); return; }
+    if (isPlaying) cancelAnimationFrame(animationId);
+    var params = getParams(), duration = params.strokeSpeed * 1000, startTime = null;
+    isPlaying = true;
+    function animate(ts) {
+      if (!startTime) startTime = ts;
+      var progress = Math.min(1, (ts - startTime) / duration);
+      renderStrokeAnimation(progress, selectedCho, selectedJung, selectedJong, params);
+      if (progress < 1) animationId = requestAnimationFrame(animate);
+      else isPlaying = false;
+    }
+    animationId = requestAnimationFrame(animate);
+  }
+
+  function reset() { if (isPlaying) { cancelAnimationFrame(animationId); isPlaying = false; } updatePreview(); }
+  function updatePreview() {
+    var resultChar = document.getElementById('result-char');
+    ctx.fillStyle = exportBgColor;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (!selectedCho || !selectedJung) { resultChar.textContent = '-'; return; }
+    var char = combineHangul(selectedCho, selectedJung, selectedJong);
+    resultChar.textContent = char || '-';
+    
+    // 프리뷰: BAEMINWORK 폰트로 표시
+    if (loadedFont && char) {
+      var color = document.getElementById('strokeColor').value;
+      if (exportBgColor === '#ffffff' && color === '#ffffff') color = '#1a1a2e';
+      else if (exportBgColor === '#1a1a2e' && color === '#1a1a2e') color = '#ffffff';
+      var path = loadedFont.getPath(char, 90, 380, 320);
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      path.commands.forEach(function(cmd) {
+        if (cmd.type === 'M') ctx.moveTo(cmd.x, cmd.y);
+        else if (cmd.type === 'L') ctx.lineTo(cmd.x, cmd.y);
+        else if (cmd.type === 'C') ctx.bezierCurveTo(cmd.x1, cmd.y1, cmd.x2, cmd.y2, cmd.x, cmd.y);
+        else if (cmd.type === 'Q') ctx.quadraticCurveTo(cmd.x1, cmd.y1, cmd.x, cmd.y);
+        else if (cmd.type === 'Z') ctx.closePath();
+      });
+      ctx.fill();
+    }
+  }
+
+  async function exportMP4() {
+    if (!selectedCho || !selectedJung) { alert('초성과 중성을 선택해주세요!'); return; }
+    var btn = document.getElementById('mp4Btn');
+    btn.textContent = '생성 중...'; btn.disabled = true;
+    var rec = document.getElementById('recordCanvas');
+    rec.width = 500; rec.height = 500;
+    var origCtx = ctx, origCanvas = canvas;
+    ctx = rec.getContext('2d'); canvas = rec;
+    var params = getParams(), fps = 30, frames = Math.ceil(params.strokeSpeed * fps) + 30;
+    if (typeof VideoEncoder === 'undefined') { alert('Chrome 94+ 필요'); btn.textContent = 'MP4'; btn.disabled = false; ctx = origCtx; canvas = origCanvas; return; }
+    var muxer = new Mp4Muxer.Muxer({ target: new Mp4Muxer.ArrayBufferTarget(), video: { codec: 'avc', width: 500, height: 500 }, fastStart: 'in-memory' });
+    var encoder = new VideoEncoder({ output: function(c, m) { muxer.addVideoChunk(c, m); }, error: console.error });
+    await encoder.configure({ codec: 'avc1.42001f', width: 500, height: 500, bitrate: 5000000, framerate: fps });
+    for (var f = 0; f <= frames; f++) {
+      renderStrokeAnimation(Math.min(1, f / (frames - 30)), selectedCho, selectedJung, selectedJong, params);
+      var frame = new VideoFrame(rec, { timestamp: f * (1000000 / fps) });
+      encoder.encode(frame, { keyFrame: f % 30 === 0 }); frame.close();
+      btn.textContent = Math.round((f / frames) * 100) + '%';
+    }
+    await encoder.flush(); encoder.close(); muxer.finalize();
+    var char = combineHangul(selectedCho, selectedJung, selectedJong);
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([muxer.target.buffer], { type: 'video/mp4' }));
+    a.download = 'brush-' + char + '.mp4'; a.click();
+    btn.textContent = 'MP4'; btn.disabled = false; ctx = origCtx; canvas = origCanvas; updatePreview();
+  }
+
+  async function exportPNG() {
+    if (!selectedCho || !selectedJung) { alert('초성과 중성을 선택해주세요!'); return; }
+    var btn = document.getElementById('pngBtn');
+    btn.textContent = '생성 중...'; btn.disabled = true;
+    var rec = document.getElementById('recordCanvas');
+    rec.width = 500; rec.height = 500;
+    var origCtx = ctx, origCanvas = canvas;
+    ctx = rec.getContext('2d'); canvas = rec;
+    var params = getParams(), fps = 30, frames = Math.ceil(params.strokeSpeed * fps) + 30;
+    var zip = new JSZip();
+    for (var f = 0; f <= frames; f++) {
+      renderStrokeAnimation(Math.min(1, f / (frames - 30)), selectedCho, selectedJung, selectedJong, params);
+      zip.file('frame_' + String(f).padStart(4, '0') + '.png', rec.toDataURL('image/png').split(',')[1], { base64: true });
+      btn.textContent = Math.round((f / frames) * 100) + '%';
+    }
+    btn.textContent = 'ZIP...';
+    var char = combineHangul(selectedCho, selectedJung, selectedJong);
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(await zip.generateAsync({ type: 'blob' }));
+    a.download = 'brush-' + char + '.zip'; a.click();
+    btn.textContent = 'PNG'; btn.disabled = false; ctx = origCtx; canvas = origCanvas; updatePreview();
+  }
+
   function createJamoButtons() {
     var choGrid = document.getElementById('cho-grid');
     var jungGrid = document.getElementById('jung-grid');
     var jongGrid = document.getElementById('jong-grid');
-
-    choList.forEach(function(j) {
-      var btn = document.createElement('button');
-      btn.className = 'jamo-btn';
-      btn.textContent = j;
-      btn.onclick = function() { selectJamo('cho', j, btn); };
-      choGrid.appendChild(btn);
-    });
-
-    jungList.forEach(function(j) {
-      var btn = document.createElement('button');
-      btn.className = 'jamo-btn';
-      btn.textContent = j;
-      btn.onclick = function() { selectJamo('jung', j, btn); };
-      jungGrid.appendChild(btn);
-    });
-
-    jongList.forEach(function(j, i) {
-      var btn = document.createElement('button');
-      btn.className = 'jamo-btn';
-      btn.textContent = j || '없음';
-      if (i === 0) btn.classList.add('active');
-      btn.onclick = function() { selectJamo('jong', j, btn); };
-      jongGrid.appendChild(btn);
-    });
+    choList.forEach(function(j) { var b = document.createElement('button'); b.className = 'jamo-btn'; b.textContent = j; b.onclick = function() { selectJamo('cho', j, b); }; choGrid.appendChild(b); });
+    jungList.forEach(function(j) { var b = document.createElement('button'); b.className = 'jamo-btn'; b.textContent = j; b.onclick = function() { selectJamo('jung', j, b); }; jungGrid.appendChild(b); });
+    jongList.forEach(function(j, i) { var b = document.createElement('button'); b.className = 'jamo-btn'; b.textContent = j || '없음'; if (i === 0) b.classList.add('active'); b.onclick = function() { selectJamo('jong', j, b); }; jongGrid.appendChild(b); });
   }
 
   function selectJamo(type, jamo, btn) {
-    var grid = btn.parentElement;
-    grid.querySelectorAll('.jamo-btn').forEach(function(b) { b.classList.remove('active'); });
+    btn.parentElement.querySelectorAll('.jamo-btn').forEach(function(b) { b.classList.remove('active'); });
     btn.classList.add('active');
-
     if (type === 'cho') selectedCho = jamo;
     else if (type === 'jung') selectedJung = jamo;
     else selectedJong = jamo;
-
     updatePreview();
   }
-
-  // 미리보기 업데이트
-  function updatePreview() {
-    var resultChar = document.getElementById('result-char');
-    var svg = document.getElementById('preview-svg');
-    
-    if (!selectedCho || !selectedJung) {
-      resultChar.textContent = '-';
-      svg.innerHTML = '<text x="200" y="220" text-anchor="middle" fill="#ddd" font-size="24">자소를 선택하세요</text>';
-      return;
-    }
-
-    var char = combineHangul(selectedCho, selectedJung, selectedJong);
-    resultChar.textContent = char || '-';
-
-    // 가이드 라인 (옅은 색으로 전체 획 표시)
-    var allStrokes = getStrokesForChar();
-    var guideSvg = '';
-    allStrokes.forEach(function(s) {
-      guideSvg += '<path class="stroke-guide" d="' + s.d + '"/>';
-    });
-    
-    svg.innerHTML = guideSvg;
-  }
-
-  // 현재 글자의 모든 획 가져오기
-  function getStrokesForChar() {
-    var strokes = [];
-    var jungType = getJungType(selectedJung);
-    var hasJong = selectedJong && selectedJong !== '';
-    var scale = 4; // viewBox 100 -> 400
-
-    // 위치 조정 함수
-    function transformPath(pathD, offsetX, offsetY, scaleX, scaleY) {
-      return pathD.replace(/([ML])\s*([\d.]+)\s+([\d.]+)/g, function(match, cmd, x, y) {
-        var nx = (parseFloat(x) + offsetX) * scaleX;
-        var ny = (parseFloat(y) + offsetY) * scaleY;
-        return cmd + ' ' + nx.toFixed(1) + ' ' + ny.toFixed(1);
-      }).replace(/A\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/g, 
-        function(match, rx, ry, rot, large, sweep, x, y) {
-          var nrx = parseFloat(rx) * scaleX;
-          var nry = parseFloat(ry) * scaleY;
-          var nx = (parseFloat(x) + offsetX) * scaleX;
-          var ny = (parseFloat(y) + offsetY) * scaleY;
-          return 'A ' + nrx.toFixed(1) + ' ' + nry.toFixed(1) + ' ' + rot + ' ' + large + ' ' + sweep + ' ' + nx.toFixed(1) + ' ' + ny.toFixed(1);
-        });
-    }
-
-    // 초성 획
-    var choKey = selectedCho + '_cho';
-    if (jamoStrokes[choKey]) {
-      var choOffsetX = 0, choOffsetY = 0, choScaleX = scale, choScaleY = scale;
-      
-      // 모음 유형에 따라 초성 위치/크기 조정
-      if (jungType === 'vertical') {
-        // 세로 모음: 초성이 왼쪽 위
-        choOffsetX = -5;
-        choOffsetY = hasJong ? -5 : 0;
-        choScaleX = hasJong ? 3.5 : 4;
-        choScaleY = hasJong ? 3 : 3.5;
-      } else {
-        // 가로 모음: 초성이 위쪽 전체
-        choOffsetX = 10;
-        choOffsetY = hasJong ? -10 : -5;
-        choScaleX = hasJong ? 3.5 : 4;
-        choScaleY = hasJong ? 2.5 : 3;
-      }
-      
-      jamoStrokes[choKey].forEach(function(d) {
-        strokes.push({ d: transformPath(d, choOffsetX, choOffsetY, choScaleX, choScaleY), type: 'cho' });
-      });
-    }
-
-    // 중성 획
-    var jungKey = selectedJung + '_jung';
-    if (jamoStrokes[jungKey]) {
-      var jungOffsetX = 0, jungOffsetY = 0, jungScaleX = scale, jungScaleY = scale;
-      
-      if (jungType === 'vertical') {
-        jungOffsetX = hasJong ? -5 : 0;
-        jungOffsetY = hasJong ? -5 : 0;
-        jungScaleX = hasJong ? 3.5 : 4;
-        jungScaleY = hasJong ? 3 : 3.5;
-      } else {
-        jungOffsetX = hasJong ? 5 : 10;
-        jungOffsetY = hasJong ? 20 : 30;
-        jungScaleX = hasJong ? 3.5 : 4;
-        jungScaleY = hasJong ? 2.5 : 3;
-      }
-      
-      jamoStrokes[jungKey].forEach(function(d) {
-        strokes.push({ d: transformPath(d, jungOffsetX, jungOffsetY, jungScaleX, jungScaleY), type: 'jung' });
-      });
-    }
-
-    // 종성 획
-    if (hasJong) {
-      var jongKey = selectedJong + '_jong';
-      if (jamoStrokes[jongKey]) {
-        var jongOffsetX = 5, jongOffsetY = 50;
-        var jongScaleX = 4, jongScaleY = 3;
-        
-        jamoStrokes[jongKey].forEach(function(d) {
-          strokes.push({ d: transformPath(d, jongOffsetX, jongOffsetY, jongScaleX, jongScaleY), type: 'jong' });
-        });
-      }
-    }
-
-    return strokes;
-  }
-
-  // 재생
-  function play() {
-    if (!selectedCho || !selectedJung) {
-      alert('초성과 중성을 선택해주세요!');
-      return;
-    }
-
-    var svg = document.getElementById('preview-svg');
-    var strokes = getStrokesForChar();
-    var strokeWidth = document.getElementById('strokeWidth').value;
-    var strokeSpeed = parseFloat(document.getElementById('strokeSpeed').value);
-    var strokeColor = document.getElementById('strokeColor').value;
-
-    var svgContent = '';
-    
-    // 가이드 라인
-    strokes.forEach(function(s) {
-      svgContent += '<path class="stroke-guide" d="' + s.d + '"/>';
-    });
-
-    // 애니메이션 획
-    var delay = 0;
-    strokes.forEach(function(s, i) {
-      var pathLen = 500; // 대략적인 경로 길이
-      svgContent += '<path class="stroke-path" d="' + s.d + '" ' +
-        'stroke="' + strokeColor + '" stroke-width="' + strokeWidth + '" ' +
-        'style="stroke-dasharray:' + pathLen + ';stroke-dashoffset:' + pathLen + ';' +
-        'animation:drawStroke ' + strokeSpeed + 's ease-out ' + delay + 's forwards;"/>';
-      delay += strokeSpeed * 0.7;
-    });
-
-    svg.innerHTML = svgContent;
-  }
-
-  // 리셋
-  function reset() {
-    updatePreview();
-  }
-
-  // MP4 내보내기
-  async function exportMP4() {
-    if (!selectedCho || !selectedJung) {
-      alert('초성과 중성을 선택해주세요!');
-      return;
-    }
-
-    var btn = document.getElementById('mp4Btn');
-    btn.textContent = '생성 중...';
-    btn.disabled = true;
-
-    var canvas = document.getElementById('recordCanvas');
-    var ctx = canvas.getContext('2d');
-    var size = 400;
-    canvas.width = size;
-    canvas.height = size;
-
-    var strokes = getStrokesForChar();
-    var strokeWidth = parseInt(document.getElementById('strokeWidth').value);
-    var strokeSpeed = parseFloat(document.getElementById('strokeSpeed').value);
-    var strokeColor = document.getElementById('strokeColor').value;
-
-    var fps = 30;
-    var totalDuration = strokes.length * strokeSpeed * 0.7 + strokeSpeed;
-    var totalFrames = Math.ceil(totalDuration * fps);
-
-    // WebCodecs 지원 확인
-    if (typeof VideoEncoder === 'undefined') {
-      alert('이 브라우저는 MP4 내보내기를 지원하지 않습니다. Chrome 최신 버전을 사용해주세요.');
-      btn.textContent = 'MP4';
-      btn.disabled = false;
-      return;
-    }
-
-    var muxer = new Mp4Muxer.Muxer({
-      target: new Mp4Muxer.ArrayBufferTarget(),
-      video: { codec: 'avc', width: size, height: size },
-      fastStart: 'in-memory'
-    });
-
-    var encoder = new VideoEncoder({
-      output: function(chunk, meta) { muxer.addVideoChunk(chunk, meta); },
-      error: function(e) { console.error(e); }
-    });
-
-    await encoder.configure({
-      codec: 'avc1.42001f',
-      width: size, height: size,
-      bitrate: 5000000, framerate: fps
-    });
-
-    // 프레임 생성
-    for (var f = 0; f <= totalFrames; f++) {
-      var time = f / fps;
-      
-      ctx.fillStyle = exportBgColor;
-      ctx.fillRect(0, 0, size, size);
-
-      // 가이드
-      ctx.strokeStyle = '#e0e0e0';
-      ctx.lineWidth = 8;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      strokes.forEach(function(s) {
-        var path = new Path2D(s.d);
-        ctx.stroke(path);
-      });
-
-      // 애니메이션 획
-      ctx.strokeStyle = strokeColor;
-      ctx.lineWidth = strokeWidth;
-      var delay = 0;
-      strokes.forEach(function(s) {
-        var progress = Math.max(0, Math.min(1, (time - delay) / strokeSpeed));
-        if (progress > 0) {
-          ctx.save();
-          ctx.beginPath();
-          // 간단한 진행률 표현 (전체 또는 미표시)
-          if (progress >= 1) {
-            var path = new Path2D(s.d);
-            ctx.stroke(path);
-          }
-          ctx.restore();
-        }
-        delay += strokeSpeed * 0.7;
-      });
-
-      var frame = new VideoFrame(canvas, { timestamp: f * (1000000 / fps) });
-      encoder.encode(frame, { keyFrame: f % 30 === 0 });
-      frame.close();
-
-      btn.textContent = 'MP4 ' + Math.round((f / totalFrames) * 100) + '%';
-    }
-
-    await encoder.flush();
-    encoder.close();
-    muxer.finalize();
-
-    var blob = new Blob([muxer.target.buffer], { type: 'video/mp4' });
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'hangul-stroke-' + Date.now() + '.mp4';
-    a.click();
-
-    btn.textContent = 'MP4';
-    btn.disabled = false;
-  }
-
-  // PNG 시퀀스 내보내기
-  function exportPNG() {
-    if (!selectedCho || !selectedJung) {
-      alert('초성과 중성을 선택해주세요!');
-      return;
-    }
-
-    var btn = document.getElementById('pngBtn');
-    btn.textContent = '생성 중...';
-    btn.disabled = true;
-
-    var canvas = document.getElementById('recordCanvas');
-    var ctx = canvas.getContext('2d');
-    var size = 400;
-    canvas.width = size;
-    canvas.height = size;
-
-    var strokes = getStrokesForChar();
-    var strokeWidth = parseInt(document.getElementById('strokeWidth').value);
-    var strokeSpeed = parseFloat(document.getElementById('strokeSpeed').value);
-    var strokeColor = document.getElementById('strokeColor').value;
-
-    var fps = 30;
-    var totalDuration = strokes.length * strokeSpeed * 0.7 + strokeSpeed;
-    var totalFrames = Math.ceil(totalDuration * fps);
-
-    var zip = new JSZip();
-
-    for (var f = 0; f <= totalFrames; f++) {
-      var time = f / fps;
-      
-      ctx.fillStyle = exportBgColor;
-      ctx.fillRect(0, 0, size, size);
-
-      // 가이드
-      ctx.strokeStyle = '#e0e0e0';
-      ctx.lineWidth = 8;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      strokes.forEach(function(s) {
-        var path = new Path2D(s.d);
-        ctx.stroke(path);
-      });
-
-      // 완료된 획만 그리기
-      ctx.strokeStyle = strokeColor;
-      ctx.lineWidth = strokeWidth;
-      var delay = 0;
-      strokes.forEach(function(s) {
-        var progress = Math.max(0, Math.min(1, (time - delay) / strokeSpeed));
-        if (progress >= 1) {
-          var path = new Path2D(s.d);
-          ctx.stroke(path);
-        }
-        delay += strokeSpeed * 0.7;
-      });
-
-      var dataUrl = canvas.toDataURL('image/png');
-      var base64 = dataUrl.split(',')[1];
-      zip.file('frame_' + String(f).padStart(4, '0') + '.png', base64, { base64: true });
-    }
-
-    btn.textContent = 'ZIP 압축...';
-    zip.generateAsync({ type: 'blob' }).then(function(content) {
-      var a = document.createElement('a');
-      a.href = URL.createObjectURL(content);
-      a.download = 'hangul-stroke-' + Date.now() + '.zip';
-      a.click();
-      btn.textContent = 'PNG';
-      btn.disabled = false;
-    });
-  }
-
-  // 이벤트 바인딩
-  document.getElementById('playBtn').onclick = play;
-  document.getElementById('resetBtn').onclick = reset;
-  document.getElementById('mp4Btn').onclick = exportMP4;
-  document.getElementById('pngBtn').onclick = exportPNG;
-
-  document.getElementById('strokeWidth').oninput = function() {
-    document.getElementById('strokeWidthVal').textContent = this.value + 'px';
-  };
-  document.getElementById('strokeSpeed').oninput = function() {
-    document.getElementById('strokeSpeedVal').textContent = this.value + 's';
-  };
-
-  document.querySelectorAll('.bg-btn').forEach(function(btn) {
-    btn.onclick = function() {
-      document.querySelectorAll('.bg-btn').forEach(function(b) { b.classList.remove('active'); });
-      btn.classList.add('active');
-      exportBgColor = btn.dataset.bg;
-      document.getElementById('canvas-area').style.background = exportBgColor;
-    };
-  });
-
-  // 초기화
-  createJamoButtons();
-  updatePreview();
 })();
 </script>
 </body>
