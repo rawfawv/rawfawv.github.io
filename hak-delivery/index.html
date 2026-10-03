@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>학상회 — HAK DELIVERY</title>
+  <style>
+    :root{--ink:#171914;--paper:#f3f0e7;--line:rgba(23,25,20,.18);--accent:#d94b2b;--panel:rgba(243,240,231,.92)}
+    *{box-sizing:border-box} html,body{margin:0;background:#111;color:var(--ink);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,"Noto Sans KR",monospace}
+    body{min-height:100vh}.app{display:grid;grid-template-columns:minmax(0,1fr) 330px;min-height:100vh}
+    .stage{position:relative;overflow:hidden;background:#1a1a18;min-height:680px}
+    video{position:absolute;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+    canvas{position:absolute;inset:0;width:100%;height:100%;transform:scaleX(-1)}
+    .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.22),transparent 22%,transparent 72%,rgba(0,0,0,.34));pointer-events:none}
+    .topbar{position:absolute;top:22px;left:24px;right:24px;display:flex;justify-content:space-between;gap:16px;color:#fff;text-shadow:0 1px 8px #000}
+    .brand{font-size:20px;font-weight:800;letter-spacing:.08em}.status{text-align:right;font-size:13px;line-height:1.55}
+    .instruction{position:absolute;left:50%;bottom:28px;transform:translateX(-50%);background:rgba(20,20,18,.72);color:#fff;padding:12px 18px;border:1px solid rgba(255,255,255,.35);font-size:14px;text-align:center;backdrop-filter:blur(8px);white-space:nowrap}
+    .detect{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);color:#fff;font-size:18px;font-weight:800;opacity:0;transition:.2s;text-shadow:0 2px 10px #000}.detect.on{opacity:1}
+    .food{position:absolute;z-index:5;font-size:70px;filter:drop-shadow(0 6px 4px rgba(0,0,0,.25));pointer-events:none;animation:drop 1.35s cubic-bezier(.2,.8,.3,1) forwards}
+    @keyframes drop{0%{transform:translate(-50%,-180px) rotate(-8deg) scale(.45);opacity:0}15%{opacity:1}82%{transform:translate(-50%,0) rotate(7deg) scale(1)}92%{transform:translate(-50%,-18px) scale(1.08)}100%{transform:translate(-50%,0) scale(1);opacity:0}}
+    aside{background:var(--paper);padding:24px 22px;display:flex;flex-direction:column;gap:22px;border-left:1px solid #000}
+    .kicker{font-size:11px;letter-spacing:.14em;opacity:.6}.menu h1{font-size:32px;margin:5px 0 4px}.menu .time{font-size:13px;opacity:.65}
+    .stock{display:flex;align-items:flex-end;justify-content:space-between;border-top:1px solid var(--ink);border-bottom:1px solid var(--ink);padding:14px 0}
+    .stock strong{font-size:42px;line-height:1}.stock span{font-size:12px;opacity:.65}
+    .timeline h2{font-size:13px;margin:0 0 10px}.slot{display:grid;grid-template-columns:58px 1fr auto;gap:8px;padding:7px 0;border-top:1px solid var(--line);font-size:12px;align-items:center}.slot.active{font-weight:800}.slot.active .dot{background:var(--accent)}.dot{width:7px;height:7px;border-radius:50%;border:1px solid var(--ink)}
+    .restock{display:none;border:1px solid var(--ink);padding:14px;background:#fff}.restock.on{display:block}.restock b{display:block;font-size:17px;margin-bottom:6px}.countdown{font-size:28px;font-weight:800}
+    .receipt-wrap{height:0;overflow:hidden;transition:height .7s ease}.receipt-wrap.on{height:310px}.receipt{background:#fff;padding:18px 16px 22px;border-top:7px solid #222;font-size:11px;line-height:1.6;box-shadow:0 8px 20px rgba(0,0,0,.12)}.receipt h3{text-align:center;margin:0;font-size:16px}.receipt .dash{border-top:1px dashed #777;margin:9px 0}.row{display:flex;justify-content:space-between}
+    .controls{margin-top:auto;display:flex;gap:8px}.controls button{font:inherit;font-size:11px;background:transparent;border:1px solid var(--ink);padding:8px 9px;cursor:pointer}.controls button:hover{background:#fff}
+    .cammsg{position:absolute;inset:0;display:grid;place-items:center;color:#fff;text-align:center;padding:30px;background:#181816;z-index:10}.cammsg button{font:inherit;padding:12px 16px;border:1px solid #fff;background:#fff;color:#111;cursor:pointer;margin-top:12px}
+    @media(max-width:760px){.app{grid-template-columns:1fr}.stage{min-height:68vh}aside{border-left:0;border-top:1px solid #000}.instruction{white-space:normal;width:calc(100% - 40px)}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <section class="stage" id="stage">
+    <video id="video" autoplay playsinline muted></video>
+    <canvas id="canvas"></canvas><div class="shade"></div>
+    <div class="topbar"><div class="brand">학상회<br>HAK DELIVERY</div><div class="status"><span id="clock"></span><br><span id="openText">24H 영업중</span></div></div>
+    <div class="detect" id="detect">주문을 받았습니다</div>
+    <div class="instruction" id="instruction">학을 향해 손을 흔들어 주문하세요</div>
+    <div class="cammsg" id="cammsg"><div><b>학의 시야를 시작합니다.</b><br><small>카메라 권한을 허용해주세요.</small><br><button id="startBtn">카메라 시작</button></div></div>
+  </section>
+  <aside>
+    <section class="menu"><div class="kicker">NOW SELLING</div><h1 id="menuName">커피</h1><div class="time" id="menuTime">14:00–18:00 · 오후 장사</div></section>
+    <section class="stock"><div><span>현재 적재량</span><br><b id="stockLabel">재고</b></div><strong><span id="stock">8</span><span style="font-size:16px"> / <span id="capacity">8</span></span></strong></section>
+    <section class="restock" id="restock"><b>재입고 중입니다…</b><div>학이 다음 물량을 받으러 갔습니다.</div><div class="countdown" id="countdown">02:00</div><small>후 영업구역 도착 예정</small></section>
+    <section class="timeline"><h2>학의 24시간 영업 타임라인</h2><div id="timeline"></div></section>
+    <section class="receipt-wrap" id="receiptWrap"><div class="receipt" id="receipt"></div></section>
+    <div class="controls"><button id="testOrder">주문 테스트</button><button id="emptyStock">재고 0 테스트</button><button id="resetStock">재입고 완료</button></div>
+  </aside>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+<script>
+(() => {
+const schedule=[
+ {s:6,e:10,name:'샌드위치',emoji:'🥪',label:'아침 장사',cap:8},
+ {s:10,e:14,name:'제육볶음',emoji:'🍚',label:'점심 장사',cap:8},
+ {s:14,e:18,name:'커피',emoji:'☕',label:'오후 장사',cap:8},
+ {s:18,e:22,name:'파스타',emoji:'🍝',label:'저녁 장사',cap:8},
+ {s:22,e:26,name:'치킨',emoji:'🍗',label:'야간 장사',cap:8},
+ {s:2,e:6,name:'라면',emoji:'🍜',label:'새벽 장사',cap:6}
+];
+const $=id=>document.getElementById(id), video=$('video'),canvas=$('canvas'),ctx=canvas.getContext('2d'),stage=$('stage');
+let current=null,stock=8,orderNo=0,lastOrder=0,restocking=false,restockEnd=0,lastMenuKey='',handHistory=[],processing=false;
+function hourForSchedule(){const h=new Date().getHours();return h<2?h+24:h}
+function pickMenu(){const h=hourForSchedule();return schedule.find(x=>h>=x.s&&h<x.e)||schedule[0]}
+function fmtHour(h){return String(h%24).padStart(2,'0')+':00'}
+function renderTimeline(){
+ const now=pickMenu(); $('timeline').innerHTML=schedule.map(x=>'<div class="slot '+(x.name===now.name?'active':'')+'"><span>'+fmtHour(x.s)+'</span><span>'+x.name+' · '+x.label+'</span><i class="dot"></i></div>').join('');
+}
+function updateMenu(force=false){
+ const m=pickMenu(),key=m.name;
+ if(force||key!==lastMenuKey){current=m;lastMenuKey=key;stock=m.cap;$('capacity').textContent=m.cap;$('stock').textContent=stock;$('menuName').textContent=m.name;$('menuTime').textContent=fmtHour(m.s)+'–'+fmtHour(m.e)+' · '+m.label;renderTimeline()}
+}
+function tick(){
+ const n=new Date();$('clock').textContent=n.toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});updateMenu();
+ if(restocking){let left=Math.max(0,restockEnd-Date.now());if(left<=0)finishRestock();else{$('countdown').textContent=String(Math.floor(left/60000)).padStart(2,'0')+':'+String(Math.floor((left%60000)/1000)).padStart(2,'0')}}
+}
+setInterval(tick,250);updateMenu(true);tick();
+function receipt(){
+ orderNo++;const now=new Date();$('receipt').innerHTML='<h3>학 상 회</h3><div style="text-align:center">HAK DELIVERY · 24H</div><div class="dash"></div><div class="row"><span>주문번호</span><b>#'+String(orderNo).padStart(4,'0')+'</b></div><div class="row"><span>배달시각</span><span>'+now.toLocaleTimeString('ko-KR',{hour12:false})+'</span></div><div class="dash"></div><div class="row"><b>'+current.name+'</b><b>1</b></div><div class="row"><span>결제금액</span><b>0원</b></div><div class="dash"></div><div class="row"><span>현재 적재량</span><b>'+stock+' / '+current.cap+'</b></div><div style="text-align:center;margin-top:12px">학이 직접 배달했습니다.<br>감사합니다.</div>';$('receiptWrap').classList.add('on');setTimeout(()=>$('receiptWrap').classList.remove('on'),7000)
+}
+function dropFood(x=.5,y=.66){
+ const f=document.createElement('div');f.className='food';f.textContent=current.emoji;f.style.left=(x*100)+'%';f.style.top=(Math.max(.42,Math.min(.78,y))*100)+'%';stage.appendChild(f);setTimeout(()=>f.remove(),1500)
+}
+function order(x=.5,y=.65){
+ if(restocking||Date.now()-lastOrder<3500)return;if(stock<=0){startRestock();return}lastOrder=Date.now();$('detect').classList.add('on');setTimeout(()=>$('detect').classList.remove('on'),1200);dropFood(x,y);stock--;$('stock').textContent=stock;setTimeout(receipt,900);if(stock===0)setTimeout(startRestock,2400)
+}
+function startRestock(){
+ if(restocking)return;restocking=true;restockEnd=Date.now()+120000;$('restock').classList.add('on');$('openText').textContent='재입고 중';$('instruction').textContent='재입고 중입니다 · 잠시 후 다시 주문할 수 있어요'
+}
+function finishRestock(){restocking=false;stock=current.cap;$('stock').textContent=stock;$('restock').classList.remove('on');$('openText').textContent='24H 영업중';$('instruction').textContent='학을 향해 손을 흔들어 주문하세요'}
+$('testOrder').addEventListener('click',()=>order(.5,.62));$('emptyStock').addEventListener('click',()=>{stock=0;$('stock').textContent=0;startRestock()});$('resetStock').addEventListener('click',finishRestock);
+async function startCamera(){
+ try{
+  const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:1280},height:{ideal:720}},audio:false});video.srcObject=stream;await video.play();$('cammsg').style.display='none';setupHands()
+ }catch(e){$('cammsg').innerHTML='<div><b>카메라를 열 수 없습니다.</b><br><small>브라우저의 카메라 권한을 확인해주세요.</small></div>'}
+}
+$('startBtn').addEventListener('click',startCamera);
+function setupHands(){
+ const hands=new Hands({locateFile:f=>'https://cdn.jsdelivr.net/npm/@mediapipe/hands/'+f});
+ hands.setOptions({maxNumHands:2,modelComplexity:1,minDetectionConfidence:.6,minTrackingConfidence:.55});
+ hands.onResults(res=>{
+  canvas.width=video.videoWidth;canvas.height=video.videoHeight;ctx.clearRect(0,0,canvas.width,canvas.height);
+  const list=res.multiHandLandmarks||[]; if(!list.length){handHistory=[];return}
+  const lm=list[0], wrist=lm[0], tip=lm[12], palm=lm[9];
+  const raised=tip.y < wrist.y-.08;
+  const x=palm.x;handHistory.push({x,t:Date.now()});handHistory=handHistory.filter(p=>Date.now()-p.t<1200);
+  ctx.fillStyle='rgba(255,255,255,.9)';ctx.beginPath();ctx.arc(palm.x*canvas.width,palm.y*canvas.height,7,0,Math.PI*2);ctx.fill();
+  if(raised&&handHistory.length>8){
+    let turns=0,lastDir=0;for(let i=1;i<handHistory.length;i++){const d=handHistory[i].x-handHistory[i-1].x,dir=Math.abs(d)>.008?Math.sign(d):0;if(dir&&lastDir&&dir!==lastDir)turns++;if(dir)lastDir=dir}
+    const xs=handHistory.map(p=>p.x),range=Math.max(...xs)-Math.min(...xs);
+    if(turns>=2&&range>.12){order(1-palm.x,Math.min(.78,palm.y+.28));handHistory=[]}
+  }
+ });
+ async function loop(){if(video.readyState>=2&&!processing){processing=true;try{await hands.send({image:video})}catch(e){}processing=false}requestAnimationFrame(loop)}loop()
+}
+})();
+</script>
+</body></html>
