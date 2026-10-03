@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>학상회 결제</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden;background:#f3f0e7;color:#171914;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.wrap{height:100%;display:grid;place-items:center;position:relative}.sky{position:absolute;inset:0;background:linear-gradient(#dce9e3,#f3f0e7 72%)}
+.sun{position:absolute;width:90px;height:90px;border:1px solid #171914;border-radius:50%;top:10%;right:12%;opacity:.35}
+.orbit{position:absolute;left:50%;top:47%;width:min(72vw,520px);aspect-ratio:1;border:1px dashed rgba(23,25,20,.22);border-radius:50%;transform:translate(-50%,-50%);animation:spin 8s linear infinite}
+.hak{position:absolute;left:50%;top:-37px;width:74px;height:74px;transform:translateX(-50%) rotate(90deg)}
+.bird{position:relative;width:74px;height:74px}.body{position:absolute;width:40px;height:23px;border:2px solid #171914;border-radius:55% 45% 55% 45%;background:#f8f7ef;left:15px;top:28px}.neck{position:absolute;width:8px;height:36px;background:#f8f7ef;border-left:2px solid #171914;border-right:2px solid #171914;left:47px;top:5px;transform:rotate(22deg);transform-origin:bottom}.head{position:absolute;width:18px;height:14px;border:2px solid #171914;border-radius:50%;background:#f8f7ef;left:51px;top:1px}.beak{position:absolute;width:20px;height:2px;background:#171914;left:66px;top:8px}.wing{position:absolute;width:44px;height:2px;background:#171914;left:-5px;top:35px;transform-origin:right;animation:flap .5s ease-in-out infinite alternate}
+.copy{position:relative;z-index:3;text-align:center;margin-top:56vh}.copy b{display:block;font-size:22px;letter-spacing:.12em}.copy span{display:block;font-size:12px;margin-top:8px;opacity:.65}
+.stamp{display:inline-block;margin-top:18px;border:1px solid #171914;padding:7px 10px;font-size:11px;transform:rotate(-2deg)}
+@keyframes spin{to{transform:translate(-50%,-50%) rotate(360deg)}}@keyframes flap{from{transform:rotate(-22deg)}to{transform:rotate(22deg)}}
+@media(prefers-reduced-motion:reduce){.orbit,.wing{animation:none}}
+</style></head><body><main class="wrap"><div class="sky"></div><div class="sun"></div>
+<div class="orbit"><div class="hak"><div class="bird"><i class="body"></i><i class="neck"></i><i class="head"></i><i class="beak"></i><i class="wing"></i></div></div></div>
+<div class="copy"><b>결제 중입니다…</b><span>학이 한 바퀴 돌고 있습니다.</span><div class="stamp">HAK DELIVERY · 24H</div></div>
+</main></body></html>
