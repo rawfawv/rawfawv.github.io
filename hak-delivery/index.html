@@ -42,7 +42,7 @@
   </section>
   <aside>
     <section class="menu"><div class="kicker">NOW SELLING</div><h1 id="menuName">커피</h1><div class="time" id="menuTime">14:00–18:00 · 오후 장사</div></section>
-    <section style="border-top:1px solid var(--ink);padding-top:12px"><div class="kicker">판매가</div><div id="price" style="font-size:28px;font-weight:800;margin-top:4px">4,500원</div><div id="effect" style="font-size:12px;line-height:1.55;margin-top:9px;opacity:.75"></div></section><section class="stock"><div><span>현재 적재량</span><br><b id="stockLabel">재고</b></div><strong><span id="stock">8</span><span style="font-size:16px"> / <span id="capacity">8</span></span></strong></section>
+    <section class="stock"><div><span>현재 적재량</span><br><b id="stockLabel">재고</b></div><strong><span id="stock">8</span><span style="font-size:16px"> / <span id="capacity">8</span></span></strong></section>
     <section class="restock" id="restock"><b>재입고 중입니다…</b><div>학이 다음 물량을 받으러 갔습니다.</div><div class="countdown" id="countdown">02:00</div><small>후 영업구역 도착 예정</small></section>
     <section class="timeline"><h2>학의 24시간 영업 타임라인</h2><div id="timeline"></div></section>
     <section class="receipt-wrap" id="receiptWrap"><div class="receipt" id="receipt"></div></section>
@@ -70,7 +70,7 @@ function renderTimeline(){
 }
 function updateMenu(force=false){
  const m=pickMenu(),key=m.name;
- if(force||key!==lastMenuKey){current=m;lastMenuKey=key;stock=m.cap;$('capacity').textContent=m.cap;$('stock').textContent=stock;$('menuName').textContent=m.name;$('menuTime').textContent=fmtHour(m.s)+'–'+fmtHour(m.e)+' · '+m.label;$('price').textContent=m.price.toLocaleString('ko-KR')+'원';$('effect').textContent='효능 · '+m.effect;renderTimeline()}
+ if(force||key!==lastMenuKey){current=m;lastMenuKey=key;stock=m.cap;$('capacity').textContent=m.cap;$('stock').textContent=stock;$('menuName').textContent=m.name;$('menuTime').textContent=fmtHour(m.s)+'–'+fmtHour(m.e)+' · '+m.label;renderTimeline()}
 }
 function tick(){
  const n=new Date();$('clock').textContent=n.toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});updateMenu();
@@ -80,7 +80,7 @@ setInterval(tick,250);updateMenu(true);tick();
 function receipt(snapshot){
  orderNo++;const now=new Date();
  const photo=snapshot?'<img class="receipt-photo" src="'+snapshot+'" alt="주문 순간 사진">':'';
- $('receipt').innerHTML='<h3>학 상 회</h3><div style="text-align:center">HAK DELIVERY · 24H</div>'+photo+'<div class="dash"></div><div class="row"><span>주문번호</span><b>#'+String(orderNo).padStart(4,'0')+'</b></div><div class="row"><span>배달시각</span><span>'+now.toLocaleTimeString('ko-KR',{hour12:false})+'</span></div><div class="dash"></div><div class="row"><b>'+current.name+'</b><b>1</b></div><div class="row"><span>결제금액</span><b>'+current.price.toLocaleString('ko-KR')+'원</b></div><img class="payqr" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https%3A%2F%2Frawfawv.github.io%2Fhak-delivery%2Fpay%2F" alt="결제 QR"><div class="paynote"><b>QR로 결제해주세요</b><br>결제금액 '+current.price.toLocaleString('ko-KR')+'원</div><div style="margin:8px 0;font-size:10px;line-height:1.45"><b>효능</b><br>'+current.effect+'<br>※ 효능은 개인에 따라 다를 수 있습니다.</div><div class="dash"></div><div class="row"><span>현재 적재량</span><b>'+stock+' / '+current.cap+'</b></div><div style="text-align:center;margin-top:12px">학이 직접 배달했습니다.<br>감사합니다.</div>';
+ $('receipt').innerHTML='<h3>학 상 회</h3><div style="text-align:center">HAK DELIVERY · 24H</div>'+photo+'<div class="dash"></div><div class="row"><span>주문번호</span><b>#'+String(orderNo).padStart(4,'0')+'</b></div><div class="row"><span>배달시각</span><span>'+now.toLocaleTimeString('ko-KR',{hour12:false})+'</span></div><div class="dash"></div><div class="row"><b>'+current.name+'</b><b>1</b></div><div class="row"><span>상품가격</span><b>'+current.price.toLocaleString('ko-KR')+'원</b></div><div class="dash"></div><div style="font-size:10px;line-height:1.55"><b>이 음식의 효능</b><br>'+current.effect+'<br>※ 효능은 개인에 따라 다를 수 있습니다.</div><div class="dash"></div><div style="text-align:center;font-size:10px"><b>결제</b><br>'+current.price.toLocaleString('ko-KR')+'원</div><img class="payqr" src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https%3A%2F%2Frawfawv.github.io%2Fhak-delivery%2Fpay%2F" alt="결제 QR"><div class="paynote"><b>QR로 결제해주세요</b><br>결제금액 '+current.price.toLocaleString('ko-KR')+'원</div><div class="dash"></div><div class="row"><span>현재 적재량</span><b>'+stock+' / '+current.cap+'</b></div><div style="text-align:center;margin-top:12px">학이 직접 배달했습니다.<br>감사합니다.</div>';
  $('receiptWrap').classList.add('on');setTimeout(()=>$('receiptWrap').classList.remove('on'),30000)
 }
 function makeDeliverySnapshot(x=.5,y=.65){
