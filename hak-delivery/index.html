@@ -42,7 +42,7 @@
   </section>
   <aside>
     <section class="menu"><div class="kicker">NOW SELLING</div><h1 id="menuName">커피</h1><div class="time" id="menuTime">14:00–18:00 · 오후 장사</div></section>
-    <section class="stock"><div><span>현재 적재량</span><br><b id="stockLabel">재고</b></div><strong><span id="stock">8</span><span style="font-size:16px"> / <span id="capacity">8</span></span></strong></section>
+    <section style="border-top:1px solid var(--ink);padding-top:12px"><div class="kicker">판매가</div><div id="price" style="font-size:28px;font-weight:800;margin-top:4px">4,500원</div><div id="effect" style="font-size:12px;line-height:1.55;margin-top:9px;opacity:.75"></div></section><section class="stock"><div><span>현재 적재량</span><br><b id="stockLabel">재고</b></div><strong><span id="stock">8</span><span style="font-size:16px"> / <span id="capacity">8</span></span></strong></section>
     <section class="restock" id="restock"><b>재입고 중입니다…</b><div>학이 다음 물량을 받으러 갔습니다.</div><div class="countdown" id="countdown">02:00</div><small>후 영업구역 도착 예정</small></section>
     <section class="timeline"><h2>학의 24시간 영업 타임라인</h2><div id="timeline"></div></section>
     <section class="receipt-wrap" id="receiptWrap"><div class="receipt" id="receipt"></div></section>
@@ -53,12 +53,12 @@
 <script>
 (() => {
 const schedule=[
- {s:6,e:10,name:'샌드위치',emoji:'🥪',label:'아침 장사',cap:8},
- {s:10,e:14,name:'제육볶음',emoji:'🍚',label:'점심 장사',cap:8},
- {s:14,e:18,name:'커피',emoji:'☕',label:'오후 장사',cap:8},
- {s:18,e:22,name:'파스타',emoji:'🍝',label:'저녁 장사',cap:8},
- {s:22,e:26,name:'치킨',emoji:'🍗',label:'야간 장사',cap:8},
- {s:2,e:6,name:'라면',emoji:'🍜',label:'새벽 장사',cap:6}
+ {s:6,e:10,name:'샌드위치',emoji:'🥪',label:'아침 장사',cap:8,price:6500,effect:'잠든 위장을 깨우고 오전의 첫 일정을 시작하게 합니다.'},
+ {s:10,e:14,name:'제육볶음',emoji:'🍚',label:'점심 장사',cap:8,price:9500,effect:'매콤한 한 끼로 오후 업무를 버틸 힘을 보충합니다.'},
+ {s:14,e:18,name:'커피',emoji:'☕',label:'오후 장사',cap:8,price:4500,effect:'눈꺼풀의 영업시간을 잠시 연장하고 오후의 속도를 되찾게 합니다.'},
+ {s:18,e:22,name:'파스타',emoji:'🍝',label:'저녁 장사',cap:8,price:13000,effect:'평범한 저녁을 조금 더 근사한 외식처럼 느끼게 합니다.'},
+ {s:22,e:26,name:'치킨',emoji:'🍗',label:'야간 장사',cap:8,price:23000,effect:'하루를 무사히 끝냈다는 기분을 주고 늦은 밤의 허기를 잠재웁니다.'},
+ {s:2,e:6,name:'라면',emoji:'🍜',label:'새벽 장사',cap:6,price:5500,effect:'깊은 새벽의 허기를 달래고 혼자 있는 시간을 조금 덜 외롭게 합니다.'}
 ];
 const $=id=>document.getElementById(id), video=$('video'),canvas=$('canvas'),ctx=canvas.getContext('2d'),stage=$('stage');
 let current=null,stock=8,orderNo=0,lastOrder=0,restocking=false,restockEnd=0,lastMenuKey='',handHistory=[],processing=false,pendingReceipt=null;
@@ -70,7 +70,7 @@ function renderTimeline(){
 }
 function updateMenu(force=false){
  const m=pickMenu(),key=m.name;
- if(force||key!==lastMenuKey){current=m;lastMenuKey=key;stock=m.cap;$('capacity').textContent=m.cap;$('stock').textContent=stock;$('menuName').textContent=m.name;$('menuTime').textContent=fmtHour(m.s)+'–'+fmtHour(m.e)+' · '+m.label;renderTimeline()}
+ if(force||key!==lastMenuKey){current=m;lastMenuKey=key;stock=m.cap;$('capacity').textContent=m.cap;$('stock').textContent=stock;$('menuName').textContent=m.name;$('menuTime').textContent=fmtHour(m.s)+'–'+fmtHour(m.e)+' · '+m.label;$('price').textContent=m.price.toLocaleString('ko-KR')+'원';$('effect').textContent='효능 · '+m.effect;renderTimeline()}
 }
 function tick(){
  const n=new Date();$('clock').textContent=n.toLocaleString('ko-KR',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});updateMenu();
@@ -80,7 +80,7 @@ setInterval(tick,250);updateMenu(true);tick();
 function receipt(snapshot){
  orderNo++;const now=new Date();
  const photo=snapshot?'<img class="receipt-photo" src="'+snapshot+'" alt="주문 순간 사진">':'';
- $('receipt').innerHTML='<h3>학 상 회</h3><div style="text-align:center">HAK DELIVERY · 24H</div>'+photo+'<div class="dash"></div><div class="row"><span>주문번호</span><b>#'+String(orderNo).padStart(4,'0')+'</b></div><div class="row"><span>배달시각</span><span>'+now.toLocaleTimeString('ko-KR',{hour12:false})+'</span></div><div class="dash"></div><div class="row"><b>'+current.name+'</b><b>1</b></div><div class="row"><span>결제금액</span><b>0원</b></div><div class="dash"></div><div class="row"><span>현재 적재량</span><b>'+stock+' / '+current.cap+'</b></div><div style="text-align:center;margin-top:12px">학이 직접 배달했습니다.<br>감사합니다.</div>';
+ $('receipt').innerHTML='<h3>학 상 회</h3><div style="text-align:center">HAK DELIVERY · 24H</div>'+photo+'<div class="dash"></div><div class="row"><span>주문번호</span><b>#'+String(orderNo).padStart(4,'0')+'</b></div><div class="row"><span>배달시각</span><span>'+now.toLocaleTimeString('ko-KR',{hour12:false})+'</span></div><div class="dash"></div><div class="row"><b>'+current.name+'</b><b>1</b></div><div class="row"><span>결제금액</span><b>'+current.price.toLocaleString('ko-KR')+'원</b></div><div style="margin:8px 0;font-size:10px;line-height:1.45"><b>효능</b><br>'+current.effect+'<br>※ 효능은 개인에 따라 다를 수 있습니다.</div><div class="dash"></div><div class="row"><span>현재 적재량</span><b>'+stock+' / '+current.cap+'</b></div><div style="text-align:center;margin-top:12px">학이 직접 배달했습니다.<br>감사합니다.</div>';
  $('receiptWrap').classList.add('on');setTimeout(()=>$('receiptWrap').classList.remove('on'),7000)
 }
 function makeDeliverySnapshot(x=.5,y=.65){
