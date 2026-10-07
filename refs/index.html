@@ -24,6 +24,9 @@
   --text-sm: 12px;
   --text-md: 14px;
   --text-nav: clamp(15px, 1.6vw, 19px);
+  --text-title: clamp(15px, 1.25vw, 18px);
+  --cols: 4;
+  --half: 2;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -61,18 +64,20 @@ button { cursor: pointer; }
 .add-btn:hover { color: var(--accent); }
 
 /* 필터 바 */
-.bar { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--line); }
+.bar { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); border-bottom: 1px solid var(--line); }
 .bar > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 14px; min-width: 0; }
-.bar > div + div { border-left: 1px solid var(--line); }
+/* 카드와 똑같이 칸 오른쪽에 선을 그어 세로선이 카드 칸 선과 정확히 겹치게 함 */
+.bar > div:first-child { grid-column: span var(--half); border-right: 1px solid var(--line); }
+.bar > div:last-child { grid-column: auto / -1; }
 .bar select { border: 0; background: transparent; text-align: right; font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; padding: 2px 0; max-width: 60%; }
 .bar select option { text-transform: none; }
 
 /* 그리드 */
-.grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.grid { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); }
 .card, .ghost { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); display: flex; flex-direction: column; min-width: 0; min-height: 340px; }
 .grid > :nth-child(4n) { border-right: 0; }
-.card-top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, auto); gap: 12px; padding: 10px 12px 0; align-items: start; }
-.card-top .title { font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; line-height: 1.35; overflow-wrap: anywhere; color: inherit; text-decoration: none; }
+.card-top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, auto); gap: 12px; padding: 12px 12px 0; align-items: baseline; }
+.card-top .title { font-size: var(--text-title); font-weight: 500; line-height: 1.3; overflow-wrap: anywhere; color: inherit; text-decoration: none; text-wrap: balance; }
 .card-top .title:hover { color: var(--accent); }
 .card-top .cat { font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; text-align: right; color: var(--muted); max-width: 12ch; overflow-wrap: anywhere; }
 .thumb { flex: 1; display: flex; align-items: center; justify-content: center; padding: 22px 14%; text-decoration: none; color: inherit; }
@@ -81,10 +86,8 @@ button { cursor: pointer; }
 .placeholder { width: 100%; aspect-ratio: 4 / 3; background: var(--well); display: flex; flex-direction: column; justify-content: space-between; padding: 12px; overflow: hidden; }
 .placeholder .ph-domain { font-size: clamp(18px, 2.1vw, 26px); font-weight: 600; line-height: 1.05; letter-spacing: -.01em; overflow-wrap: anywhere; }
 .placeholder .ph-note { font-size: var(--text-xs); color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
-.card-bottom { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; padding: 0 12px 10px; min-height: 34px; }
-.domain { font-size: var(--text-md); color: inherit; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-.domain:hover { color: var(--accent); }
-.meta { font-size: var(--text-xs); color: var(--muted); text-align: right; white-space: nowrap; }
+.card-bottom { display: flex; align-items: flex-end; gap: 10px; padding: 0 12px 10px; min-height: 30px; }
+.meta { font-size: var(--text-xs); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .note { margin: 0 12px 6px; font-size: var(--text-sm); color: var(--muted); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .actions { display: flex; gap: 10px; justify-content: flex-end; padding: 0 12px 10px; opacity: 0; transition: opacity .15s; }
 .card:hover .actions, .card:focus-within .actions { opacity: 1; }
@@ -102,11 +105,11 @@ button { cursor: pointer; }
 .notice { padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: var(--text-sm); color: var(--muted); }
 .foot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 10px 14px; font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 
-@media (max-width: 1100px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .grid > :nth-child(4n) { border-right: 1px solid var(--line); } .grid > :nth-child(3n) { border-right: 0; } }
-@media (max-width: 800px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .grid > :nth-child(3n) { border-right: 1px solid var(--line); } .grid > :nth-child(2n) { border-right: 0; } .card, .ghost { min-height: 280px; } }
+@media (max-width: 1100px) { :root { --cols: 3; --half: 2; } .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .grid > :nth-child(4n) { border-right: 1px solid var(--line); } .grid > :nth-child(3n) { border-right: 0; } }
+@media (max-width: 800px) { :root { --cols: 2; --half: 1; } .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .grid > :nth-child(3n) { border-right: 1px solid var(--line); } .grid > :nth-child(2n) { border-right: 0; } .card, .ghost { min-height: 280px; } }
 @media (max-width: 480px) {
   .grid { grid-template-columns: minmax(0, 1fr); } .grid > * { border-right: 0 !important; }
-  .bar { grid-template-columns: 1fr; } .bar > div + div { border-left: 0; border-top: 1px solid var(--line); }
+  :root { --cols: 1; --half: 1; } .bar > div:first-child { border-right: 0; } .bar > div:last-child { border-top: 1px solid var(--line); }
   .nav-right { gap: 18px; }
 }
 
@@ -272,7 +275,7 @@ function card(s) {
   c.append(top, thumb);
   if (s.note) c.appendChild(el("p", "note", s.note));
   const bottom = el("div", "card-bottom");
-  bottom.append(link("domain", domainOf(s.url)), el("span", "meta", fmtDate(s.added)));
+  bottom.append(el("span", "meta", fmtDate(s.added)));
   c.appendChild(bottom);
   return c;
 }
