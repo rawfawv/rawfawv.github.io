@@ -110,6 +110,26 @@ button { cursor: pointer; }
   .nav-right { gap: 18px; }
 }
 
+/* 추가 패널 */
+.sheet-wrap { position: fixed; inset: 0; background: var(--overlay); display: flex; align-items: flex-start; justify-content: center; padding: 24px 16px; overflow-y: auto; z-index: 10; }
+.sheet { width: 100%; max-width: 560px; background: var(--paper); border: 1px solid var(--line); }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.sheet-head h2 { margin: 0; font-size: var(--text-nav); font-weight: 500; }
+.sheet-head button { border: 0; background: transparent; font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; }
+.sheet form { display: flex; flex-direction: column; }
+.field { display: flex; flex-direction: column; gap: 6px; padding: 10px 14px; border-bottom: 1px solid var(--hair); }
+.field input, .field textarea { border: 0; background: transparent; padding: 2px 0; font-size: 16px; width: 100%; min-width: 0; }
+.field textarea { resize: vertical; min-height: 44px; line-height: 1.5; }
+.field input::placeholder, .field textarea::placeholder { color: var(--muted); }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; }
+.row2 .field + .field { border-left: 1px solid var(--hair); }
+@media (max-width: 480px) { .row2 { grid-template-columns: 1fr; } .row2 .field + .field { border-left: 0; } }
+.how { margin: 0; padding: 12px 14px; font-size: var(--text-sm); color: var(--muted); line-height: 1.7; }
+.how ol { margin: 0; padding-left: 18px; }
+.sheet-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--line); }
+.form-msg { font-size: var(--text-sm); color: var(--danger); margin: 0; min-height: 1em; }
+.submit { border: 1px solid var(--line); background: var(--ink); color: var(--paper); border-radius: 999px; padding: 8px 20px; display: inline-flex; align-items: center; gap: 8px; }
+.submit .dot { background: var(--accent); }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -125,6 +145,7 @@ button { cursor: pointer; }
     </label>
     <div class="nav-right">
       <span class="count"><span class="dot" aria-hidden="true"></span><span>SITES <span id="count">0</span></span></span>
+      <button class="add-btn" id="addBtn" type="button">+ 링크 추가</button>
     </div>
   </header>
 
@@ -153,10 +174,52 @@ button { cursor: pointer; }
   </footer>
 </div>
 
+<div class="sheet-wrap" id="sheetWrap" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-head">
+      <h2 id="sheetTitle">링크 추가</h2>
+      <button type="button" id="closeSheet">닫기 ✕</button>
+    </div>
+    <form id="form" novalidate>
+      <div class="field">
+        <label class="label" for="fUrl">URL *</label>
+        <input id="fUrl" type="url" inputmode="url" placeholder="https://example.com" autocomplete="off" required>
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label class="label" for="fTitle">이름</label>
+          <input id="fTitle" type="text" maxlength="60" placeholder="비우면 도메인으로 표시" autocomplete="off">
+        </div>
+        <div class="field">
+          <label class="label" for="fCat">분류</label>
+          <input id="fCat" type="text" maxlength="24" placeholder="예: 커머스, 포트폴리오" list="catList" autocomplete="off">
+          <datalist id="catList"></datalist>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label" for="fNote">메모</label>
+        <textarea id="fNote" maxlength="200" placeholder="어떤 점이 좋은지 한 줄로"></textarea>
+      </div>
+      <div class="how">
+        <ol>
+          <li>아래 버튼을 누르면 입력한 내용이 채워진 GitHub 등록 화면이 새 탭으로 열려요.</li>
+          <li>스크린샷이 있으면 거기에 끌어놓고 <b>Create</b>를 눌러 주세요. 없으면 사이트 화면을 자동으로 캡처해요.</li>
+          <li>이 페이지를 새로고침하면 카드로 올라가 있어요. (GitHub 로그인이 필요해요)</li>
+        </ol>
+      </div>
+      <div class="sheet-foot">
+        <p class="form-msg" id="formMsg" role="status"></p>
+        <button class="submit" type="submit"><span class="dot" aria-hidden="true"></span>GitHub에서 등록하기</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <script>
-// 사이트 목록은 같은 폴더의 sites.json 에 있어요.
-// 항목 예: { "url": "https://...", "title": "이름", "category": "커머스", "note": "메모", "thumb": "thumbs/파일.jpg", "added": "2026-10-07" }
-// thumb 를 비우면 사이트 화면을 자동 캡처한 썸네일(thum.io)을 쓰고, 그것도 실패하면 도메인 이름으로 보여줘요.
+// 사이트는 두 곳에서 모아요.
+// 1) 같은 폴더의 sites.json — 예: { "url": "https://...", "title": "이름", "category": "커머스", "note": "메모", "thumb": "thumbs/파일.jpg", "added": "2026-10-07" }
+// 2) 저장소의 열린 'site' 라벨 이슈 — 페이지의 '+ 링크 추가'가 여는 등록 양식으로 만들어지고, 이슈를 닫으면 선반에서 빠져요.
+// thumb 가 없으면 사이트 화면을 자동 캡처한 썸네일(thum.io)을 쓰고, 그것도 실패하면 도메인 이름으로 보여줘요.
 const $ = (id) => document.getElementById(id);
 const state = { sites: [], loaded: false, q: "", cat: "", sort: "new" };
 const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
@@ -245,16 +308,85 @@ $("sort").addEventListener("change", (e) => { state.sort = e.target.value; rende
 let resizeT;
 addEventListener("resize", () => { clearTimeout(resizeT); resizeT = setTimeout(render, 150); });
 
+// 링크 추가: 입력한 내용으로 GitHub 이슈 등록 화면을 열면, Actions가 sites.json 에 넣어줘요
+const ISSUE_FORM = "https://github.com/rawfawv/rawfawv.github.io/issues/new";
+function normalizeUrl(raw) {
+  let v = raw.trim();
+  if (!v) return null;
+  if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(v)) v = "https://" + v;
+  return safeUrl(v);
+}
+function openSheet() {
+  const dl = $("catList");
+  dl.textContent = "";
+  const cats = state.sites.map((s) => s.category).filter(Boolean);
+  ["커머스", "포트폴리오", "브랜드", "에디토리얼", "이벤트", ...cats].filter((v, i, a) => a.indexOf(v) === i).forEach((c) => dl.appendChild(new Option(c)));
+  $("formMsg").textContent = "";
+  $("sheetWrap").hidden = false;
+  $("fUrl").focus();
+}
+function closeSheet() { $("sheetWrap").hidden = true; }
+$("addBtn").addEventListener("click", openSheet);
+$("closeSheet").addEventListener("click", closeSheet);
+$("sheetWrap").addEventListener("click", (e) => { if (e.target === $("sheetWrap")) closeSheet(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("sheetWrap").hidden) closeSheet(); });
+$("form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const url = normalizeUrl($("fUrl").value);
+  if (!url) { $("formMsg").textContent = "http:// 또는 https://로 시작하는 주소를 넣어 주세요."; $("fUrl").focus(); return; }
+  if (state.sites.some((s) => s.url.replace(/\/$/, "") === url.replace(/\/$/, ""))) { $("formMsg").textContent = "이미 선반에 있는 사이트예요."; return; }
+  const title = $("fTitle").value.trim();
+  const params = new URLSearchParams({
+    template: "add-site.yml",
+    title: "[사이트 추가] " + (title || domainOf(url)),
+    url,
+    name: title,
+    category: $("fCat").value.trim(),
+    note: $("fNote").value.trim(),
+  });
+  window.open(ISSUE_FORM + "?" + params.toString(), "_blank", "noopener");
+  $("form").reset();
+  closeSheet();
+});
+
+// 등록 양식(.github/ISSUE_TEMPLATE/add-site.yml)으로 만든 이슈 본문을 항목으로 바꿈
+const ISSUE_FIELDS = { "URL": "url", "이름": "title", "분류": "category", "메모": "note", "스크린샷 (선택)": "screenshot" };
+const THUMB_HOSTS = ["https://github.com/user-attachments/", "https://user-images.githubusercontent.com/", "https://private-user-images.githubusercontent.com/"];
+function siteFromIssue(issue) {
+  const fields = {};
+  let current = null;
+  (issue.body || "").replace(/\r\n/g, "\n").split("\n").forEach((line) => {
+    if (line.startsWith("### ")) { current = ISSUE_FIELDS[line.slice(4).trim()] || null; if (current) fields[current] = []; }
+    else if (current) fields[current].push(line);
+  });
+  const get = (k) => { const v = (fields[k] || []).join("\n").trim(); return v === "_No response_" ? "" : v; };
+  const url = normalizeUrl(get("url").split(/\s+/)[0] || "");
+  if (!url) return null;
+  const thumb = (get("screenshot").match(/https:\/\/[^\s"')<>\]]+/g) || []).find((u) => THUMB_HOSTS.some((h) => u.startsWith(h))) || "";
+  const one = (k, n) => get(k).split(/\s+/).join(" ").slice(0, n);
+  return { url, title: one("title", 60), category: one("category", 24), note: one("note", 200), thumb, added: issue.created_at };
+}
+const ISSUES_API = "https://api.github.com/repos/rawfawv/rawfawv.github.io/issues?labels=site&state=open&per_page=100";
+
 render();
-fetch("sites.json", { cache: "no-cache" })
-  .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
-  .then((data) => {
-    state.sites = (Array.isArray(data) ? data : data.sites || [])
-      .map((s, i) => ({ ...s, i, url: safeUrl(s.url || "") }))
-      .filter((s) => s.url);
-  })
-  .catch(() => { $("notice").textContent = "사이트 목록(sites.json)을 불러오지 못했어요."; $("notice").hidden = false; })
-  .finally(() => { state.loaded = true; renderCategories(); render(); });
+Promise.allSettled([
+  fetch("sites.json", { cache: "no-cache" }).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }),
+  fetch(ISSUES_API, { headers: { Accept: "application/vnd.github+json" } }).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }),
+]).then(([file, issues]) => {
+  const fromFile = file.status === "fulfilled" ? (Array.isArray(file.value) ? file.value : file.value.sites || []) : [];
+  const fromIssues = issues.status === "fulfilled" ? issues.value.filter((i) => !i.pull_request).map(siteFromIssue).filter(Boolean) : [];
+  const seen = new Set();
+  state.sites = [...fromFile.map((s) => ({ ...s, url: safeUrl(s.url || "") })), ...fromIssues]
+    .filter((s) => s.url && !seen.has(s.url.replace(/\/$/, "")) && seen.add(s.url.replace(/\/$/, "")))
+    .map((s, i) => ({ ...s, i }));
+  if (issues.status === "rejected") {
+    $("notice").textContent = "새로 등록된 링크를 불러오지 못했어요. 잠시 뒤 새로고침해 주세요.";
+    $("notice").hidden = false;
+  }
+  state.loaded = true;
+  renderCategories();
+  render();
+});
 </script>
 </body>
 </html>
