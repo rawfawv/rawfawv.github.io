@@ -26,10 +26,13 @@
 html, body { background: var(--bg); color: var(--fg); }
 body { font-family: var(--ui); font-size: 14px; padding-inline: 16px; padding-block: 48px; }
 main { min-height: 80vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 48px; }
-.word { display: flex; font-family: var(--display); font-size: clamp(5rem, 26vw, 16rem); line-height: 1; color: var(--mint); }
+.word { display: flex; font-family: var(--display); font-size: min(16rem, 26vw); line-height: 1; color: var(--mint); }
 .reel { position: relative; overflow: hidden; height: 1.2em; -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 14%, #000 86%, transparent 100%); mask-image: linear-gradient(to bottom, transparent 0%, #000 14%, #000 86%, transparent 100%); }
 .strip { display: flex; flex-direction: column; }
 .strip span { height: 1.2em; display: flex; align-items: center; justify-content: center; }
+.text-form { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 8px; }
+.text-form input { width: 12rem; max-width: 100%; background: #000; color: var(--fg); border: 1px solid var(--mint-line); border-radius: 999px; padding: 8px 16px; font: inherit; font-size: 16px; }
+.text-form input::placeholder { color: var(--muted); }
 .buttons { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; }
 button { border: 1px solid var(--mint-line); border-radius: 999px; padding: 8px 24px; background: transparent; color: var(--mint); font: inherit; cursor: pointer; }
 button:hover:not(:disabled) { background: var(--mint-soft); }
@@ -47,6 +50,11 @@ input[type=checkbox] { accent-color: var(--mint); }
 
 <main>
   <div class="word" id="word" role="img" aria-label="적립"></div>
+  <form class="text-form" id="textForm">
+    <label for="textInput">글자</label>
+    <input id="textInput" type="text" maxlength="10" placeholder="적립" autocomplete="off" required>
+    <button type="submit">바꾸기</button>
+  </form>
   <div class="buttons">
     <button type="button" data-dir="down">↓ 내려가며 돌리기</button>
     <button type="button" data-dir="up">↑ 올라가며 돌리기</button>
@@ -69,7 +77,10 @@ input[type=checkbox] { accent-color: var(--mint); }
 </main>
 
 <script>
-const TEXT = "적립";
+const DEFAULT_TEXT = "적립";
+const MAX_CHARS = 10;
+let text = DEFAULT_TEXT;
+let lastDir = "down";
 const FONT_FAMILY = '"BaeminWork"';
 const POOL = "가나다라마바사아자차카타파하포인트쿠폰배민혜택머니캐시777★";
 const SPIN_ITEMS = 18;
@@ -93,7 +104,8 @@ function buildStrip(finalChar, seed) {
   return [...above, finalChar, ...below];
 }
 const startY = (dir) => (dir === "down" ? REST_Y * 2 : 0);
-const reelDuration = (i) => 2200 + i * 500;
+// 글자가 많아도 전체 길이가 너무 늘어나지 않게 릴 사이 간격을 줄임
+const reelDuration = (i, n) => 2200 + i * (n > 1 ? Math.min(500, 2000 / (n - 1)) : 0);
 
 function solveBezier([x1, y1, x2, y2], x) {
   if (x <= 0) return 0;
@@ -127,7 +139,7 @@ function blurAt(p) {
 }
 // 릴 하나의 움직임: 시간(ms) → 위치(em)·블러(em). 화면 재생과 PNG 내보내기가 같이 씀
 function reelTimeline(index, count, dir) {
-  const spinMs = reelDuration(index);
+  const spinMs = reelDuration(index, count);
   const drops = dir === "up" && index === count - 1;
   const from = startY(dir);
   const target = drops ? REST_Y - DROP.liftEm : REST_Y;
@@ -147,24 +159,34 @@ function reelTimeline(index, count, dir) {
 
 // 화면 슬롯
 const word = document.getElementById("word");
-const strips = [...TEXT].map((ch, i) => {
-  const reel = document.createElement("div");
-  reel.className = "reel";
-  reel.setAttribute("aria-hidden", "true");
-  const strip = document.createElement("div");
-  strip.className = "strip";
-  strip.style.transform = "translateY(" + REST_Y + "em)";
-  buildStrip(ch, i + 1).forEach((c) => {
-    const s = document.createElement("span");
-    s.textContent = c;
-    strip.appendChild(s);
+const textInput = document.getElementById("textInput");
+let strips = [];
+
+function buildReels() {
+  const chars = [...text];
+  word.textContent = "";
+  word.setAttribute("aria-label", text);
+  word.style.fontSize = "min(16rem, " + (52 / chars.length).toFixed(2) + "vw)";
+  strips = chars.map((ch, i) => {
+    const reel = document.createElement("div");
+    reel.className = "reel";
+    reel.setAttribute("aria-hidden", "true");
+    const strip = document.createElement("div");
+    strip.className = "strip";
+    strip.style.transform = "translateY(" + REST_Y + "em)";
+    buildStrip(ch, i + 1).forEach((c) => {
+      const s = document.createElement("span");
+      s.textContent = c;
+      strip.appendChild(s);
+    });
+    reel.appendChild(strip);
+    word.appendChild(reel);
+    return strip;
   });
-  reel.appendChild(strip);
-  word.appendChild(reel);
-  return strip;
-});
+}
 
 function play(dir) {
+  lastDir = dir;
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   strips.forEach((strip, i) => {
     strip.getAnimations().forEach((a) => a.cancel());
@@ -179,19 +201,45 @@ function play(dir) {
     strip.animate(kf, { duration, easing: "linear", fill: "both" });
   });
 }
+
+// 주소 뒤 ?t=글자 로도 지정할 수 있음 (링크로 공유)
+function setText(next, { updateUrl = true } = {}) {
+  const clean = [...next.replace(/\s+/g, " ").trim()].slice(0, MAX_CHARS).join("");
+  if (!clean) return false;
+  text = clean;
+  textInput.value = text;
+  if (updateUrl) {
+    const url = new URL(location.href);
+    if (text === DEFAULT_TEXT) url.searchParams.delete("t"); else url.searchParams.set("t", text);
+    history.replaceState(null, "", url);
+  }
+  buildReels();
+  return true;
+}
+
+document.getElementById("textForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (setText(textInput.value)) document.fonts.load("100px " + FONT_FAMILY, text).finally(() => play(lastDir));
+});
 document.querySelectorAll("[data-dir]").forEach((b) => b.addEventListener("click", () => play(b.dataset.dir)));
-document.fonts.load("100px " + FONT_FAMILY, TEXT + POOL).finally(() => play("down"));
+
+setText(new URLSearchParams(location.search).get("t") || DEFAULT_TEXT, { updateUrl: false });
+document.fonts.load("100px " + FONT_FAMILY, text + POOL).finally(() => play("down"));
 
 // PNG 시퀀스 내보내기
 async function exportPngSequence({ dir, fps, fade, onProgress }) {
-  const width = 1920, height = 1080, fontSize = 400, holdMs = 500;
-  const font = fontSize + "px " + FONT_FAMILY;
-  await document.fonts.load(font, TEXT + POOL);
+  const width = 1920, height = 1080, holdMs = 500, maxW = 1800;
+  const chars = [...text];
   const canvas = document.createElement("canvas");
   canvas.width = width; canvas.height = height;
   const ctx = canvas.getContext("2d");
+  await document.fonts.load("400px " + FONT_FAMILY, text + POOL);
+  // 글자가 많으면 1920 폭 안에 들어오도록 글자 크기를 줄임
+  ctx.font = "400px " + FONT_FAMILY;
+  const width400 = chars.reduce((sum, ch, i) => sum + Math.max(...buildStrip(ch, i + 1).map((c) => ctx.measureText(c).width)), 0);
+  const fontSize = Math.min(400, Math.floor((400 * maxW) / width400));
+  const font = fontSize + "px " + FONT_FAMILY;
   const itemH = ITEM_HEIGHT_EM * fontSize;
-  const chars = [...TEXT];
   ctx.font = font;
   const reels = chars.map((ch, i) => {
     const strip = buildStrip(ch, i + 1);
@@ -200,14 +248,14 @@ async function exportPngSequence({ dir, fps, fade, onProgress }) {
     rc.width = w; rc.height = Math.ceil(itemH);
     return { strip, w, rc, rctx: rc.getContext("2d"), tl: reelTimeline(i, chars.length, dir) };
   });
-  const m = ctx.measureText(TEXT);
+  const m = ctx.measureText(text);
   const asc = m.fontBoundingBoxAscent, desc = m.fontBoundingBoxDescent;
   const baseline = (itemH - fontSize) / 2 + (fontSize - (asc + desc)) / 2 + asc;
   const totalW = reels.reduce((s, r) => s + r.w, 0);
   const ox = Math.round((width - totalW) / 2), oy = Math.round((height - itemH) / 2);
   const totalMs = Math.max(...reels.map((r) => r.tl.duration)) + holdMs;
   const frameCount = Math.ceil((totalMs / 1000) * fps) + 1;
-  const base = "jeokrip_" + dir + "_" + fps + "fps";
+  const base = fileSlug() + "_" + dir + "_" + fps + "fps";
   const files = [];
   for (let f = 0; f < frameCount; f++) {
     const t = (f / fps) * 1000;
@@ -278,6 +326,7 @@ function zipStore(files) {
   return new Blob([...parts, ...central, end.buffer], { type: "application/zip" });
 }
 
+const fileSlug = () => "slot_" + text.replace(/[\\/:*?"<>|\s]+/g, "_");
 const btn = document.getElementById("exportBtn");
 const errEl = document.getElementById("err");
 const label = btn.textContent;
@@ -295,7 +344,7 @@ btn.addEventListener("click", async () => {
     btn.textContent = "준비 중…";
     const zip = await exportPngSequence({ dir, fps, fade, onProgress: (d, t) => (btn.textContent = "프레임 " + d + "/" + t) });
     btn.textContent = "저장 중…";
-    const filename = "jeokrip_" + dir + "_" + fps + "fps_alpha.zip";
+    const filename = fileSlug() + "_" + dir + "_" + fps + "fps_alpha.zip";
     if (downloads) {
       await downloads.save({ filename, data: zip });
     } else {
