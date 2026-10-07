@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>레퍼런스 선반</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600&family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap">
+<style>
+/* 레이아웃: 서점 진열대처럼 얇은 검은 선으로 나뉜 4열 그리드. 상단 내비 + 필터 바, 카드마다 위에 이름/분류, 가운데 썸네일, 아래 도메인 */
+:root {
+  --paper: #ffffff;
+  --ink: #111110;
+  --line: #1c1c1a;
+  --hair: #d9d8d3;
+  --muted: #6d6c67;
+  --well: #f3f2ee;
+  --accent: #ef8a3c;
+  --danger: #c2410c;
+  --overlay: rgba(17,17,16,.42);
+  --font: "Schibsted Grotesk", "IBM Plex Sans KR", "Apple SD Gothic Neo", system-ui, sans-serif;
+  --text-xs: 10.5px;
+  --text-sm: 12px;
+  --text-md: 14px;
+  --text-nav: clamp(15px, 1.6vw, 19px);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #121211; --ink: #efeee9; --line: #4a4945; --hair: #2c2b29; --muted: #9c9b95;
+    --well: #1b1b19; --accent: #f39a52; --danger: #fb923c; --overlay: rgba(0,0,0,.6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #121211; --ink: #efeee9; --line: #4a4945; --hair: #2c2b29; --muted: #9c9b95;
+  --well: #1b1b19; --accent: #f39a52; --danger: #fb923c; --overlay: rgba(0,0,0,.6);
+  color-scheme: dark;
+}
+html, body { background: var(--paper); color: var(--ink); }
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; font-family: var(--font); font-size: var(--text-md); padding-inline: 16px; padding-block: 16px 40px; }
+.empty-cta code { font-size: var(--text-sm); background: var(--well); padding: 1px 6px; }
+.shell { max-width: 1320px; margin: 0 auto; border: 1px solid var(--line); }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.label { font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; }
+
+/* 상단 내비 */
+.nav { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: var(--text-nav); }
+.logo { font-weight: 600; letter-spacing: .02em; margin: 0; font-size: inherit; }
+.search { display: flex; align-items: center; gap: 8px; flex: 1 1 180px; min-width: 0; }
+.search svg { width: 18px; height: 18px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.6; }
+.search input { width: 100%; min-width: 0; border: 0; background: transparent; padding: 4px 0; font-size: var(--text-md); }
+.search input::placeholder { color: var(--muted); }
+.nav-right { display: flex; align-items: center; gap: 28px; margin-left: auto; }
+.count { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
+.dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
+.add-btn { border: 0; background: transparent; padding: 0; white-space: nowrap; }
+.add-btn:hover { color: var(--accent); }
+
+/* 필터 바 */
+.bar { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1px solid var(--line); }
+.bar > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 14px; min-width: 0; }
+.bar > div + div { border-left: 1px solid var(--line); }
+.bar select { border: 0; background: transparent; text-align: right; font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; padding: 2px 0; max-width: 60%; }
+.bar select option { text-transform: none; }
+
+/* 그리드 */
+.grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.card, .ghost { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); display: flex; flex-direction: column; min-width: 0; min-height: 340px; }
+.grid > :nth-child(4n) { border-right: 0; }
+.card-top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, auto); gap: 12px; padding: 10px 12px 0; align-items: start; }
+.card-top .title { font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; line-height: 1.35; overflow-wrap: anywhere; color: inherit; text-decoration: none; }
+.card-top .title:hover { color: var(--accent); }
+.card-top .cat { font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; text-align: right; color: var(--muted); max-width: 12ch; overflow-wrap: anywhere; }
+.thumb { flex: 1; display: flex; align-items: center; justify-content: center; padding: 22px 14%; text-decoration: none; color: inherit; }
+.thumb img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; object-position: top center; display: block; box-shadow: 0 1px 0 var(--hair), 0 10px 24px -14px rgba(0,0,0,.35); transition: transform .25s ease; }
+.thumb:hover img { transform: translateY(-3px); }
+.placeholder { width: 100%; aspect-ratio: 4 / 3; background: var(--well); display: flex; flex-direction: column; justify-content: space-between; padding: 12px; overflow: hidden; }
+.placeholder .ph-domain { font-size: clamp(18px, 2.1vw, 26px); font-weight: 600; line-height: 1.05; letter-spacing: -.01em; overflow-wrap: anywhere; }
+.placeholder .ph-note { font-size: var(--text-xs); color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+.card-bottom { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; padding: 0 12px 10px; min-height: 34px; }
+.domain { font-size: var(--text-md); color: inherit; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.domain:hover { color: var(--accent); }
+.meta { font-size: var(--text-xs); color: var(--muted); text-align: right; white-space: nowrap; }
+.note { margin: 0 12px 6px; font-size: var(--text-sm); color: var(--muted); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.actions { display: flex; gap: 10px; justify-content: flex-end; padding: 0 12px 10px; opacity: 0; transition: opacity .15s; }
+.card:hover .actions, .card:focus-within .actions { opacity: 1; }
+@media (hover: none) { .actions { opacity: 1; } }
+.actions button { border: 0; background: transparent; padding: 0; font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.actions button:hover { color: var(--ink); }
+.actions button.armed { color: var(--danger); }
+.ghost { align-items: center; justify-content: center; color: var(--muted); }
+.ghost .ghost-box { width: 72%; aspect-ratio: 4 / 3; border: 1px dashed var(--hair); }
+.empty-cta { grid-column: 1 / -1; border-bottom: 1px solid var(--line); padding: 28px 14px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.empty-cta p { margin: 0; max-width: 60ch; line-height: 1.6; }
+.empty-cta .sub { color: var(--muted); font-size: var(--text-sm); }
+.pill { border: 1px solid var(--line); border-radius: 999px; background: transparent; padding: 7px 16px; }
+.pill:hover { background: var(--ink); color: var(--paper); }
+.notice { padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: var(--text-sm); color: var(--muted); }
+.foot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 10px 14px; font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+
+@media (max-width: 1100px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .grid > :nth-child(4n) { border-right: 1px solid var(--line); } .grid > :nth-child(3n) { border-right: 0; } }
+@media (max-width: 800px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .grid > :nth-child(3n) { border-right: 1px solid var(--line); } .grid > :nth-child(2n) { border-right: 0; } .card, .ghost { min-height: 280px; } }
+@media (max-width: 480px) {
+  .grid { grid-template-columns: minmax(0, 1fr); } .grid > * { border-right: 0 !important; }
+  .bar { grid-template-columns: 1fr; } .bar > div + div { border-left: 0; border-top: 1px solid var(--line); }
+  .nav-right { gap: 18px; }
+}
+
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="nav">
+    <h1 class="logo">REF·SHELF</h1>
+    <label class="search">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg>
+      <span class="sr">검색</span>
+      <input id="q" type="search" placeholder="이름, 도메인, 메모로 찾기">
+    </label>
+    <div class="nav-right">
+      <span class="count"><span class="dot" aria-hidden="true"></span><span>SITES <span id="count">0</span></span></span>
+    </div>
+  </header>
+
+  <div class="bar">
+    <div>
+      <span class="label">Category</span>
+      <label class="sr" for="cat">분류</label>
+      <select id="cat"><option value="">All</option></select>
+    </div>
+    <div>
+      <span class="label">Sort by</span>
+      <label class="sr" for="sort">정렬</label>
+      <select id="sort">
+        <option value="new">Newest</option>
+        <option value="old">Oldest</option>
+        <option value="name">Name A–Z</option>
+      </select>
+    </div>
+  </div>
+
+  <p class="notice" id="notice" hidden></p>
+  <section class="grid" id="grid" aria-live="polite"></section>
+  <footer class="foot">
+    <span>Team reference board</span>
+    <span>카드를 누르면 사이트가 새 탭으로 열려요</span>
+  </footer>
+</div>
+
+<script>
+// 사이트 목록은 같은 폴더의 sites.json 에 있어요.
+// 항목 예: { "url": "https://...", "title": "이름", "category": "커머스", "note": "메모", "thumb": "thumbs/파일.jpg", "added": "2026-10-07" }
+// thumb 를 비우면 사이트 화면을 자동 캡처한 썸네일(thum.io)을 쓰고, 그것도 실패하면 도메인 이름으로 보여줘요.
+const $ = (id) => document.getElementById(id);
+const state = { sites: [], loaded: false, q: "", cat: "", sort: "new" };
+const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+const domainOf = (href) => { try { return new URL(href).hostname.replace(/^www\./, ""); } catch { return href; } };
+const safeUrl = (href) => { try { const u = new URL(href); return u.protocol === "http:" || u.protocol === "https:" ? u.href : null; } catch { return null; } };
+const fmtDate = (iso) => { const d = new Date(iso); return isNaN(d) ? "" : d.getFullYear() + "." + (d.getMonth() + 1) + "." + d.getDate(); };
+const autoThumb = (url) => "https://image.thum.io/get/width/800/crop/600/noanimate/" + url;
+
+function visibleSites() {
+  const q = state.q.trim().toLowerCase();
+  const list = state.sites.filter((s) => {
+    if (state.cat && (s.category || "") !== state.cat) return false;
+    if (!q) return true;
+    return [s.title, domainOf(s.url), s.note, s.category].some((v) => (v || "").toLowerCase().includes(q));
+  });
+  const key = (s) => (s.title || domainOf(s.url)).toLowerCase();
+  if (state.sort === "name") list.sort((a, b) => key(a).localeCompare(key(b), "ko"));
+  else if (state.sort === "old") list.sort((a, b) => (a.added || "").localeCompare(b.added || "") || a.i - b.i);
+  else list.sort((a, b) => (b.added || "").localeCompare(a.added || "") || b.i - a.i);
+  return list;
+}
+
+function renderCategories() {
+  const cats = [...new Set(state.sites.map((s) => s.category).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ko"));
+  const sel = $("cat");
+  sel.textContent = "";
+  sel.appendChild(new Option("All", ""));
+  cats.forEach((c) => sel.appendChild(new Option(c, c)));
+}
+
+function placeholder(s) {
+  const p = el("div", "placeholder");
+  p.append(el("span", "ph-domain", domainOf(s.url)), el("span", "ph-note", "No thumbnail"));
+  return p;
+}
+
+function card(s) {
+  const c = el("article", "card");
+  const link = (cls, text) => { const a = el("a", cls, text); a.href = s.url; a.target = "_blank"; a.rel = "noopener noreferrer"; return a; };
+  const top = el("div", "card-top");
+  top.append(link("title", s.title || domainOf(s.url)), el("span", "cat", s.category || ""));
+  const thumb = link("thumb");
+  thumb.setAttribute("aria-label", (s.title || domainOf(s.url)) + " 열기");
+  const img = el("img");
+  img.alt = ""; img.loading = "lazy"; img.referrerPolicy = "no-referrer";
+  img.src = s.thumb || autoThumb(s.url);
+  img.onerror = () => img.replaceWith(placeholder(s));
+  thumb.appendChild(img);
+  c.append(top, thumb);
+  if (s.note) c.appendChild(el("p", "note", s.note));
+  const bottom = el("div", "card-bottom");
+  bottom.append(link("domain", domainOf(s.url)), el("span", "meta", fmtDate(s.added)));
+  c.appendChild(bottom);
+  return c;
+}
+
+function render() {
+  const grid = $("grid");
+  grid.textContent = "";
+  $("count").textContent = String(state.sites.length);
+  const list = visibleSites();
+  if (state.loaded && !state.sites.length) {
+    const cta = el("div", "empty-cta");
+    const p = el("p");
+    p.append(el("span", "", "아직 선반이 비어 있어요."), el("br"));
+    const sub = el("span", "sub", "이 폴더의 ");
+    sub.append(el("code", "", "sites.json"), document.createTextNode(" 에 사이트 주소를 넣으면 여기에 카드로 진열돼요."));
+    p.appendChild(sub);
+    cta.appendChild(p);
+    grid.appendChild(cta);
+  } else if (state.loaded && !list.length) {
+    const cta = el("div", "empty-cta");
+    cta.appendChild(el("p", "", "조건에 맞는 사이트가 없어요. 검색어나 분류를 바꿔 보세요."));
+    grid.appendChild(cta);
+  }
+  list.forEach((s) => grid.appendChild(card(s)));
+  // 빈 칸은 점선 상자로 채워 진열대 줄을 맞춤
+  const cols = getComputedStyle(grid).gridTemplateColumns.split(" ").length;
+  const fill = list.length === 0 ? cols : (cols - (list.length % cols)) % cols;
+  for (let i = 0; i < fill; i++) { const g = el("div", "ghost"); g.setAttribute("aria-hidden", "true"); g.appendChild(el("div", "ghost-box")); grid.appendChild(g); }
+}
+
+$("q").addEventListener("input", (e) => { state.q = e.target.value; render(); });
+$("cat").addEventListener("change", (e) => { state.cat = e.target.value; render(); });
+$("sort").addEventListener("change", (e) => { state.sort = e.target.value; render(); });
+let resizeT;
+addEventListener("resize", () => { clearTimeout(resizeT); resizeT = setTimeout(render, 150); });
+
+render();
+fetch("sites.json", { cache: "no-cache" })
+  .then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); })
+  .then((data) => {
+    state.sites = (Array.isArray(data) ? data : data.sites || [])
+      .map((s, i) => ({ ...s, i, url: safeUrl(s.url || "") }))
+      .filter((s) => s.url);
+  })
+  .catch(() => { $("notice").textContent = "사이트 목록(sites.json)을 불러오지 못했어요."; $("notice").hidden = false; })
+  .finally(() => { state.loaded = true; renderCategories(); render(); });
+</script>
+</body>
+</html>
