@@ -5,7 +5,7 @@ labels: ["site"]
 body:
   - type: markdown
     attributes:
-      value: 제출하면 바로 [레퍼런스 선반](https://rawfawv.github.io/refs/)에 카드로 올라가요. 선반에서 빼려면 이 이슈를 닫으면 돼요.
+      value: 제출하면 바로 [레퍼런스 선반](https://rawfawv.github.io/refs/)에 카드로 올라가요. 선반에서 빼려면 이 이슈를 닫으면 돼요. 나중에 썸네일을 바꾸려면 이 이슈 댓글에 새 스크린샷을 붙여넣으면 돼요.
   - type: input
     id: url
     attributes:

@@ -319,6 +319,7 @@ function card(s) {
   if (s.editUrl || s.deleteUrl) {
     const actions = el("div", "actions");
     const gh = (text, href, tip) => { const a = el("a", "", text); a.href = href; a.target = "_blank"; a.rel = "noopener noreferrer"; a.title = tip; return a; };
+    if (s.issueNum) actions.appendChild(gh("썸네일 바꾸기", s.editUrl + "#new_comment_field", "등록글 아래 댓글 칸에 새 스크린샷을 붙여넣고 Comment를 누르면 바뀌어요"));
     if (s.editUrl) actions.appendChild(gh("수정", s.editUrl, s.code ? "GitHub에서 파일을 고쳐요" : "GitHub 등록글 오른쪽 위 ··· → Edit 으로 고쳐요"));
     if (s.deleteUrl) actions.appendChild(gh("삭제", s.deleteUrl, s.code ? "GitHub에서 파일·폴더를 지워요" : "GitHub 등록글 아래 Close issue 를 누르면 선반에서 빠져요"));
     bottom.appendChild(actions);
@@ -405,6 +406,7 @@ $("form").addEventListener("submit", (e) => {
 // 등록 양식(.github/ISSUE_TEMPLATE/add-site.yml)으로 만든 이슈 본문을 항목으로 바꿈
 const ISSUE_FIELDS = { "URL": "url", "이름": "title", "분류": "category", "메모": "note", "스크린샷 (선택)": "screenshot" };
 const THUMB_HOSTS = ["https://github.com/user-attachments/", "https://user-images.githubusercontent.com/", "https://private-user-images.githubusercontent.com/"];
+const findThumb = (t) => (t.match(/https:\/\/[^\s"')<>\]]+/g) || []).find((u) => THUMB_HOSTS.some((h) => u.startsWith(h))) || "";
 function siteFromIssue(issue) {
   const fields = {};
   let current = null;
@@ -416,19 +418,35 @@ function siteFromIssue(issue) {
   const url = normalizeUrl(get("url").split(/\s+/)[0] || "");
   if (!url) return null;
   // 스크린샷 칸이 비었으면 메모 칸에 넣은 이미지도 썸네일로 씀
-  const findThumb = (t) => (t.match(/https:\/\/[^\s"')<>\]]+/g) || []).find((u) => THUMB_HOSTS.some((h) => u.startsWith(h))) || "";
   const thumb = findThumb(get("screenshot")) || findThumb(get("note"));
   // 이미지 태그·마크다운 이미지는 글자로 보이지 않게 지움
   const plain = (t) => t.replace(/!\[[^\]]*\]\([^)]*\)/g, " ").replace(/<[^>]*>/g, " ");
   const one = (k, n) => plain(get(k)).split(/\s+/).join(" ").trim().slice(0, n);
   return {
     url, title: one("title", 60), category: one("category", 24), note: one("note", 200), thumb, added: issue.created_at,
-    by: issue.user && issue.user.login, editUrl: issue.html_url, deleteUrl: issue.html_url,
+    by: issue.user && issue.user.login, issueNum: issue.number, editUrl: issue.html_url, deleteUrl: issue.html_url,
   };
 }
 const ISSUES_API = "https://api.github.com/repos/rawfawv/rawfawv.github.io/issues?labels=site&state=open&per_page=100";
 const ENTRIES_API = "https://api.github.com/repos/rawfawv/rawfawv.github.io/contents/refs/entries?ref=main";
 const REPO = "https://github.com/rawfawv/rawfawv.github.io";
+const COMMENTS_API = "https://api.github.com/repos/rawfawv/rawfawv.github.io/issues/comments?sort=created&direction=desc&per_page=100";
+const TRUSTED = ["OWNER", "MEMBER", "COLLABORATOR"];
+
+// 등록글 댓글에 올린 가장 최근 이미지를 새 썸네일로 씀 (등록한 본인이나 저장소 권한자가 단 댓글만)
+function applyCommentThumbs(sites, comments) {
+  const latest = {};
+  comments.forEach((cm) => {
+    const num = Number((cm.issue_url || "").split("/").pop());
+    const site = sites.find((s) => s.issueNum === num);
+    if (!site || latest[num]) return;
+    const who = cm.user && cm.user.login;
+    if (who !== site.by && !TRUSTED.includes(cm.author_association)) return;
+    const img = findThumb(cm.body || "");
+    if (img) latest[num] = img;
+  });
+  sites.forEach((s) => { if (latest[s.issueNum]) s.thumb = latest[s.issueNum]; });
+}
 
 // GitHub API는 로그인 없이 같은 인터넷 회선에서 시간당 60번까지만 불러올 수 있어서, 2분 동안은 이 브라우저에 저장한 결과를 다시 씀
 async function githubJson(url) {
@@ -479,9 +497,11 @@ Promise.allSettled([
   fetch("sites.json", { cache: "no-cache" }).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }),
   githubJson(ISSUES_API),
   loadEntries(),
-]).then(([file, issues, entries]) => {
+  githubJson(COMMENTS_API),
+]).then(([file, issues, entries, comments]) => {
   const fromFile = file.status === "fulfilled" ? (Array.isArray(file.value) ? file.value : file.value.sites || []) : [];
   const fromIssues = issues.status === "fulfilled" ? issues.value.filter((i) => !i.pull_request).map(siteFromIssue).filter(Boolean) : [];
+  if (comments.status === "fulfilled") applyCommentThumbs(fromIssues, comments.value);
   const fromEntries = entries.status === "fulfilled" ? entries.value : [];
   const seen = new Set();
   state.sites = [...fromEntries, ...fromFile.map((s) => ({ ...s, url: safeUrl(s.url || "") })), ...fromIssues]
