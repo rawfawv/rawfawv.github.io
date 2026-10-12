@@ -196,7 +196,7 @@ button { cursor: pointer; }
         </div>
         <div class="field">
           <label class="label" for="fCat">분류</label>
-          <input id="fCat" type="text" maxlength="24" placeholder="예: 커머스, 포트폴리오" list="catList" autocomplete="off">
+          <input id="fCat" type="text" maxlength="24" placeholder="예: 모션, 목업" list="catList" autocomplete="off">
           <datalist id="catList"></datalist>
         </div>
       </div>
@@ -221,7 +221,7 @@ button { cursor: pointer; }
 
 <script>
 // 사이트는 두 곳에서 모아요.
-// 1) 같은 폴더의 sites.json — 예: { "url": "https://...", "title": "이름", "category": "커머스", "note": "메모", "thumb": "thumbs/파일.jpg", "added": "2026-10-07" }
+// 1) 같은 폴더의 sites.json — 예: { "url": "https://...", "title": "이름", "category": "모션", "note": "메모", "thumb": "thumbs/파일.jpg", "added": "2026-10-07" }
 // 2) 저장소의 열린 'site' 라벨 이슈 — 페이지의 '+ 링크 추가'가 여는 등록 양식으로 만들어지고, 이슈를 닫으면 선반에서 빠져요.
 // thumb 가 없으면 사이트 화면을 자동 캡처한 썸네일(thum.io)을 쓰고, 그것도 실패하면 도메인 이름으로 보여줘요.
 const $ = (id) => document.getElementById(id);
@@ -324,7 +324,7 @@ function openSheet() {
   const dl = $("catList");
   dl.textContent = "";
   const cats = state.sites.map((s) => s.category).filter(Boolean);
-  ["커머스", "포트폴리오", "브랜드", "에디토리얼", "이벤트", ...cats].filter((v, i, a) => a.indexOf(v) === i).forEach((c) => dl.appendChild(new Option(c)));
+  ["모션", "목업", "타이포", "인터랙션", "레이아웃", ...cats].filter((v, i, a) => a.indexOf(v) === i).forEach((c) => dl.appendChild(new Option(c)));
   $("formMsg").textContent = "";
   $("sheetWrap").hidden = false;
   $("fUrl").focus();

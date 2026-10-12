@@ -22,7 +22,7 @@ body:
     id: category
     attributes:
       label: 분류
-      placeholder: 커머스, 포트폴리오, 브랜드, 에디토리얼…
+      placeholder: 모션, 목업, 타이포, 인터랙션…
   - type: textarea
     id: note
     attributes:
