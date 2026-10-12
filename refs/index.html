@@ -65,12 +65,13 @@ button { cursor: pointer; }
 
 /* 필터 바 */
 .bar { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); border-bottom: 1px solid var(--line); }
-.bar > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 6px 14px; min-width: 0; }
+.bar > div { display: flex; align-items: center; gap: 10px; padding: 8px 14px; min-width: 0; }
+.bar label.bar-label { font-size: var(--text-sm); color: var(--muted); white-space: nowrap; }
 /* 카드와 똑같이 칸 오른쪽에 선을 그어 세로선이 카드 칸 선과 정확히 겹치게 함 */
 .bar > div:first-child { grid-column: span var(--half); border-right: 1px solid var(--line); }
 .bar > div:last-child { grid-column: auto / -1; }
-.bar select { border: 0; background: transparent; text-align: right; font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; padding: 2px 0; max-width: 60%; }
-.bar select option { text-transform: none; }
+.bar select { border: 1px solid var(--hair); border-radius: 6px; background: var(--paper); font-size: var(--text-sm); padding: 5px 8px; min-width: 0; max-width: 100%; cursor: pointer; }
+.bar select:hover { border-color: var(--line); }
 
 /* 그리드 */
 .grid { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); }
@@ -154,17 +155,15 @@ button { cursor: pointer; }
 
   <div class="bar">
     <div>
-      <span class="label">Category</span>
-      <label class="sr" for="cat">분류</label>
-      <select id="cat"><option value="">All</option></select>
+      <label class="bar-label" for="cat">분류</label>
+      <select id="cat"><option value="">전체</option></select>
     </div>
     <div>
-      <span class="label">Sort by</span>
-      <label class="sr" for="sort">정렬</label>
+      <label class="bar-label" for="sort">정렬</label>
       <select id="sort">
-        <option value="new">Newest</option>
-        <option value="old">Oldest</option>
-        <option value="name">Name A–Z</option>
+        <option value="new">최신순</option>
+        <option value="old">오래된순</option>
+        <option value="name">이름순</option>
       </select>
     </div>
   </div>
@@ -249,7 +248,7 @@ function renderCategories() {
   const cats = [...new Set(state.sites.map((s) => s.category).filter(Boolean))].sort((a, b) => a.localeCompare(b, "ko"));
   const sel = $("cat");
   sel.textContent = "";
-  sel.appendChild(new Option("All", ""));
+  sel.appendChild(new Option("전체", ""));
   cats.forEach((c) => sel.appendChild(new Option(c, c)));
 }
 
