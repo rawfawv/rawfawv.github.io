@@ -103,6 +103,9 @@ a.submit { text-decoration: none; }
 .actions button { border: 0; background: transparent; padding: 0; font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
 .actions button:hover { color: var(--ink); }
 .actions button.armed { color: var(--danger); }
+.card-bottom .actions { padding: 0; margin-left: auto; }
+.actions a { font-size: var(--text-xs); letter-spacing: .06em; color: var(--muted); text-decoration: none; white-space: nowrap; }
+.actions a:hover { color: var(--ink); text-decoration: underline; }
 .ghost { align-items: center; justify-content: center; color: var(--muted); }
 .ghost .ghost-box { width: 72%; aspect-ratio: 4 / 3; border: 1px dashed var(--hair); }
 .empty-cta { grid-column: 1 / -1; border-bottom: 1px solid var(--line); padding: 28px 14px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
@@ -229,7 +232,7 @@ a.submit { text-decoration: none; }
         <li><b>폴더로 올릴 때:</b> 폴더 안에 <code>index.html</code>이 있어야 해요. 이미지·JS·CSS 파일은 같은 폴더에 함께 넣어 주세요.</li>
         <li><b>파일 하나만 올릴 때:</b> <code>작업이름.html</code> 파일을 그대로 올리면 돼요.</li>
         <li>아래 버튼을 누르면 GitHub 업로드 화면이 열려요. 폴더나 파일을 끌어놓고 <b>Commit changes</b>를 누르세요.</li>
-        <li>1~2분 뒤 이 선반을 새로고침하면 카드로 올라가 있어요.</li>
+        <li>1~2분 뒤 이 선반을 새로고침하면 카드로 올라가 있어요. 고치거나 지우려면 카드 아래 <b>수정·삭제</b>를 누르세요.</li>
       </ol>
       <p class="how-lead">카드 제목·설명·분류는 HTML 파일의 <code>&lt;head&gt;</code>에서 읽어요. 없으면 폴더 이름으로 보여요.</p>
       <pre class="snippet">&lt;title&gt;카드에 보일 제목&lt;/title&gt;
@@ -311,7 +314,15 @@ function card(s) {
   c.append(top, thumb);
   if (s.note) c.appendChild(el("p", "note", s.note));
   const bottom = el("div", "card-bottom");
-  bottom.append(el("span", "meta", fmtDate(s.added)));
+  bottom.append(el("span", "meta", [s.by ? "@" + s.by : "", fmtDate(s.added)].filter(Boolean).join(" · ")));
+  // 수정·삭제는 GitHub 화면에서 해요. 본인이 올린 것(또는 저장소 권한이 있는 사람)만 GitHub이 허락해 줘요
+  if (s.editUrl || s.deleteUrl) {
+    const actions = el("div", "actions");
+    const gh = (text, href, tip) => { const a = el("a", "", text); a.href = href; a.target = "_blank"; a.rel = "noopener noreferrer"; a.title = tip; return a; };
+    if (s.editUrl) actions.appendChild(gh("수정", s.editUrl, s.code ? "GitHub에서 파일을 고쳐요" : "GitHub 등록글 오른쪽 위 ··· → Edit 으로 고쳐요"));
+    if (s.deleteUrl) actions.appendChild(gh("삭제", s.deleteUrl, s.code ? "GitHub에서 파일·폴더를 지워요" : "GitHub 등록글 아래 Close issue 를 누르면 선반에서 빠져요"));
+    bottom.appendChild(actions);
+  }
   c.appendChild(bottom);
   return c;
 }
@@ -410,10 +421,14 @@ function siteFromIssue(issue) {
   // 이미지 태그·마크다운 이미지는 글자로 보이지 않게 지움
   const plain = (t) => t.replace(/!\[[^\]]*\]\([^)]*\)/g, " ").replace(/<[^>]*>/g, " ");
   const one = (k, n) => plain(get(k)).split(/\s+/).join(" ").trim().slice(0, n);
-  return { url, title: one("title", 60), category: one("category", 24), note: one("note", 200), thumb, added: issue.created_at };
+  return {
+    url, title: one("title", 60), category: one("category", 24), note: one("note", 200), thumb, added: issue.created_at,
+    by: issue.user && issue.user.login, editUrl: issue.html_url, deleteUrl: issue.html_url,
+  };
 }
 const ISSUES_API = "https://api.github.com/repos/rawfawv/rawfawv.github.io/issues?labels=site&state=open&per_page=100";
 const ENTRIES_API = "https://api.github.com/repos/rawfawv/rawfawv.github.io/contents/refs/entries?ref=main";
+const REPO = "https://github.com/rawfawv/rawfawv.github.io";
 
 // GitHub API는 로그인 없이 같은 인터넷 회선에서 시간당 60번까지만 불러올 수 있어서, 2분 동안은 이 브라우저에 저장한 결과를 다시 씀
 async function githubJson(url) {
@@ -436,7 +451,13 @@ async function loadEntries() {
   const items = list.filter((f) => (f.type === "dir" && !f.name.startsWith(".")) || (f.type === "file" && /\.html?$/i.test(f.name)));
   return Promise.all(items.map(async (f) => {
     const url = new URL("entries/" + encodeURIComponent(f.name) + (f.type === "dir" ? "/" : ""), location.href).href;
-    const site = { url, title: f.type === "dir" ? f.name : f.name.replace(/\.html?$/i, ""), category: "코드", note: "", thumb: "", added: "", code: true };
+    const path = "refs/entries/" + f.name.split("/").map(encodeURIComponent).join("/");
+    const site = {
+      url, title: f.type === "dir" ? f.name : f.name.replace(/\.html?$/i, ""), category: "코드", note: "", thumb: "", added: "", code: true,
+      // 폴더는 GitHub 폴더 화면(··· → Delete directory), 파일은 바로 편집·삭제 화면으로 보냄
+      editUrl: REPO + (f.type === "dir" ? "/tree/main/" : "/edit/main/") + path,
+      deleteUrl: REPO + (f.type === "dir" ? "/tree/main/" : "/delete/main/") + path,
+    };
     try {
       const r = await fetch(url, { cache: "no-cache" });
       if (!r.ok) return site;
