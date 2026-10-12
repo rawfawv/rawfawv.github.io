@@ -404,8 +404,12 @@ function siteFromIssue(issue) {
   const get = (k) => { const v = (fields[k] || []).join("\n").trim(); return v === "_No response_" ? "" : v; };
   const url = normalizeUrl(get("url").split(/\s+/)[0] || "");
   if (!url) return null;
-  const thumb = (get("screenshot").match(/https:\/\/[^\s"')<>\]]+/g) || []).find((u) => THUMB_HOSTS.some((h) => u.startsWith(h))) || "";
-  const one = (k, n) => get(k).split(/\s+/).join(" ").slice(0, n);
+  // 스크린샷 칸이 비었으면 메모 칸에 넣은 이미지도 썸네일로 씀
+  const findThumb = (t) => (t.match(/https:\/\/[^\s"')<>\]]+/g) || []).find((u) => THUMB_HOSTS.some((h) => u.startsWith(h))) || "";
+  const thumb = findThumb(get("screenshot")) || findThumb(get("note"));
+  // 이미지 태그·마크다운 이미지는 글자로 보이지 않게 지움
+  const plain = (t) => t.replace(/!\[[^\]]*\]\([^)]*\)/g, " ").replace(/<[^>]*>/g, " ");
+  const one = (k, n) => plain(get(k)).split(/\s+/).join(" ").trim().slice(0, n);
   return { url, title: one("title", 60), category: one("category", 24), note: one("note", 200), thumb, added: issue.created_at };
 }
 const ISSUES_API = "https://api.github.com/repos/rawfawv/rawfawv.github.io/issues?labels=site&state=open&per_page=100";
