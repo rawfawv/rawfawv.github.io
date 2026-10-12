@@ -67,9 +67,7 @@ button { cursor: pointer; }
 .bar { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); border-bottom: 1px solid var(--line); }
 .bar > div { display: flex; align-items: center; gap: 10px; padding: 8px 14px; min-width: 0; }
 .bar label.bar-label { font-size: var(--text-sm); color: var(--muted); white-space: nowrap; }
-/* 카드와 똑같이 칸 오른쪽에 선을 그어 세로선이 카드 칸 선과 정확히 겹치게 함 */
-.bar > div:first-child { grid-column: span var(--half); border-right: 1px solid var(--line); }
-.bar > div:last-child { grid-column: auto / -1; }
+.bar > div { grid-column: 1 / -1; }
 .bar select { border: 1px solid var(--hair); border-radius: 6px; background: var(--paper); font-size: var(--text-sm); padding: 5px 8px; min-width: 0; max-width: 100%; cursor: pointer; }
 .bar select:hover { border-color: var(--line); }
 
@@ -110,7 +108,7 @@ button { cursor: pointer; }
 @media (max-width: 800px) { :root { --cols: 2; --half: 1; } .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .grid > :nth-child(3n) { border-right: 1px solid var(--line); } .grid > :nth-child(2n) { border-right: 0; } .card, .ghost { min-height: 280px; } }
 @media (max-width: 480px) {
   .grid { grid-template-columns: minmax(0, 1fr); } .grid > * { border-right: 0 !important; }
-  :root { --cols: 1; --half: 1; } .bar > div:first-child { border-right: 0; } .bar > div:last-child { border-top: 1px solid var(--line); }
+  :root { --cols: 1; --half: 1; }
   .nav-right { gap: 18px; }
 }
 
@@ -157,14 +155,6 @@ button { cursor: pointer; }
     <div>
       <label class="bar-label" for="cat">분류</label>
       <select id="cat"><option value="">전체</option></select>
-    </div>
-    <div>
-      <label class="bar-label" for="sort">정렬</label>
-      <select id="sort">
-        <option value="new">최신순</option>
-        <option value="old">오래된순</option>
-        <option value="name">이름순</option>
-      </select>
     </div>
   </div>
 
@@ -305,7 +295,6 @@ function render() {
 
 $("q").addEventListener("input", (e) => { state.q = e.target.value; render(); });
 $("cat").addEventListener("change", (e) => { state.cat = e.target.value; render(); });
-$("sort").addEventListener("change", (e) => { state.sort = e.target.value; render(); });
 let resizeT;
 addEventListener("resize", () => { clearTimeout(resizeT); resizeT = setTimeout(render, 150); });
 
