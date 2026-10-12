@@ -82,6 +82,15 @@ button { cursor: pointer; }
 .thumb { flex: 1; display: flex; align-items: center; justify-content: center; padding: 22px 14%; text-decoration: none; color: inherit; }
 .thumb img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; object-position: top center; display: block; box-shadow: 0 1px 0 var(--hair), 0 10px 24px -14px rgba(0,0,0,.35); transition: transform .25s ease; }
 .thumb:hover img { transform: translateY(-3px); }
+/* 코드 작업 카드: 실제 페이지를 1/4 크기로 줄여 미리보기로 띄움 */
+.live { width: 100%; aspect-ratio: 4 / 3; position: relative; overflow: hidden; background: #fff; box-shadow: 0 1px 0 var(--hair), 0 10px 24px -14px rgba(0,0,0,.35); transition: transform .25s ease; }
+.thumb:hover .live { transform: translateY(-3px); }
+.live iframe { position: absolute; top: 0; left: 0; width: 400%; height: 400%; border: 0; transform: scale(.25); transform-origin: 0 0; pointer-events: none; }
+.how-lead { margin: 0 0 8px; }
+.how code, .snippet { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; background: var(--well); }
+.how code { padding: 1px 5px; }
+.snippet { margin: 4px 0 12px; padding: 10px 12px; overflow-x: auto; white-space: pre; color: var(--ink); }
+a.submit { text-decoration: none; }
 .placeholder { width: 100%; aspect-ratio: 4 / 3; background: var(--well); display: flex; flex-direction: column; justify-content: space-between; padding: 12px; overflow: hidden; }
 .placeholder .ph-domain { font-size: clamp(18px, 2.1vw, 26px); font-weight: 600; line-height: 1.05; letter-spacing: -.01em; overflow-wrap: anywhere; }
 .placeholder .ph-note { font-size: var(--text-xs); color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
@@ -147,6 +156,7 @@ button { cursor: pointer; }
       <input id="q" type="search" placeholder="이름, 도메인, 메모로 찾기">
     </label>
     <div class="nav-right">
+      <button class="add-btn" id="codeBtn" type="button">+ 코드 폴더 올리기</button>
       <button class="add-btn" id="addBtn" type="button">+ 링크 추가</button>
     </div>
   </header>
@@ -196,7 +206,7 @@ button { cursor: pointer; }
         <ol>
           <li>아래 버튼을 누르면 입력한 내용이 채워진 GitHub 등록 화면이 새 탭으로 열려요.</li>
           <li>스크린샷이 있으면 거기에 끌어놓고 <b>Create</b>를 눌러 주세요. 없으면 사이트 화면을 자동으로 캡처해요.</li>
-          <li>이 페이지를 새로고침하면 카드로 올라가 있어요. (GitHub 로그인이 필요해요)</li>
+          <li>1~2분 뒤 이 페이지를 새로고침하면 카드로 올라가 있어요. (GitHub 로그인이 필요해요)</li>
         </ol>
       </div>
       <div class="sheet-foot">
@@ -204,6 +214,33 @@ button { cursor: pointer; }
         <button class="submit" type="submit"><span class="dot" aria-hidden="true"></span>GitHub에서 등록하기</button>
       </div>
     </form>
+  </div>
+</div>
+
+<div class="sheet-wrap" id="codeWrap" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="codeTitle">
+    <div class="sheet-head">
+      <h2 id="codeTitle">코드 폴더 올리기</h2>
+      <button type="button" id="closeCode">닫기 ✕</button>
+    </div>
+    <div class="how">
+      <p class="how-lead">직접 만든 HTML 작업을 이 선반에서 바로 열리는 페이지로 올려요. 카드에는 작업 화면이 그대로 미리보기로 나와요.</p>
+      <ol>
+        <li><b>폴더로 올릴 때:</b> 폴더 안에 <code>index.html</code>이 있어야 해요. 이미지·JS·CSS 파일은 같은 폴더에 함께 넣어 주세요.</li>
+        <li><b>파일 하나만 올릴 때:</b> <code>작업이름.html</code> 파일을 그대로 올리면 돼요.</li>
+        <li>아래 버튼을 누르면 GitHub 업로드 화면이 열려요. 폴더나 파일을 끌어놓고 <b>Commit changes</b>를 누르세요.</li>
+        <li>1~2분 뒤 이 선반을 새로고침하면 카드로 올라가 있어요.</li>
+      </ol>
+      <p class="how-lead">카드 제목·설명·분류는 HTML 파일의 <code>&lt;head&gt;</code>에서 읽어요. 없으면 폴더 이름으로 보여요.</p>
+      <pre class="snippet">&lt;title&gt;카드에 보일 제목&lt;/title&gt;
+&lt;meta name="description" content="한 줄 설명"&gt;
+&lt;meta name="category" content="모션"&gt;</pre>
+      <p class="how-lead">GitHub 계정이 있어야 하고, 이 저장소에 올릴 권한(협업자)이 없으면 주인이 승인해야 올라가요.</p>
+    </div>
+    <div class="sheet-foot">
+      <p class="form-msg"></p>
+      <a class="submit" href="https://github.com/rawfawv/rawfawv.github.io/upload/main/refs/entries" target="_blank" rel="noopener noreferrer"><span class="dot" aria-hidden="true"></span>GitHub에서 올리기</a>
+    </div>
   </div>
 </div>
 
@@ -255,11 +292,22 @@ function card(s) {
   top.append(link("title", s.title || domainOf(s.url)), el("span", "cat", s.category || ""));
   const thumb = link("thumb");
   thumb.setAttribute("aria-label", (s.title || domainOf(s.url)) + " 열기");
-  const img = el("img");
-  img.alt = ""; img.loading = "lazy"; img.referrerPolicy = "no-referrer";
-  img.src = s.thumb || autoThumb(s.url);
-  img.onerror = () => img.replaceWith(placeholder(s));
-  thumb.appendChild(img);
+  if (s.code && !s.thumb) {
+    // 같은 사이트에 올라간 코드 작업은 화면을 직접 줄여서 보여줌 (스크립트는 돌지만 이 페이지에는 손대지 못하게 격리)
+    const live = el("div", "live");
+    const frame = el("iframe");
+    frame.src = s.url; frame.loading = "lazy"; frame.tabIndex = -1; frame.title = (s.title || "") + " 미리보기";
+    frame.setAttribute("sandbox", "allow-scripts");
+    frame.setAttribute("aria-hidden", "true");
+    live.appendChild(frame);
+    thumb.appendChild(live);
+  } else {
+    const img = el("img");
+    img.alt = ""; img.loading = "lazy"; img.referrerPolicy = "no-referrer";
+    img.src = s.thumb || autoThumb(s.url);
+    img.onerror = () => img.replaceWith(placeholder(s));
+    thumb.appendChild(img);
+  }
   c.append(top, thumb);
   if (s.note) c.appendChild(el("p", "note", s.note));
   const bottom = el("div", "card-bottom");
@@ -319,7 +367,11 @@ function closeSheet() { $("sheetWrap").hidden = true; }
 $("addBtn").addEventListener("click", openSheet);
 $("closeSheet").addEventListener("click", closeSheet);
 $("sheetWrap").addEventListener("click", (e) => { if (e.target === $("sheetWrap")) closeSheet(); });
-document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("sheetWrap").hidden) closeSheet(); });
+const closeCode = () => { $("codeWrap").hidden = true; };
+$("codeBtn").addEventListener("click", () => { $("codeWrap").hidden = false; $("closeCode").focus(); });
+$("closeCode").addEventListener("click", closeCode);
+$("codeWrap").addEventListener("click", (e) => { if (e.target === $("codeWrap")) closeCode(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeSheet(); closeCode(); } });
 $("form").addEventListener("submit", (e) => {
   e.preventDefault();
   const url = normalizeUrl($("fUrl").value);
@@ -357,19 +409,60 @@ function siteFromIssue(issue) {
   return { url, title: one("title", 60), category: one("category", 24), note: one("note", 200), thumb, added: issue.created_at };
 }
 const ISSUES_API = "https://api.github.com/repos/rawfawv/rawfawv.github.io/issues?labels=site&state=open&per_page=100";
+const ENTRIES_API = "https://api.github.com/repos/rawfawv/rawfawv.github.io/contents/refs/entries?ref=main";
+
+// GitHub API는 로그인 없이 같은 인터넷 회선에서 시간당 60번까지만 불러올 수 있어서, 2분 동안은 이 브라우저에 저장한 결과를 다시 씀
+async function githubJson(url) {
+  const key = "refs-cache:" + url;
+  try {
+    const hit = JSON.parse(localStorage.getItem(key) || "null");
+    if (hit && Date.now() - hit.at < 2 * 60 * 1000) return hit.data;
+  } catch {}
+  const r = await fetch(url, { headers: { Accept: "application/vnd.github+json" } });
+  if (r.status === 404) return [];
+  if (!r.ok) throw new Error(r.status);
+  const data = await r.json();
+  try { localStorage.setItem(key, JSON.stringify({ at: Date.now(), data })); } catch {}
+  return data;
+}
+
+// refs/entries 에 올린 코드 작업(폴더의 index.html 또는 .html 파일)을 카드로 바꿈
+async function loadEntries() {
+  const list = await githubJson(ENTRIES_API);
+  const items = list.filter((f) => (f.type === "dir" && !f.name.startsWith(".")) || (f.type === "file" && /\.html?$/i.test(f.name)));
+  return Promise.all(items.map(async (f) => {
+    const url = new URL("entries/" + encodeURIComponent(f.name) + (f.type === "dir" ? "/" : ""), location.href).href;
+    const site = { url, title: f.type === "dir" ? f.name : f.name.replace(/\.html?$/i, ""), category: "코드", note: "", thumb: "", added: "", code: true };
+    try {
+      const r = await fetch(url, { cache: "no-cache" });
+      if (!r.ok) return site;
+      const doc = new DOMParser().parseFromString(await r.text(), "text/html");
+      const meta = (sel) => (doc.querySelector(sel)?.getAttribute("content") || "").trim();
+      const title = (doc.querySelector("title")?.textContent || "").trim();
+      if (title) site.title = title.slice(0, 60);
+      site.note = meta('meta[name="description"]').slice(0, 200);
+      site.category = meta('meta[name="category"]').slice(0, 24) || site.category;
+      const og = meta('meta[property="og:image"]');
+      if (og) site.thumb = safeUrl(new URL(og, url).href) || "";
+    } catch {}
+    return site;
+  }));
+}
 
 render();
 Promise.allSettled([
   fetch("sites.json", { cache: "no-cache" }).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }),
-  fetch(ISSUES_API, { headers: { Accept: "application/vnd.github+json" } }).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); }),
-]).then(([file, issues]) => {
+  githubJson(ISSUES_API),
+  loadEntries(),
+]).then(([file, issues, entries]) => {
   const fromFile = file.status === "fulfilled" ? (Array.isArray(file.value) ? file.value : file.value.sites || []) : [];
   const fromIssues = issues.status === "fulfilled" ? issues.value.filter((i) => !i.pull_request).map(siteFromIssue).filter(Boolean) : [];
+  const fromEntries = entries.status === "fulfilled" ? entries.value : [];
   const seen = new Set();
-  state.sites = [...fromFile.map((s) => ({ ...s, url: safeUrl(s.url || "") })), ...fromIssues]
+  state.sites = [...fromEntries, ...fromFile.map((s) => ({ ...s, url: safeUrl(s.url || "") })), ...fromIssues]
     .filter((s) => s.url && !seen.has(s.url.replace(/\/$/, "")) && seen.add(s.url.replace(/\/$/, "")))
     .map((s, i) => ({ ...s, i }));
-  if (issues.status === "rejected") {
+  if (issues.status === "rejected" || entries.status === "rejected") {
     $("notice").textContent = "새로 등록된 링크를 불러오지 못했어요. 잠시 뒤 새로고침해 주세요.";
     $("notice").hidden = false;
   }
