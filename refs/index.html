@@ -115,6 +115,8 @@ a.submit { text-decoration: none; }
 .pill:hover { background: var(--ink); color: var(--paper); }
 .notice { padding: 10px 14px; border-bottom: 1px solid var(--line); font-size: var(--text-sm); color: var(--muted); }
 .foot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 10px 14px; font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.foot .reload { border: 0; background: transparent; padding: 0; color: var(--ink); text-decoration: underline; text-underline-offset: 2px; font-size: inherit; letter-spacing: inherit; }
+.foot .reload:hover { color: var(--accent); }
 
 @media (max-width: 1100px) { :root { --cols: 3; --half: 2; } .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } .grid > :nth-child(4n) { border-right: 1px solid var(--line); } .grid > :nth-child(3n) { border-right: 0; } }
 @media (max-width: 800px) { :root { --cols: 2; --half: 1; } .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .grid > :nth-child(3n) { border-right: 1px solid var(--line); } .grid > :nth-child(2n) { border-right: 0; } .card, .ghost { min-height: 280px; } }
@@ -175,7 +177,7 @@ a.submit { text-decoration: none; }
   <section class="grid" id="grid" aria-live="polite"></section>
   <footer class="foot">
     <span>Team reference board</span>
-    <span>카드를 누르면 사이트가 새 탭으로 열려요</span>
+    <span>방금 올린 게 안 보이면 1~2분 뒤 <button type="button" class="reload" id="reloadBtn">목록 새로 불러오기</button></span>
   </footer>
 </div>
 
@@ -365,6 +367,10 @@ function render() {
 }
 
 $("q").addEventListener("input", (e) => { state.q = e.target.value; render(); });
+$("reloadBtn").addEventListener("click", () => {
+  try { Object.keys(localStorage).filter((k) => k.startsWith("refs-cache:")).forEach((k) => localStorage.removeItem(k)); } catch {}
+  location.reload();
+});
 $("cat").addEventListener("change", (e) => { state.cat = e.target.value; render(); });
 let resizeT;
 addEventListener("resize", () => { clearTimeout(resizeT); resizeT = setTimeout(render, 150); });
@@ -475,12 +481,13 @@ function applyCommentThumbs(sites, comments) {
   sites.forEach((s) => { if (latest[s.issueNum]) s.thumb = latest[s.issueNum]; });
 }
 
-// GitHub API는 로그인 없이 같은 인터넷 회선에서 시간당 60번까지만 불러올 수 있어서, 2분 동안은 이 브라우저에 저장한 결과를 다시 씀
+// GitHub API는 로그인 없이 같은 인터넷 회선에서 시간당 60번까지만 불러올 수 있어서, 1분 동안은 이 브라우저에 저장한 결과를 다시 씀
+// (바닥의 '목록 새로 불러오기'를 누르면 저장한 결과를 버리고 바로 다시 불러와요)
 async function githubJson(url) {
   const key = "refs-cache:" + url;
   try {
     const hit = JSON.parse(localStorage.getItem(key) || "null");
-    if (hit && Date.now() - hit.at < 2 * 60 * 1000) return hit.data;
+    if (hit && Date.now() - hit.at < 60 * 1000) return hit.data;
   } catch {}
   const r = await fetch(url, { headers: { Accept: "application/vnd.github+json" } });
   if (r.status === 404) return [];
@@ -498,7 +505,8 @@ async function loadEntries() {
     const url = new URL("entries/" + encodeURIComponent(f.name) + (f.type === "dir" ? "/" : ""), location.href).href;
     const path = "refs/entries/" + f.name.split("/").map(encodeURIComponent).join("/");
     const site = {
-      url, title: f.type === "dir" ? f.name : f.name.replace(/\.html?$/i, ""), category: "코드", note: "", thumb: "", added: "", code: true,
+      // 맥에서 올린 한글 이름은 자모가 쪼개져 저장돼서, 주소에는 그대로 쓰고 화면에 보일 때만 붙여서 보여줌
+      url, title: (f.type === "dir" ? f.name : f.name.replace(/\.html?$/i, "")).normalize("NFC"), category: "코드", note: "", thumb: "", added: "", code: true,
       // 폴더는 GitHub 폴더 화면(··· → Delete directory), 파일은 바로 편집·삭제 화면으로 보냄
       editUrl: REPO + (f.type === "dir" ? "/tree/main/" : "/edit/main/") + path,
       deleteUrl: REPO + (f.type === "dir" ? "/tree/main/" : "/delete/main/") + path,
