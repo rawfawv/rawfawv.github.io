@@ -1,0 +1,1137 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>옥외 LED 3D 프리뷰</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#e9ecee; --chrome:#ffffff; --stage:#23272c;
+    --ink:#15181c; --ink2:#5d656e; --line:#d6dbe0;
+    --accent:#0fa8a3; --accent-soft:rgba(15,168,163,.12);
+    --warn:#c9481f; --warn-soft:rgba(201,72,31,.1);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0e1113; --chrome:#171b1f; --stage:#0b0d10;
+      --ink:#e9edf0; --ink2:#98a2ab; --line:#272d33;
+      --accent:#2ac1bc; --accent-soft:rgba(42,193,188,.14);
+      --warn:#f0774c; --warn-soft:rgba(240,119,76,.12);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0e1113; --chrome:#171b1f; --stage:#0b0d10;
+    --ink:#e9edf0; --ink2:#98a2ab; --line:#272d33;
+    --accent:#2ac1bc; --accent-soft:rgba(42,193,188,.14);
+    --warn:#f0774c; --warn-soft:rgba(240,119,76,.12);
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+    font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .app{display:flex;flex-direction:column;height:100dvh}
+
+  header{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:10px 18px;background:var(--chrome);border-bottom:1px solid var(--line)}
+  header h1{margin:0;font-size:15px;font-weight:600;letter-spacing:-.01em}
+  header .venueName{color:var(--accent);font-weight:500}
+  header .spec{color:var(--ink2);font-size:12.5px;font-variant-numeric:tabular-nums}
+  header .right{margin-left:auto;display:flex;gap:8px}
+
+  main{flex:1;display:flex;min-height:0}
+
+  #stage{position:relative;flex:1;min-width:0;background:var(--stage);overflow:hidden;touch-action:none}
+  #bgLayer{position:absolute;inset:0}
+  #view{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab}
+  #view.dragging{cursor:grabbing}
+  #drop{position:absolute;inset:0;display:none;place-items:center;background:rgba(15,168,163,.18);border:2px dashed var(--accent);color:#fff;font-weight:500;font-size:16px;text-align:center;padding:20px}
+  #stage.over #drop{display:grid}
+
+  .hud{position:absolute;left:14px;bottom:14px;right:14px;display:flex;gap:8px;align-items:flex-end;pointer-events:none;flex-wrap:wrap}
+  .chip{background:rgba(12,14,17,.72);color:#e9edf0;border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:5px 11px;font-size:12px;font-variant-numeric:tabular-nums;backdrop-filter:blur(6px)}
+  .chip.warn{background:rgba(190,60,25,.88);border-color:rgba(255,255,255,.18)}
+
+  #videobar{position:absolute;left:14px;right:14px;bottom:52px;display:none;gap:10px;align-items:center;background:rgba(12,14,17,.74);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:7px 12px;backdrop-filter:blur(6px)}
+  #videobar.on{display:flex}
+  #videobar button{background:none;border:none;color:#fff;font:inherit;cursor:pointer;width:24px}
+  #videobar input[type=range]{flex:1;accent-color:var(--accent)}
+  #videobar .t{color:#cfd6db;font-size:12px;font-variant-numeric:tabular-nums;min-width:86px;text-align:right}
+
+  aside{width:304px;flex:none;background:var(--chrome);border-left:1px solid var(--line);overflow-y:auto;padding-bottom:28px}
+  aside.hidden{display:none}
+  .group{padding:14px 18px;border-bottom:1px solid var(--line)}
+  .group h2{margin:0 0 10px;font-size:12px;font-weight:600;color:var(--ink2)}
+
+  .row{display:flex;align-items:center;gap:9px;margin:8px 0}
+  .row label{flex:none;width:58px;color:var(--ink2);font-size:12.5px}
+  .row input[type=range]{flex:1;accent-color:var(--accent);min-width:0}
+  .row .val{flex:none;width:52px;text-align:right;font-size:12px;font-variant-numeric:tabular-nums;color:var(--ink2)}
+  .row input.num{flex:1;min-width:0;font:inherit;font-size:12.5px;padding:4px 7px;border:1px solid var(--line);border-radius:6px;background:transparent;color:var(--ink)}
+  .row input.num::placeholder{color:var(--ink2);opacity:.7}
+  .sizeRow{border-bottom:1px solid var(--line);padding-bottom:10px;margin-bottom:4px}
+
+  .bend{margin:12px 0 0}
+  .bendName{font-size:12.5px;font-weight:500;display:flex;align-items:center;gap:6px}
+  .bendName i{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+  .bend .row{margin:6px 0}
+
+  .side{margin:0 0 14px}
+  .side:last-child{margin-bottom:0}
+  .sideName{font-size:12px;font-weight:600;color:var(--accent);margin-bottom:6px}
+
+  button.btn{font:inherit;font-size:13px;border:1px solid var(--line);background:transparent;color:var(--ink);padding:7px 12px;border-radius:8px;cursor:pointer}
+  button.btn:hover{border-color:var(--accent);color:var(--accent)}
+  button.btn:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  button.btn.primary{background:var(--accent);border-color:var(--accent);color:#04322f;font-weight:500}
+  button.btn.wide{width:100%}
+  button.btn.small{font-size:12px;padding:5px 9px}
+
+  .venues{display:grid;gap:6px}
+  .venues button{text-align:left;font-size:13px;padding:8px 11px;line-height:1.35}
+  .venues button small{display:block;color:var(--ink2);font-size:11.5px;font-variant-numeric:tabular-nums}
+  .venues button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+  .venues button[aria-pressed="true"] small{color:var(--accent)}
+
+  .presets{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .presets button{font-size:12.5px;padding:7px 4px}
+  .presets button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+
+  select{font:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--chrome);color:var(--ink);width:100%}
+  .check{display:flex;align-items:center;gap:8px;margin:8px 0;font-size:13px;cursor:pointer}
+  .check input{accent-color:var(--accent);width:15px;height:15px}
+
+  .file{display:block;border:1px dashed var(--line);border-radius:10px;padding:12px;text-align:center;cursor:pointer;color:var(--ink2);font-size:12.5px}
+  .file:hover{border-color:var(--accent);color:var(--accent)}
+  .file input{display:none}
+
+  .meta{margin-top:8px;font-size:12px;font-variant-numeric:tabular-nums}
+  .meta div{margin:3px 0;display:flex;justify-content:space-between;gap:8px}
+  .meta .k{color:var(--ink2)}
+  .meta .v{color:var(--ink);text-align:right;word-break:break-all}
+  .meta .v.bad{color:var(--warn);font-weight:500}
+  .notice{margin-top:8px;background:var(--warn-soft);color:var(--warn);border-radius:8px;padding:8px 10px;font-size:12px}
+  .rules{margin:8px 0 0;padding:0;list-style:none;color:var(--ink2);font-size:12px}
+  .rules li{margin:4px 0;padding-left:11px;position:relative}
+  .rules li::before{content:"";position:absolute;left:0;top:8px;width:4px;height:4px;border-radius:50%;background:var(--accent)}
+  .hint{color:var(--ink2);font-size:11.5px;margin-top:10px}
+
+  .legend{display:flex;flex-wrap:wrap;gap:8px;font-size:11.5px;color:var(--ink2);margin-top:8px}
+  .legend span{display:flex;align-items:center;gap:5px}
+  .legend i{width:9px;height:9px;border-radius:2px}
+
+  @media (max-width:860px){
+    main{flex-direction:column}
+    aside{width:auto;border-left:none;border-top:1px solid var(--line);max-height:48dvh}
+    #stage{min-height:40dvh}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>옥외 LED 3D 프리뷰 &nbsp;<span class="venueName" id="hName"></span></h1>
+    <div class="spec" id="hSpec"></div>
+    <div class="right"><button class="btn" id="panelToggle">패널 접기</button></div>
+  </header>
+
+  <main>
+    <div id="stage">
+      <div id="bgLayer"></div>
+      <canvas id="view"></canvas>
+      <div id="drop">여기에 놓으면 올라갑니다</div>
+      <div id="videobar">
+        <button id="playBtn" aria-label="재생 / 일시정지">▶</button>
+        <button id="syncBtn" style="display:none" title="처음부터 함께 재생" aria-label="처음부터 함께 재생">↻</button>
+        <input type="range" id="seek" min="0" max="1000" value="0" aria-label="재생 위치">
+        <div class="t" id="time">0.0 / 0.0초</div>
+      </div>
+      <div class="hud" id="hud"></div>
+    </div>
+
+    <aside id="panel">
+      <div class="group">
+        <h2>매체</h2>
+        <div class="venues" id="venues"></div>
+        <ul class="rules" id="rules"></ul>
+        <div class="legend" id="legend"></div>
+      </div>
+
+      <div class="group">
+        <h2>소재</h2>
+        <div id="sources"></div>
+      </div>
+
+      <div class="group">
+        <h2>시점</h2>
+        <div class="presets">
+          <button class="btn" data-az="0" data-el="-4">정면</button>
+          <button class="btn" data-az="42" data-el="-13">우측 코너</button>
+          <button class="btn" data-az="-42" data-el="-13">좌측 코너</button>
+          <button class="btn" data-az="30" data-el="-32">올려다보기</button>
+        </div>
+        <div class="row"><label for="az">좌우</label><input type="range" id="az" min="-179" max="179" value="42"><div class="val" id="azV">42°</div></div>
+        <div class="row"><label for="el">상하</label><input type="range" id="el" min="-60" max="55" value="-13"><div class="val" id="elV">-13°</div></div>
+        <div class="row"><label for="zoom">줌</label><input type="range" id="zoom" min="0.35" max="2.2" step="0.01" value="1"><div class="val" id="zoomV">1.00</div></div>
+        <div class="row"><label for="fov">렌즈</label><input type="range" id="fov" min="14" max="70" value="34"><div class="val" id="fovV">34mm</div></div>
+        <button class="btn wide" id="fitBtn" style="margin-top:4px">화면에 맞추기</button>
+      </div>
+
+      <div class="group">
+        <h2>꺾임</h2>
+        <div id="structure"></div>
+        <div class="hint">배분 100%는 곡면을 전면부에서 전부 가져오고, 50%면 전면·후면이 반씩 나눠 갖습니다. 매체사에서 R값을 받으면 실측 가로와 R만 넣으면 각도가 자동으로 잡힙니다.</div>
+      </div>
+
+      <div class="group">
+        <h2>표시</h2>
+        <div class="row"><label for="bright">밝기</label><input type="range" id="bright" min="35" max="150" value="100"><div class="val" id="brightV">100</div></div>
+        <div class="row" id="gapRow"><label for="gap">간격</label><input type="range" id="gap" min="0" max="2" step="0.05" value="0.5"><div class="val" id="gapV">0.50</div></div>
+        <label class="check"><input type="checkbox" id="seams" checked> 면 경계선 표시</label>
+        <select id="bgMode" style="margin-top:8px">
+          <option value="studio">스튜디오 그라데이션</option>
+          <option value="dark">어두운 단색</option>
+          <option value="sky">맑은 하늘</option>
+          <option value="image">현장 사진</option>
+        </select>
+        <label class="file" style="margin-top:8px">현장 사진 올리기
+          <input type="file" id="bgFile" accept="image/*"></label>
+      </div>
+
+      <div class="group" id="exportGroup" style="display:none">
+        <h2>내보내기</h2>
+        <button class="btn primary wide" id="savePng">현재 화면 PNG로 저장</button>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var C_FRONT = '#f53b30', C_CURVE = '#0fb521', C_SIDE = '#ffd83d';
+
+  var VENUES = [
+    {
+      id:'gangnam', name:'강남 씨티빌딩', w:2400, h:832, maxMB:100, maxSec:30,
+      view:{az:44, el:-12},
+      segs:[
+        {t:'flat', px:1376, label:'정면', color:C_FRONT, main:true},
+        {t:'curve', px:384, deg:90, label:'곡면', color:C_CURVE},
+        {t:'flat', px:640, label:'측면', color:C_SIDE}
+      ],
+      rules:['100MB 미만 · 30초','좌 → 우 : 정면 · 곡면 · 측면']
+    },
+    {
+      id:'lumi', name:'루미미디어', w:2192, h:2976, maxMB:100, maxSec:30,
+      view:{az:-52, el:-14},
+      segs:[
+        {t:'flat', px:192, label:'배면', color:C_SIDE},
+        {t:'curve', px:272, deg:135, label:'측면(곡면)', color:C_CURVE},
+        {t:'flat', px:1728, label:'정면', color:C_FRONT, main:true}
+      ],
+      rules:['100MB 미만 · 30초 · 1개 파일로 입고','측면부만 곡면, 배면·정면은 평면 모듈','로고는 곡면을 피해 정면 또는 배면에 배치']
+    },
+    {
+      id:'gyujeong', name:'강남대로 규정빌딩', w:2496, h:768, maxMB:100, maxSec:30,
+      view:{az:-18, el:-10},
+      segs:[
+        {t:'flat', px:480, label:'좌측면', color:C_SIDE},
+        {t:'joint', deg:68, round:300, label:'좌 모서리'},
+        {t:'flat', px:1536, label:'정면', color:C_FRONT, main:true},
+        {t:'joint', deg:68, round:300, label:'우 모서리'},
+        {t:'flat', px:480, label:'우측면', color:C_SIDE}
+      ],
+      rules:['100MB 미만 · 30초','정면은 CF 동영상, 좌·우측면은 로고 / 슬로건 / 포스터']
+    },
+    {
+      id:'itaewon', name:'이태원 스크린', w:2400, h:688, maxMB:100, maxSec:30,
+      view:{az:-34, el:-16},
+      segs:[
+        {t:'flat', px:672, label:'배면', color:C_SIDE},
+        {t:'curve', px:384, deg:90, label:'곡면', color:C_CURVE},
+        {t:'flat', px:960, label:'정면', color:C_FRONT, main:true},
+        {t:'joint', deg:90, round:24, label:'우 모서리'},
+        {t:'flat', px:384, label:'측면', color:C_SIDE}
+      ],
+      rules:['100MB 미만 · 30초 · mp4 / mkv · 30~60fps','20초 소재는 송출 불가','사운드 AAC 48kHz · -15 ~ -13 LUFS','운영 06:00 ~ 24:00']
+    },
+    {
+      id:'panorama', name:'이태원 파노라마', w:4192, h:512, maxMB:1000, maxSec:30,
+      view:{az:38, el:-17},
+      segs:[
+        {t:'flat', px:3680, label:'정면', color:C_FRONT, main:true},
+        {t:'joint', deg:90, round:0, label:'우 모서리'},
+        {t:'flat', px:512, label:'측면', color:C_SIDE}
+      ],
+      rules:['1,000MB 미만 · 30초','4,192 × 512 한 개 파일로 제작','곡면 없이 90°로 각진 모서리']
+    },
+    {
+      id:'kt', name:'KT스퀘어 좌·우', w:5760, h:2400, maxMB:200, maxSec:30,
+      view:{az:0, el:-7},
+      panels:[
+        {
+          key:'L', label:'좌측',
+          segs:[
+            {t:'flat', px:1440, label:'후면부', color:C_SIDE},
+            {t:'joint', deg:90, sign:1, round:480, bias:1, biasFlip:true, label:'코너'},
+            {t:'flat', px:4320, label:'전면부', color:C_FRONT, main:true}
+          ]
+        },
+        {
+          key:'R', label:'우측',
+          segs:[
+            {t:'flat', px:4320, label:'전면부', color:C_FRONT, main:true},
+            {t:'joint', deg:90, sign:1, round:480, bias:1, label:'코너'},
+            {t:'flat', px:1440, label:'후면부', color:C_SIDE}
+          ]
+        }
+      ],
+      rules:['200MB 미만 · 30초','좌·우 두 면이 수평으로 뒤집힌 형태로 함께 송출','전면부 4,320 = 평면 + 곡면 / 후면부 1,440','좌·우 각각 다른 소재를 올릴 수 있음']
+    }
+  ];
+
+  VENUES.forEach(function(v){
+    if (!v.panels) v.panels = [{key:'main', label:'', segs:v.segs}];
+  });
+
+  var venue = VENUES[0];
+
+  var stage = document.getElementById('stage');
+  var canvas = document.getElementById('view');
+  var bgLayer = document.getElementById('bgLayer');
+  var hud = document.getElementById('hud');
+
+  var renderer = new THREE.WebGLRenderer({canvas:canvas, antialias:true, alpha:true, preserveDrawingBuffer:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.setClearColor(0x000000, 0);
+
+  var scene = new THREE.Scene();
+  var root = new THREE.Group();
+  scene.add(root);
+  var camera = new THREE.PerspectiveCamera(34, 1, 0.05, 400);
+  var target = new THREE.Vector3();
+  var maxAniso = renderer.capabilities.getMaxAnisotropy();
+
+  var panels = [];          // {def, rig, mesh, seams, material, guideTex, asset}
+  var assets = {};          // venueId/key -> asset
+  var activeVideos = [];
+  var brightness = 1;
+  var gapUnits = 0.5;
+
+  function biasOf(s){
+    var b = (s.bias == null) ? 0.5 : s.bias;
+    return s.biasFlip ? 1 - b : b;
+  }
+  function degOf(s){ return (s.sign || 1) * Math.max(3, s.deg); }
+  function clamp(v,a,b){ return Math.min(b, Math.max(a,v)); }
+  function wrap(v){ while(v>179)v-=360; while(v<-179)v+=360; return v; }
+
+  // ---------- 경로 ----------
+  function buildPath(segsIn){
+    var SEG = 56;
+    var list = segsIn.map(function(s){
+      return {t:s.t, px:s.px, deg:s.deg, sign:s.sign, round:s.round,
+              bias:s.bias, biasFlip:s.biasFlip, main:s.main};
+    });
+
+    for (var i = 0; i < list.length; i++){
+      if (list[i].t === 'joint' && list[i].round > 0){
+        var prev = list[i-1], next = list[i+1];
+        if (prev && next && prev.px && next.px){
+          var b = biasOf(list[i]);
+          var tp = Math.min(list[i].round*b, prev.px*0.9);
+          var tn = Math.min(list[i].round*(1-b), next.px*0.9);
+          prev.px -= tp; next.px -= tn;
+          list[i] = {t:'curve', px: tp+tn, deg: list[i].deg, sign: list[i].sign};
+        }
+      }
+    }
+
+    function nX(p){ return Math.sin(p); }
+    function nZ(p){ return Math.cos(p); }
+
+    var pts = [], phi = 0, x = 0, z = 0, len = 0, mainPhi = 0;
+    pts.push({x:0, z:0, len:0, nx:0, nz:1});
+
+    list.forEach(function(s){
+      if (s.main) mainPhi = phi;
+      if (s.t === 'flat'){
+        x += Math.cos(phi)*s.px; z += -Math.sin(phi)*s.px; len += s.px;
+        pts.push({x:x, z:z, len:len, nx:nX(phi), nz:nZ(phi)});
+      } else if (s.t === 'curve'){
+        var a = degOf(s) * Math.PI/180;
+        var r = s.px / a;
+        var cx = x - nX(phi)*r, cz = z - nZ(phi)*r;
+        for (var i = 1; i <= SEG; i++){
+          var p = phi + a*i/SEG;
+          x = cx + nX(p)*r; z = cz + nZ(p)*r;
+          pts.push({x:x, z:z, len:len + s.px*i/SEG, nx:nX(p), nz:nZ(p)});
+        }
+        len += s.px; phi += a;
+      } else if (s.t === 'joint'){
+        phi += degOf(s) * Math.PI/180;
+      }
+    });
+    return {pts:pts, mainPhi:mainPhi};
+  }
+
+  function seamMarks(segs){
+    var marks = [], acc = 0;
+    segs.forEach(function(s, i){
+      if (s.px){
+        acc += s.px;
+        var next = segs[i+1];
+        if (!next || next.t === 'joint') return;
+        marks.push(acc);
+      } else if (s.t === 'joint'){
+        var r = s.round || 0;
+        if (r > 0){ var b = biasOf(s); marks.push(acc - r*b, acc + r*(1-b)); }
+        else marks.push(acc);
+      }
+    });
+    return marks;
+  }
+
+  function sampleAt(pts, len){
+    for (var i = 1; i < pts.length; i++){
+      if (pts[i].len >= len - 0.001){
+        var a = pts[i-1], b = pts[i], span = b.len - a.len;
+        var t = span > 0 ? (len - a.len)/span : 0;
+        return {x:a.x+(b.x-a.x)*t, z:a.z+(b.z-a.z)*t, nx:a.nx+(b.nx-a.nx)*t, nz:a.nz+(b.nz-a.nz)*t};
+      }
+    }
+    return pts[pts.length-1];
+  }
+
+  function specParts(segs){
+    var out = [];
+    segs.forEach(function(s, i){
+      if (s.px){
+        var take = 0, pj = segs[i-1], nj = segs[i+1];
+        if (nj && nj.t === 'joint' && nj.round > 0) take += nj.round * biasOf(nj);
+        if (pj && pj.t === 'joint' && pj.round > 0) take += pj.round * (1 - biasOf(pj));
+        take = Math.min(take, s.px*0.9);
+        out.push({label:s.label, px:Math.round(s.px - take), color:s.color});
+      } else if (s.t === 'joint' && s.round > 0){
+        out.push({label:'곡면', px:Math.round(s.round), color:C_CURVE});
+      }
+    });
+    return out;
+  }
+
+  // ---------- 패널 ----------
+  function disposePanels(){
+    panels.forEach(function(p){
+      root.remove(p.rig);
+      p.mesh.geometry.dispose();
+      p.seams.geometry.dispose();
+      p.material.dispose();
+      if (p.guideTex) p.guideTex.dispose();
+    });
+    panels = [];
+  }
+
+  function createPanels(v){
+    disposePanels();
+    v.panels.forEach(function(def){
+      var material = new THREE.MeshBasicMaterial({side:THREE.DoubleSide, toneMapped:false});
+      material.color.setScalar(brightness);
+      var mesh = new THREE.Mesh(new THREE.BufferGeometry(), material);
+      var seams = new THREE.LineSegments(new THREE.BufferGeometry(),
+        new THREE.LineBasicMaterial({color:0x2ac1bc, transparent:true, opacity:.9}));
+      seams.visible = document.getElementById('seams').checked;
+      var rig = new THREE.Group();
+      rig.add(mesh); rig.add(seams);
+      root.add(rig);
+      panels.push({def:def, rig:rig, mesh:mesh, seams:seams, material:material, guideTex:null});
+    });
+  }
+
+  function rebuild(){
+    var H = venue.h, W = venue.w;
+    panels.forEach(function(p){
+      var built = buildPath(p.def.segs), pts = built.pts, n = pts.length;
+      var pos = new Float32Array(n*6), uv = new Float32Array(n*4), idx = [];
+      for (var i = 0; i < n; i++){
+        var q = pts[i], u = q.len/W;
+        pos[i*6+0]=q.x; pos[i*6+1]=-H/2; pos[i*6+2]=q.z;
+        pos[i*6+3]=q.x; pos[i*6+4]= H/2; pos[i*6+5]=q.z;
+        uv[i*4+0]=u; uv[i*4+1]=0; uv[i*4+2]=u; uv[i*4+3]=1;
+      }
+      for (var j = 0; j < n-1; j++){
+        var a=j*2, b=j*2+1, c=(j+1)*2, d=(j+1)*2+1;
+        idx.push(a,c,b, b,c,d);
+      }
+      var g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(pos,3));
+      g.setAttribute('uv', new THREE.BufferAttribute(uv,2));
+      g.setIndex(idx);
+      p.mesh.geometry.dispose(); p.mesh.geometry = g;
+
+      var v3 = [], off = Math.max(2, W/500);
+      seamMarks(p.def.segs).forEach(function(L){
+        var s = sampleAt(pts, L), m = Math.hypot(s.nx, s.nz) || 1;
+        v3.push(s.x + s.nx/m*off, -H/2, s.z + s.nz/m*off,
+                s.x + s.nx/m*off,  H/2, s.z + s.nz/m*off);
+      });
+      p.seams.geometry.dispose();
+      var sg = new THREE.BufferGeometry();
+      sg.setAttribute('position', new THREE.Float32BufferAttribute(v3,3));
+      p.seams.geometry = sg;
+
+      p.rig.rotation.y = -built.mainPhi;
+      p.rig.scale.setScalar(1/H);
+      g.computeBoundingBox();
+      var bb = g.boundingBox;
+      p.mesh.position.set(-(bb.min.x+bb.max.x)/2, 0, -(bb.min.z+bb.max.z)/2);
+      p.seams.position.copy(p.mesh.position);
+    });
+    layout();
+    fit();
+  }
+
+  function layout(){
+    if (panels.length === 1){ panels[0].rig.position.x = 0; return; }
+    var boxes = panels.map(function(p){
+      p.rig.position.x = 0;
+      return new THREE.Box3().setFromObject(p.rig);
+    });
+    var widths = boxes.map(function(b){ return b.max.x - b.min.x; });
+    var total = widths.reduce(function(a,b){ return a+b; }, 0) + gapUnits*(panels.length-1);
+    var x = -total/2;
+    panels.forEach(function(p, i){
+      p.rig.position.x = x - boxes[i].min.x;
+      x += widths[i] + gapUnits;
+    });
+  }
+
+  // ---------- 카메라 ----------
+  var view = {az:44, el:-12, zoom:1, fov:34}, fitDist = 5;
+
+  function fit(){
+    var sph = new THREE.Box3().setFromObject(root).getBoundingSphere(new THREE.Sphere());
+    if (!isFinite(sph.radius) || sph.radius <= 0) return;
+    target.copy(sph.center);
+    var vFov = view.fov*Math.PI/180, aspect = Math.max(0.3, camera.aspect);
+    var hFov = 2*Math.atan(Math.tan(vFov/2)*aspect);
+    fitDist = sph.radius / Math.sin(Math.min(vFov,hFov)/2) * 1.1;
+    applyCamera();
+  }
+
+  function applyCamera(){
+    var a = view.az*Math.PI/180, e = view.el*Math.PI/180, d = fitDist*view.zoom;
+    camera.fov = view.fov;
+    camera.position.set(
+      target.x + d*Math.cos(e)*Math.sin(a),
+      target.y + d*Math.sin(e),
+      target.z + d*Math.cos(e)*Math.cos(a));
+    camera.lookAt(target);
+    camera.updateProjectionMatrix();
+  }
+
+  function resize(){
+    var w = stage.clientWidth, h = stage.clientHeight;
+    if (!w || !h) return;
+    renderer.setSize(w, h, false);
+    camera.aspect = w/h;
+    fit();
+  }
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(stage);
+  window.addEventListener('resize', resize);
+
+  var drag = null;
+  canvas.addEventListener('pointerdown', function(e){
+    drag = {x:e.clientX, y:e.clientY, az:view.az, el:view.el};
+    canvas.setPointerCapture(e.pointerId); canvas.classList.add('dragging');
+  });
+  canvas.addEventListener('pointermove', function(e){
+    if (!drag) return;
+    view.az = wrap(drag.az + (e.clientX-drag.x)*0.35);
+    view.el = clamp(drag.el - (e.clientY-drag.y)*0.25, -60, 55);
+    syncView(); applyCamera(); clearPresets();
+  });
+  ['pointerup','pointercancel'].forEach(function(ev){
+    canvas.addEventListener(ev, function(){ drag=null; canvas.classList.remove('dragging'); });
+  });
+  canvas.addEventListener('wheel', function(e){
+    e.preventDefault();
+    view.zoom = clamp(view.zoom*(1 + Math.sign(e.deltaY)*0.08), 0.35, 2.2);
+    syncView(); applyCamera();
+  }, {passive:false});
+
+  function syncView(){
+    put('az', view.az, Math.round(view.az)+'°');
+    put('el', view.el, Math.round(view.el)+'°');
+    put('zoom', view.zoom, view.zoom.toFixed(2));
+    function put(id,val,txt){
+      document.getElementById(id).value = val;
+      document.getElementById(id+'V').textContent = txt;
+    }
+  }
+
+  function bind(id, fn, fmt){
+    var el = document.getElementById(id), out = document.getElementById(id+'V');
+    el.addEventListener('input', function(){
+      var v = parseFloat(el.value);
+      if (out) out.textContent = fmt ? fmt(v) : v;
+      fn(v);
+    });
+  }
+  bind('az', function(v){ view.az=v; applyCamera(); clearPresets(); }, function(v){return v+'°';});
+  bind('el', function(v){ view.el=v; applyCamera(); clearPresets(); }, function(v){return v+'°';});
+  bind('zoom', function(v){ view.zoom=v; applyCamera(); }, function(v){return v.toFixed(2);});
+  bind('fov', function(v){ view.fov=v; fit(); }, function(v){return Math.round(v)+'mm';});
+  bind('bright', function(v){
+    brightness = v/100;
+    panels.forEach(function(p){ p.material.color.setScalar(brightness); });
+  }, function(v){return Math.round(v);});
+  bind('gap', function(v){ gapUnits = v; layout(); fit(); }, function(v){return v.toFixed(2);});
+
+  var presetBtns = [].slice.call(document.querySelectorAll('.presets button'));
+  function clearPresets(){ presetBtns.forEach(function(b){ b.setAttribute('aria-pressed','false'); }); }
+  presetBtns.forEach(function(b){
+    b.addEventListener('click', function(){
+      clearPresets(); b.setAttribute('aria-pressed','true');
+      view.az = parseFloat(b.dataset.az); view.el = parseFloat(b.dataset.el);
+      syncView(); applyCamera();
+    });
+  });
+  document.getElementById('fitBtn').addEventListener('click', function(){ view.zoom=1; syncView(); fit(); });
+  document.getElementById('seams').addEventListener('change', function(e){
+    panels.forEach(function(p){ p.seams.visible = e.target.checked; });
+  });
+  document.getElementById('panelToggle').addEventListener('click', function(){
+    var p = document.getElementById('panel');
+    p.classList.toggle('hidden');
+    this.textContent = p.classList.contains('hidden') ? '패널 펼치기' : '패널 접기';
+    setTimeout(resize, 0);
+  });
+
+  // ---------- 가이드 텍스처 ----------
+  function guideTexture(v, def){
+    var c = document.createElement('canvas');
+    var scale = Math.min(1, 4096/Math.max(v.w, v.h));
+    c.width = Math.round(v.w*scale); c.height = Math.round(v.h*scale);
+    var x = c.getContext('2d'), base = Math.min(c.width, c.height), ox = 0;
+
+    def.segs.forEach(function(s){
+      if (!s.px) return;
+      var w = s.px*scale;
+      x.fillStyle = s.color; x.fillRect(ox, 0, w+1, c.height);
+      x.fillStyle = (s.color === C_SIDE) ? '#4a3400' : '#ffffff';
+      x.textAlign = 'center'; x.textBaseline = 'middle';
+      var vertical = w < base*0.22;
+      var fs = Math.max(14, Math.min(base/13, (vertical ? c.height : w)/8));
+      x.save(); x.translate(ox + w/2, c.height/2);
+      if (vertical) x.rotate(-Math.PI/2);
+      x.font = '600 ' + fs + 'px "IBM Plex Sans KR", sans-serif';
+      x.fillText(s.label, 0, -fs*0.65);
+      x.font = '500 ' + (fs*0.72) + 'px "IBM Plex Sans KR", sans-serif';
+      x.fillText(s.px + ' × ' + v.h, 0, fs*0.65);
+      x.restore();
+      ox += w;
+    });
+
+    var acc = 0;
+    def.segs.forEach(function(s){
+      if (s.px){ acc += s.px; return; }
+      if (s.t !== 'joint' || !(s.round > 0)) return;
+      var gx = (acc - s.round*biasOf(s))*scale, gw = s.round*scale;
+      x.fillStyle = C_CURVE; x.fillRect(gx, 0, gw, c.height);
+      x.fillStyle = '#ffffff'; x.textAlign = 'center'; x.textBaseline = 'middle';
+      var f2 = Math.max(13, Math.min(base/15, (gw < base*0.22 ? c.height : gw)/8));
+      x.save(); x.translate(gx + gw/2, c.height/2);
+      if (gw < base*0.22) x.rotate(-Math.PI/2);
+      x.font = '600 ' + f2 + 'px "IBM Plex Sans KR", sans-serif';
+      x.fillText('곡면', 0, -f2*0.65);
+      x.font = '500 ' + (f2*0.72) + 'px "IBM Plex Sans KR", sans-serif';
+      x.fillText(Math.round(s.round) + ' × ' + v.h, 0, f2*0.65);
+      x.restore();
+    });
+
+    x.fillStyle = 'rgba(255,255,255,.92)'; x.textAlign = 'center';
+    x.font = '500 ' + Math.max(12, base/28) + 'px "IBM Plex Sans KR", sans-serif';
+    x.fillText(v.name + (def.label ? ' · ' + def.label : '') + ' · ' + v.w + ' × ' + v.h +
+               ' · ' + v.maxMB + 'MB 미만 · ' + v.maxSec + '초',
+               c.width/2, c.height - base/14);
+    var t = new THREE.CanvasTexture(c);
+    t.encoding = THREE.sRGBEncoding; t.anisotropy = maxAniso;
+    return t;
+  }
+
+  function showGuide(p){
+    if (p.guideTex) p.guideTex.dispose();
+    p.guideTex = guideTexture(venue, p.def);
+    p.material.map = p.guideTex;
+    p.material.needsUpdate = true;
+    p.usingGuide = true;
+  }
+
+  function refreshGuides(){
+    panels.forEach(function(p){ if (p.usingGuide) showGuide(p); });
+  }
+
+  // ---------- 규격 표시 ----------
+  function refreshSpec(){
+    var parts = specParts(venue.panels[venue.panels.length-1].segs);
+    var label = venue.panels.length > 1 ? '  ·  좌·우 2면' : '';
+    document.getElementById('hSpec').textContent = venue.w + ' × ' + venue.h + label + '  ·  ' +
+      parts.map(function(p){ return p.label + ' ' + p.px; }).join(' / ');
+    document.getElementById('legend').innerHTML = parts.map(function(p){
+      return '<span><i style="background:' + p.color + '"></i>' + p.label + ' ' + p.px + '</span>';
+    }).join('');
+  }
+
+  // ---------- 꺾임 컨트롤 ----------
+  function slider(parent, label, min, max, step, value, unit, onInput){
+    var row = document.createElement('div'); row.className = 'row';
+    var lb = document.createElement('label'); lb.textContent = label;
+    var input = document.createElement('input');
+    input.type = 'range'; input.min = min; input.max = max; input.step = step; input.value = value;
+    var val = document.createElement('div'); val.className = 'val';
+    val.textContent = Math.round(value) + unit;
+    input.addEventListener('input', function(){
+      var v = parseFloat(input.value);
+      val.textContent = Math.round(v) + unit;
+      onInput(v);
+    });
+    row.appendChild(lb); row.appendChild(input); row.appendChild(val);
+    parent.appendChild(row);
+  }
+
+  function numRow(parent, label, placeholder, value, onChange){
+    var row = document.createElement('div'); row.className = 'row';
+    var lb = document.createElement('label'); lb.textContent = label;
+    var input = document.createElement('input');
+    input.type = 'number'; input.className = 'num'; input.placeholder = placeholder;
+    if (value != null && value !== '') input.value = value;
+    input.addEventListener('change', function(){ onChange(parseFloat(input.value)); });
+    row.appendChild(lb); row.appendChild(input);
+    parent.appendChild(row);
+    return row;
+  }
+
+  function bendsOf(def){
+    return def.segs.filter(function(s){ return s.t === 'curve' || s.t === 'joint'; });
+  }
+
+  // 같은 매체의 여러 면은 같은 하드웨어이므로 n번째 꺾임을 함께 맞춘다
+  function eachLinkedBend(index, fn){
+    venue.panels.forEach(function(def){
+      var b = bendsOf(def)[index];
+      if (b) fn(b);
+    });
+  }
+
+  function afterStructureChange(){
+    refreshGuides(); refreshSpec(); rebuild();
+  }
+
+  function applyR(index, rmm){
+    eachLinkedBend(index, function(s){ s.rmm = rmm; });
+    if (!(rmm > 0) || !(venue.widthM > 0)) return;
+    var rpx = rmm/1000 * (venue.w / venue.widthM);
+    eachLinkedBend(index, function(s){
+      if (s.t === 'curve') s.deg = clamp(s.px/rpx * 180/Math.PI, 20, 170);
+      else s.round = clamp(rpx * s.deg*Math.PI/180, 0, venue.w*0.3);
+    });
+    buildStructure();
+    afterStructureChange();
+  }
+
+  function buildStructure(){
+    var box = document.getElementById('structure');
+    box.innerHTML = '';
+    var sizeRow = numRow(box, '실측 가로', '전광판 실폭 m', venue.widthM, function(v){
+      venue.widthM = v > 0 ? v : null;
+      buildStructure();
+    });
+    sizeRow.className = 'row sizeRow';
+
+    bendsOf(venue.panels[0]).forEach(function(s0, idx){
+      var blk = document.createElement('div'); blk.className = 'bend';
+      var name = document.createElement('div'); name.className = 'bendName';
+      name.innerHTML = '<i></i>' + (s0.label || '모서리') +
+        (s0.t === 'curve' ? ' <span style="color:var(--ink2);font-weight:400">· ' + s0.px + 'px</span>' : '');
+      blk.appendChild(name);
+
+      slider(blk, '각도', 20, 170, 1, s0.deg, '°', function(v){
+        eachLinkedBend(idx, function(s){ s.deg = v; });
+        afterStructureChange();
+      });
+      if (s0.t === 'joint'){
+        var maxR = Math.floor(Math.min(venue.w*0.3, 900));
+        slider(blk, '곡면폭', 0, maxR, 4, Math.min(s0.round, maxR), 'px', function(v){
+          eachLinkedBend(idx, function(s){ s.round = v; });
+          afterStructureChange();
+        });
+        slider(blk, '배분', 0, 100, 5, (s0.bias == null ? 0.5 : s0.bias)*100, '%', function(v){
+          eachLinkedBend(idx, function(s){ s.bias = v/100; });
+          afterStructureChange();
+        });
+      }
+      numRow(blk, 'R', venue.widthM > 0 ? '반지름 mm' : '실측 가로 먼저 입력', s0.rmm, function(v){
+        applyR(idx, v);
+      });
+      box.appendChild(blk);
+    });
+  }
+
+  // ---------- 소재 ----------
+  function keyOf(def){ return venue.id + '/' + def.key; }
+  function fmtMB(b){ return (b/1048576).toFixed(1)+'MB'; }
+  function ratioOK(w,h){
+    var want = venue.w/venue.h;
+    return Math.abs(w/h - want)/want < 0.01;
+  }
+
+  function buildSources(){
+    var box = document.getElementById('sources');
+    box.innerHTML = '';
+    venue.panels.forEach(function(def){
+      var wrapEl = document.createElement('div'); wrapEl.className = 'side';
+      if (def.label){
+        var t = document.createElement('div'); t.className = 'sideName';
+        t.textContent = def.label + ' 화면';
+        wrapEl.appendChild(t);
+      }
+      var lab = document.createElement('label'); lab.className = 'file';
+      lab.innerHTML = '이미지 또는 영상 불러오기<br>PNG · JPG · MP4 · WebM';
+      var input = document.createElement('input');
+      input.type = 'file'; input.accept = 'image/*,video/*';
+      input.addEventListener('change', function(e){ loadFile(e.target.files[0], def); });
+      lab.appendChild(input);
+      wrapEl.appendChild(lab);
+
+      var meta = document.createElement('div'); meta.className = 'meta';
+      meta.id = 'meta-' + def.key;
+      wrapEl.appendChild(meta);
+      var notice = document.createElement('div'); notice.id = 'notice-' + def.key;
+      wrapEl.appendChild(notice);
+
+      var clr = document.createElement('button');
+      clr.className = 'btn small wide'; clr.style.marginTop = '8px'; clr.style.display = 'none';
+      clr.id = 'clear-' + def.key;
+      clr.textContent = '비우고 규격 가이드 보기';
+      clr.addEventListener('click', function(){ clearArt(def); });
+      wrapEl.appendChild(clr);
+
+      box.appendChild(wrapEl);
+    });
+  }
+
+  function validateAll(){
+    var chips = [];
+    venue.panels.forEach(function(def){
+      var a = assets[keyOf(def)];
+      var meta = document.getElementById('meta-' + def.key);
+      var notice = document.getElementById('notice-' + def.key);
+      if (!meta) return;
+      if (!a){ meta.innerHTML = ''; notice.innerHTML = ''; return; }
+
+      var warn = [], rows = [];
+      var sizeBad = a.size >= venue.maxMB*1048576;
+      var rOK = ratioOK(a.w, a.h);
+      if (!rOK) warn.push('비율이 ' + venue.w + ' : ' + venue.h + '와 다릅니다. 면 경계가 어긋납니다.');
+      rows.push(['해상도', a.w + ' × ' + a.h, !rOK]);
+      if (a.video){
+        var dOK = a.duration <= venue.maxSec + 0.05;
+        if (!dOK) warn.push('길이가 ' + venue.maxSec + '초를 넘습니다.');
+        if (venue.id === 'itaewon' && Math.abs(a.duration-20) < 0.6) warn.push('20초 소재는 송출 불가입니다.');
+        rows.push(['길이', a.duration.toFixed(1) + '초', !dOK]);
+      }
+      if (sizeBad) warn.push('용량이 ' + venue.maxMB + 'MB 이상입니다.');
+      rows.push(['용량', fmtMB(a.size), sizeBad]);
+      rows.push(['파일', a.name, false]);
+
+      meta.innerHTML = rows.map(function(r){
+        return '<div><span class="k">'+r[0]+'</span><span class="v'+(r[2]?' bad':'')+'">'+r[1]+'</span></div>';
+      }).join('');
+      notice.innerHTML = warn.length ? '<div class="notice">'+warn.join('<br>')+'</div>' : '';
+
+      var pre = def.label ? def.label + ' ' : '';
+      rows.slice(0,3).forEach(function(r){
+        chips.push('<div class="chip'+(r[2]?' warn':'')+'">'+pre+r[0]+' '+r[1]+'</div>');
+      });
+    });
+    hud.innerHTML = chips.length ? chips.join('') : '<div class="chip">규격 가이드</div>';
+  }
+
+  function tryPlay(v){
+    var pr = v.play();
+    if (pr && pr.catch) pr.catch(function(){
+      v.addEventListener('canplay', function once(){
+        v.removeEventListener('canplay', once);
+        v.play().catch(function(){});
+        updatePlay();
+      });
+    });
+  }
+
+  var lastLead = 0;
+  function restartAll(){
+    lastLead = 0;
+    activeVideos.forEach(function(v){
+      try { v.currentTime = 0; } catch(e){}
+      tryPlay(v);
+    });
+    updatePlay();
+  }
+
+  function syncPlayback(){
+    activeVideos = [];
+    venue.panels.forEach(function(def){
+      var a = assets[keyOf(def)];
+      if (a && a.video) activeVideos.push(a.video);
+    });
+    Object.keys(assets).forEach(function(k){
+      var a = assets[k];
+      if (a.video && activeVideos.indexOf(a.video) === -1) a.video.pause();
+    });
+    var bar = document.getElementById('videobar');
+    if (activeVideos.length){
+      bar.classList.add('on');
+      restartAll();
+    } else bar.classList.remove('on');
+    document.getElementById('syncBtn').style.display = activeVideos.length > 1 ? '' : 'none';
+    updatePlay();
+  }
+
+  function applyAssets(){
+    panels.forEach(function(p){
+      var a = assets[keyOf(p.def)];
+      var clr = document.getElementById('clear-' + p.def.key);
+      if (a){
+        p.usingGuide = false;
+        p.material.map = a.texture;
+        p.material.needsUpdate = true;
+        if (clr) clr.style.display = '';
+      } else {
+        showGuide(p);
+        if (clr) clr.style.display = 'none';
+      }
+    });
+    validateAll();
+    syncPlayback();
+  }
+
+  function clearArt(def){
+    var k = keyOf(def), a = assets[k];
+    if (a){
+      if (a.video){ a.video.pause(); a.video.remove(); }
+      if (a.texture) a.texture.dispose();
+      if (a.url) URL.revokeObjectURL(a.url);
+      delete assets[k];
+    }
+    buildSources();
+    applyAssets();
+  }
+
+  function loadFile(file, def){
+    if (!file) return;
+    var k = keyOf(def);
+    if (assets[k]) clearArt(def);
+    var url = URL.createObjectURL(file);
+
+    if (/^video\//.test(file.type)){
+      var v = document.createElement('video');
+      v.muted = true; v.loop = true; v.playsInline = true;
+      v.autoplay = true; v.preload = 'auto';
+      v.setAttribute('playsinline',''); v.setAttribute('muted','');
+      v.style.cssText = 'position:fixed;left:0;top:0;width:2px;height:2px;opacity:0.01;pointer-events:none;z-index:-1';
+      document.body.appendChild(v);
+      v.addEventListener('loadedmetadata', function(){
+        var t = new THREE.VideoTexture(v);
+        t.minFilter = THREE.LinearFilter; t.magFilter = THREE.LinearFilter;
+        t.generateMipmaps = false; t.encoding = THREE.sRGBEncoding;
+        assets[k] = {name:file.name, size:file.size, w:v.videoWidth, h:v.videoHeight,
+                     duration:v.duration, video:v, texture:t, url:url};
+        applyAssets();
+      });
+      v.addEventListener('timeupdate', function(){
+        if (leadVideo() !== v) return;
+        if (v.currentTime + 0.4 < lastLead && activeVideos.length > 1){
+          activeVideos.forEach(function(o){
+            if (o !== v){ try { o.currentTime = 0; } catch(e){} tryPlay(o); }
+          });
+        }
+        lastLead = v.currentTime;
+        updateBar(v);
+      });
+      v.src = url;
+    } else {
+      var img = new Image();
+      img.onload = function(){
+        var t = new THREE.Texture(img);
+        t.encoding = THREE.sRGBEncoding; t.anisotropy = maxAniso; t.needsUpdate = true;
+        assets[k] = {name:file.name, size:file.size, w:img.naturalWidth, h:img.naturalHeight,
+                     video:null, texture:t, url:url};
+        applyAssets();
+      };
+      img.src = url;
+    }
+  }
+
+  // 드롭 : 소재가 비어 있는 첫 면에 넣고, 다 찼으면 마지막 면을 교체
+  ['dragenter','dragover'].forEach(function(ev){
+    stage.addEventListener(ev, function(e){ e.preventDefault(); stage.classList.add('over'); });
+  });
+  ['dragleave','drop'].forEach(function(ev){
+    stage.addEventListener(ev, function(e){ e.preventDefault(); stage.classList.remove('over'); });
+  });
+  stage.addEventListener('drop', function(e){
+    var f = e.dataTransfer && e.dataTransfer.files[0];
+    if (!f) return;
+    var target = null;
+    venue.panels.forEach(function(def){ if (!target && !assets[keyOf(def)]) target = def; });
+    loadFile(f, target || venue.panels[venue.panels.length-1]);
+  });
+
+  // ---------- 재생 컨트롤 ----------
+  var playBtn = document.getElementById('playBtn'),
+      seek = document.getElementById('seek'),
+      timeEl = document.getElementById('time');
+
+  function maxDur(){
+    return activeVideos.reduce(function(m, v){
+      return (v.duration && v.duration > m) ? v.duration : m;
+    }, 0);
+  }
+  function leadVideo(){
+    var lead = null;
+    activeVideos.forEach(function(v){ if (!lead || (v.duration||0) > (lead.duration||0)) lead = v; });
+    return lead;
+  }
+  function updatePlay(){
+    var playing = activeVideos.some(function(v){ return !v.paused; });
+    playBtn.textContent = playing ? '❚❚' : '▶';
+  }
+  function updateBar(v){
+    var total = maxDur();
+    if (!total) return;
+    seek.value = v.currentTime/total*1000;
+    timeEl.textContent = v.currentTime.toFixed(1) + ' / ' + total.toFixed(1) + '초';
+  }
+  playBtn.addEventListener('click', function(){
+    var playing = activeVideos.some(function(v){ return !v.paused; });
+    activeVideos.forEach(function(v){ if (playing) v.pause(); else tryPlay(v); });
+    updatePlay();
+  });
+  document.getElementById('syncBtn').addEventListener('click', restartAll);
+  seek.addEventListener('input', function(){
+    var t = seek.value/1000 * maxDur();
+    activeVideos.forEach(function(v){
+      if (v.duration) v.currentTime = Math.min(v.duration - 0.03, t);
+    });
+  });
+
+  // ---------- 매체 ----------
+  var venuesEl = document.getElementById('venues');
+  VENUES.forEach(function(v){
+    var b = document.createElement('button');
+    b.className = 'btn';
+    b.innerHTML = v.name + '<small>' + v.w + ' × ' + v.h + (v.panels.length > 1 ? ' × 2면' : '') + '</small>';
+    b.addEventListener('click', function(){ selectVenue(v); });
+    venuesEl.appendChild(b);
+  });
+
+  function selectVenue(v){
+    venue = v;
+    [].slice.call(venuesEl.children).forEach(function(n, i){
+      n.setAttribute('aria-pressed', VENUES[i].id === v.id ? 'true' : 'false');
+    });
+    document.getElementById('hName').textContent = v.name;
+    document.getElementById('rules').innerHTML = v.rules.map(function(r){ return '<li>'+r+'</li>'; }).join('');
+    document.getElementById('gapRow').style.display = v.panels.length > 1 ? '' : 'none';
+
+    clearPresets();
+    view.az = v.view.az; view.el = v.view.el; view.zoom = 1;
+    syncView();
+
+    createPanels(v);
+    buildSources();
+    buildStructure();
+    refreshSpec();
+    applyAssets();
+    rebuild();
+  }
+
+  // ---------- 배경 ----------
+  var bgURL = null, bgMode = 'studio';
+  var BG = {
+    studio:'radial-gradient(120% 90% at 50% 15%, #3a4149 0%, #1b1f24 55%, #101316 100%)',
+    dark:'#0a0c0e',
+    sky:'linear-gradient(180deg, #7fb6e6 0%, #bcd9ef 62%, #e6eef4 100%)'
+  };
+  function applyBg(){
+    bgLayer.style.background = (bgMode === 'image' && bgURL)
+      ? 'center / cover no-repeat url("'+bgURL+'")' : BG[bgMode];
+  }
+  applyBg();
+  document.getElementById('bgMode').addEventListener('change', function(e){ bgMode = e.target.value; applyBg(); });
+  document.getElementById('bgFile').addEventListener('change', function(e){
+    var f = e.target.files[0]; if (!f) return;
+    if (bgURL) URL.revokeObjectURL(bgURL);
+    bgURL = URL.createObjectURL(f); bgMode = 'image';
+    document.getElementById('bgMode').value = 'image'; applyBg();
+  });
+
+  // ---------- 저장 ----------
+  (async function(){
+    var dl = null;
+    try { dl = window.claude && await window.claude.use('downloads'); } catch(e){ dl = null; }
+    if (!dl) return;
+    document.getElementById('exportGroup').style.display = '';
+    document.getElementById('savePng').addEventListener('click', async function(){
+      this.disabled = true;
+      try {
+        var blob = await compose();
+        await dl.save({filename: venue.id + '-preview.png', data: blob});
+      } catch(err){ if (err && err.code !== 'declined') console.error(err); }
+      this.disabled = false;
+    });
+  })();
+
+  function compose(){
+    return new Promise(function(resolve){
+      renderer.render(scene, camera);
+      var src = renderer.domElement, out = document.createElement('canvas');
+      out.width = src.width; out.height = src.height;
+      var ctx = out.getContext('2d');
+      function finish(){ ctx.drawImage(src,0,0); out.toBlob(resolve, 'image/png'); }
+      if (bgMode === 'image' && bgURL){
+        var im = new Image();
+        im.onload = function(){
+          var s = Math.max(out.width/im.width, out.height/im.height);
+          ctx.drawImage(im, (out.width-im.width*s)/2, (out.height-im.height*s)/2, im.width*s, im.height*s);
+          finish();
+        };
+        im.onerror = finish; im.src = bgURL;
+      } else if (bgMode === 'sky'){
+        var g = ctx.createLinearGradient(0,0,0,out.height);
+        g.addColorStop(0,'#7fb6e6'); g.addColorStop(.62,'#bcd9ef'); g.addColorStop(1,'#e6eef4');
+        ctx.fillStyle = g; ctx.fillRect(0,0,out.width,out.height); finish();
+      } else if (bgMode === 'dark'){
+        ctx.fillStyle = '#0a0c0e'; ctx.fillRect(0,0,out.width,out.height); finish();
+      } else {
+        var rg = ctx.createRadialGradient(out.width/2,out.height*.15,0,out.width/2,out.height*.15,out.width*.9);
+        rg.addColorStop(0,'#3a4149'); rg.addColorStop(.55,'#1b1f24'); rg.addColorStop(1,'#101316');
+        ctx.fillStyle = rg; ctx.fillRect(0,0,out.width,out.height); finish();
+      }
+    });
+  }
+
+  resize();
+  selectVenue(VENUES[0]);
+  (function loop(){ requestAnimationFrame(loop); renderer.render(scene, camera); })();
+})();
+</script>
+</body>
+</html>
