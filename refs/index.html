@@ -60,7 +60,7 @@ button { cursor: pointer; }
 .nav-right { display: flex; align-items: center; gap: 28px; margin-left: auto; }
 .count { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
 .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
-.add-btn { border: 0; background: transparent; padding: 0; white-space: nowrap; }
+.add-btn { border: 0; background: transparent; padding: 0; white-space: nowrap; color: inherit; text-decoration: none; font: inherit; }
 .add-btn:hover { color: var(--accent); }
 
 /* 필터 바 */
@@ -171,7 +171,7 @@ a.submit { text-decoration: none; }
       <input id="q" type="search" placeholder="이름, 도메인, 메모로 찾기">
     </label>
     <div class="nav-right">
-      <button class="add-btn" id="codeBtn" type="button">+ 코드 올리기</button>
+      <a class="add-btn" id="codeBtn" href="https://github.com/rawfawv/rawfawv.github.io/upload/main/refs/entries" target="_blank" rel="noopener noreferrer" title="GitHub 업로드 화면에 HTML 파일이나 폴더를 끌어놓고 Commit changes를 누르면, 1분쯤 뒤 선반에 카드가 생겨요">+ 코드 올리기</a>
       <button class="add-btn" id="addBtn" type="button">+ 링크 추가</button>
     </div>
   </header>
@@ -235,19 +235,12 @@ a.submit { text-decoration: none; }
 <div class="sheet-wrap" id="codeWrap" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="codeTitle">
     <div class="sheet-head">
-      <h2 id="codeTitle">코드 올리기</h2>
+      <h2 id="codeTitle">코드 작업 정보 등록</h2>
       <button type="button" id="closeCode">닫기 ✕</button>
     </div>
     <form id="codeForm" novalidate>
-      <div class="step">
-        <div class="step-row">
-          <span class="label">① 파일 올리기</span>
-          <a class="pill" href="https://github.com/rawfawv/rawfawv.github.io/upload/main/refs/entries" target="_blank" rel="noopener noreferrer">GitHub에 파일 올리기 ↗</a>
-        </div>
-        <p class="step-note">HTML 파일 하나, 또는 <code>index.html</code>이 든 폴더를 끌어놓고 <b>Commit changes</b>. 1분쯤 뒤 아래 목록에 나타나요.</p>
-      </div>
       <div class="field">
-        <label class="label" for="cFile">② 올린 파일 고르기 *</label>
+        <label class="label" for="cFile">작업 *</label>
         <div class="file-row">
           <select id="cFile"></select>
           <button type="button" class="reload" id="cReload">목록 새로 불러오기</button>
@@ -268,7 +261,7 @@ a.submit { text-decoration: none; }
         <textarea id="cMemo" maxlength="200" placeholder="어떤 작업인지 한 줄로"></textarea>
       </div>
       <div class="how">
-        <p class="how-lead">③ 아래 버튼을 누르면 링크 추가와 같은 GitHub 등록 화면이 열려요. <b>Create</b>만 누르면 끝이에요. 카드에는 작업 화면이 그대로 미리보기로 나오고, 이름·분류·메모 수정과 썸네일 바꾸기는 링크 카드와 똑같이 해요.</p>
+        <p class="how-lead">아래 버튼을 누르면 링크 추가와 같은 GitHub 등록 화면이 열려요. <b>Create</b>만 누르면 끝이에요. 등록하면 이름·분류·메모 수정과 썸네일 바꾸기를 링크 카드와 똑같이 할 수 있어요.</p>
       </div>
       <div class="sheet-foot">
         <p class="form-msg" id="codeMsg" role="status"></p>
@@ -433,7 +426,7 @@ function openCode(preselect) {
   sel.textContent = "";
   const waiting = state.sites.filter((s) => s.code && !s.issueNum);
   if (!waiting.length) {
-    const o = new Option("아직 등록할 파일이 없어요 · 올리고 1분 뒤 새로 불러오기", "");
+    const o = new Option("정보를 등록할 작업이 없어요 · 방금 올렸다면 1분 뒤 새로 불러오기", "");
     o.disabled = true;
     sel.appendChild(o);
   }
@@ -451,7 +444,7 @@ function syncCodeTitle() {
   $("cTitle").placeholder = s ? "비우면 '" + s.title + "'(으)로 표시" : "비우면 파일 이름으로 표시";
 }
 $("cFile").addEventListener("change", syncCodeTitle);
-$("codeBtn").addEventListener("click", () => openCode());
+// '+ 코드 올리기'는 팝업 없이 바로 GitHub 업로드 화면으로 가는 링크예요. 카드는 올리고 1분쯤 뒤 자동으로 생겨요
 // 새로 올린 파일이 목록에 보이게: 저장해 둔 목록을 버리고 다시 불러온 뒤 이 팝업을 다시 엶
 $("cReload").addEventListener("click", () => {
   try { Object.keys(localStorage).filter((k) => k.startsWith("refs-cache:")).forEach((k) => localStorage.removeItem(k)); } catch {}
