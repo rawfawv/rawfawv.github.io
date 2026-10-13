@@ -66,6 +66,10 @@ button { cursor: pointer; }
 /* 필터 바 */
 .bar { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); border-bottom: 1px solid var(--line); }
 .bar > div { display: flex; align-items: center; gap: 10px; padding: 8px 14px; min-width: 0; }
+.bar-hint { margin: 0 0 0 auto; font-size: var(--text-sm); color: var(--muted); text-align: right; min-width: 0; }
+.bar-hint b { color: var(--ink); font-weight: 500; }
+.bar-hint code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; background: var(--well); padding: 1px 5px; color: var(--ink); }
+@media (max-width: 800px) { .bar > div { flex-wrap: wrap; } .bar-hint { margin-left: 0; text-align: left; flex-basis: 100%; } }
 .bar label.bar-label { font-size: var(--text-sm); color: var(--muted); white-space: nowrap; }
 .bar > div { grid-column: 1 / -1; }
 .bar select { border: 1px solid var(--hair); border-radius: 6px; background: var(--paper); font-size: var(--text-sm); padding: 5px 8px; min-width: 0; max-width: 100%; cursor: pointer; }
@@ -171,7 +175,7 @@ a.submit { text-decoration: none; }
       <input id="q" type="search" placeholder="이름, 도메인, 메모로 찾기">
     </label>
     <div class="nav-right">
-      <a class="add-btn" id="codeBtn" href="https://github.com/rawfawv/rawfawv.github.io/upload/main/refs/entries" target="_blank" rel="noopener noreferrer" title="GitHub 업로드 화면에 HTML 파일이나 폴더를 끌어놓고 Commit changes를 누르면, 1분쯤 뒤 선반에 카드가 생겨요">+ 코드 올리기</a>
+      <a class="add-btn" id="codeBtn" href="https://github.com/rawfawv/rawfawv.github.io/upload/main/refs/entries" target="_blank" rel="noopener noreferrer" title="HTML 파일이나 폴더를 끌어놓고, Commit changes 위 제목 칸에 &#39;작업 이름 #분류&#39;, 설명 칸에 메모를 쓰고 Commit changes. 1분쯤 뒤 선반에 카드가 생겨요">+ 코드 올리기</a>
       <button class="add-btn" id="addBtn" type="button">+ 링크 추가</button>
     </div>
   </header>
@@ -180,6 +184,7 @@ a.submit { text-decoration: none; }
     <div>
       <label class="bar-label" for="cat">분류</label>
       <select id="cat"><option value="">전체</option></select>
+      <p class="bar-hint">코드 올릴 때 <b>Commit changes</b> 위 제목 칸에 <code>작업 이름 #분류</code>, 설명 칸에 메모를 쓰면 카드에 들어가요</p>
     </div>
   </div>
 
@@ -538,11 +543,11 @@ function applyCommentThumbs(sites, comments) {
 
 // GitHub API는 로그인 없이 같은 인터넷 회선에서 시간당 60번까지만 불러올 수 있어서, 1분 동안은 이 브라우저에 저장한 결과를 다시 씀
 // (바닥의 '목록 새로 불러오기'를 누르면 저장한 결과를 버리고 바로 다시 불러와요)
-async function githubJson(url) {
+async function githubJson(url, ttlMs = 60 * 1000) {
   const key = "refs-cache:" + url;
   try {
     const hit = JSON.parse(localStorage.getItem(key) || "null");
-    if (hit && Date.now() - hit.at < 60 * 1000) return hit.data;
+    if (hit && Date.now() - hit.at < ttlMs) return hit.data;
   } catch {}
   const r = await fetch(url, { headers: { Accept: "application/vnd.github+json" } });
   if (r.status === 404) return [];
@@ -551,6 +556,22 @@ async function githubJson(url) {
   try { localStorage.setItem(key, JSON.stringify({ at: Date.now(), data })); } catch {}
   return data;
 }
+
+// GitHub 업로드 화면의 커밋 메시지에서 카드 정보를 읽음
+// 제목 칸: "작업 이름 #분류"   설명 칸: 메모   (기본값 "Add files via upload"는 이름으로 쓰지 않음)
+function cardFromCommit(message) {
+  const [first = "", ...rest] = (message || "").replace(/\r\n/g, "\n").split("\n");
+  const body = rest.filter((l) => !/^[\w-]+-by:/i.test(l)).join(" ").trim();
+  const tag = (s) => (s.match(/(?:^|\s)#([^\s#]+)/) || [])[1] || "";
+  const strip = (s) => s.replace(/(?:^|\s)#[^\s#]+/g, " ").replace(/\s+/g, " ").trim();
+  const isDefault = /^(add files via upload|create|update|delete|upload)\b/i.test(first.trim());
+  return {
+    title: isDefault ? "" : strip(first).slice(0, 60),
+    category: (tag(first) || tag(body)).slice(0, 24),
+    note: strip(body).slice(0, 200),
+  };
+}
+const COMMITS_API = "https://api.github.com/repos/rawfawv/rawfawv.github.io/commits?per_page=100&path=";
 
 // refs/entries 에 올린 코드 작업(폴더의 index.html 또는 .html 파일)을 카드로 바꿈
 async function loadEntries() {
@@ -577,6 +598,19 @@ async function loadEntries() {
       site.category = meta('meta[name="category"]').slice(0, 24) || site.category;
       const og = meta('meta[property="og:image"]');
       if (og) site.thumb = safeUrl(new URL(og, url).href) || "";
+    } catch {}
+    // 처음 올릴 때의 커밋 메시지·올린 사람·날짜 (처음 커밋은 바뀌지 않아서 12시간 동안 저장해 두고 씀)
+    try {
+      const commits = await githubJson(COMMITS_API + encodeURIComponent(f.path), 12 * 60 * 60 * 1000);
+      const firstCommit = Array.isArray(commits) && commits[commits.length - 1];
+      if (firstCommit) {
+        const info = cardFromCommit(firstCommit.commit && firstCommit.commit.message);
+        site.title = info.title || site.title;
+        site.category = info.category || site.category;
+        site.note = info.note || site.note;
+        site.by = (firstCommit.author && firstCommit.author.login) || (firstCommit.commit.author && firstCommit.commit.author.name) || "";
+        site.added = (firstCommit.commit.author && firstCommit.commit.author.date) || "";
+      }
     } catch {}
     // 폴더에 card.json(선반 팝업에서 받은 파일)이 있으면 그 제목·분류·메모를 우선으로 씀
     if (f.type === "dir") {
