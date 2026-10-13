@@ -226,24 +226,35 @@ a.submit { text-decoration: none; }
       <h2 id="codeTitle">코드 폴더 올리기</h2>
       <button type="button" id="closeCode">닫기 ✕</button>
     </div>
-    <div class="how">
-      <p class="how-lead">직접 만든 HTML 작업을 이 선반에서 바로 열리는 페이지로 올려요. 카드에는 작업 화면이 그대로 미리보기로 나와요.</p>
-      <ol>
-        <li><b>폴더로 올릴 때:</b> 폴더 안에 <code>index.html</code>이 있어야 해요. 이미지·JS·CSS 파일은 같은 폴더에 함께 넣어 주세요.</li>
-        <li><b>파일 하나만 올릴 때:</b> <code>작업이름.html</code> 파일을 그대로 올리면 돼요.</li>
-        <li>아래 버튼을 누르면 GitHub 업로드 화면이 열려요. 폴더나 파일을 끌어놓고 <b>Commit changes</b>를 누르세요.</li>
-        <li>1~2분 뒤 이 선반을 새로고침하면 카드로 올라가 있어요. 고치거나 지우려면 카드 아래 <b>수정·삭제</b>를 누르세요.</li>
-      </ol>
-      <p class="how-lead">카드 제목·설명·분류는 HTML 파일의 <code>&lt;head&gt;</code>에서 읽어요. 없으면 폴더 이름으로 보여요.</p>
-      <pre class="snippet">&lt;title&gt;카드에 보일 제목&lt;/title&gt;
-&lt;meta name="description" content="한 줄 설명"&gt;
-&lt;meta name="category" content="모션"&gt;</pre>
-      <p class="how-lead">GitHub 계정이 있어야 하고, 이 저장소에 올릴 권한(협업자)이 없으면 주인이 승인해야 올라가요.</p>
-    </div>
-    <div class="sheet-foot">
-      <p class="form-msg"></p>
-      <a class="submit" href="https://github.com/rawfawv/rawfawv.github.io/upload/main/refs/entries" target="_blank" rel="noopener noreferrer"><span class="dot" aria-hidden="true"></span>GitHub에서 올리기</a>
-    </div>
+    <form id="codeForm" novalidate>
+      <div class="field">
+        <label class="label" for="cTitle">제목</label>
+        <input id="cTitle" type="text" maxlength="60" placeholder="비우면 폴더 이름으로 표시" autocomplete="off">
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label class="label" for="cCat">분류</label>
+          <input id="cCat" type="text" maxlength="24" placeholder="예: 모션, 목업" list="catList" autocomplete="off">
+        </div>
+        <div class="field">
+          <label class="label" for="cMemo">메모</label>
+          <input id="cMemo" type="text" maxlength="200" placeholder="어떤 작업인지 한 줄로" autocomplete="off">
+        </div>
+      </div>
+      <div class="how">
+        <ol>
+          <li><b>카드 정보 파일 받기</b>를 누르면 위 내용이 담긴 <code>card.json</code> 파일이 받아져요.</li>
+          <li>그 파일을 올릴 작업 폴더 안, <code>index.html</code> 옆에 넣어 주세요. 이미지·JS·CSS도 같은 폴더에 있어야 해요.</li>
+          <li><b>GitHub에서 올리기</b>를 누르고, 열린 화면에 <b>폴더째</b> 끌어놓은 뒤 <b>Commit changes</b>를 누르세요.</li>
+          <li>1~2분 뒤 이 선반을 새로고침하면 카드로 올라가 있어요. 카드에는 작업 화면이 그대로 미리보기로 나와요.</li>
+        </ol>
+        <p class="how-lead">GitHub 계정이 필요해요. 이 저장소 협업자가 아니면 주인이 승인해야 올라가요. 나중에 고치려면 카드의 <b>수정</b>을 눌러 <code>card.json</code>을 고치면 돼요.</p>
+      </div>
+      <div class="sheet-foot">
+        <button class="pill" type="submit" id="cardJsonBtn">카드 정보 파일 받기</button>
+        <a class="submit" href="https://github.com/rawfawv/rawfawv.github.io/upload/main/refs/entries" target="_blank" rel="noopener noreferrer"><span class="dot" aria-hidden="true"></span>GitHub에서 올리기</a>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -366,11 +377,14 @@ function normalizeUrl(raw) {
   if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(v)) v = "https://" + v;
   return safeUrl(v);
 }
-function openSheet() {
+function fillCategoryList() {
   const dl = $("catList");
   dl.textContent = "";
   const cats = state.sites.map((s) => s.category).filter(Boolean);
   ["모션", "목업", "타이포", "인터랙션", "레이아웃", ...cats].filter((v, i, a) => a.indexOf(v) === i).forEach((c) => dl.appendChild(new Option(c)));
+}
+function openSheet() {
+  fillCategoryList();
   $("formMsg").textContent = "";
   $("sheetWrap").hidden = false;
   $("fUrl").focus();
@@ -380,7 +394,20 @@ $("addBtn").addEventListener("click", openSheet);
 $("closeSheet").addEventListener("click", closeSheet);
 $("sheetWrap").addEventListener("click", (e) => { if (e.target === $("sheetWrap")) closeSheet(); });
 const closeCode = () => { $("codeWrap").hidden = true; };
-$("codeBtn").addEventListener("click", () => { $("codeWrap").hidden = false; $("closeCode").focus(); });
+$("codeBtn").addEventListener("click", () => { fillCategoryList(); $("codeWrap").hidden = false; $("cTitle").focus(); });
+// 팝업에 쓴 제목·분류·메모를 card.json 파일로 받아서 작업 폴더에 같이 올리게 함
+$("codeForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const card = { title: $("cTitle").value.trim(), category: $("cCat").value.trim(), note: $("cMemo").value.trim() };
+  const blob = new Blob([JSON.stringify(card, null, 2) + "\n"], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "card.json";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  $("cardJsonBtn").textContent = "받았어요 · 폴더에 넣어 주세요";
+  setTimeout(() => { $("cardJsonBtn").textContent = "카드 정보 파일 받기"; }, 3000);
+});
 $("closeCode").addEventListener("click", closeCode);
 $("codeWrap").addEventListener("click", (e) => { if (e.target === $("codeWrap")) closeCode(); });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeSheet(); closeCode(); } });
@@ -488,6 +515,21 @@ async function loadEntries() {
       const og = meta('meta[property="og:image"]');
       if (og) site.thumb = safeUrl(new URL(og, url).href) || "";
     } catch {}
+    // 폴더에 card.json(선반 팝업에서 받은 파일)이 있으면 그 제목·분류·메모를 우선으로 씀
+    if (f.type === "dir") {
+      try {
+        const r = await fetch(url + "card.json", { cache: "no-cache" });
+        if (r.ok) {
+          const card = await r.json();
+          const text = (v, n) => (typeof v === "string" ? v.trim().slice(0, n) : "");
+          site.title = text(card.title, 60) || site.title;
+          site.category = text(card.category, 24) || site.category;
+          site.note = text(card.note, 200) || site.note;
+          if (text(card.thumb, 200)) site.thumb = safeUrl(new URL(card.thumb, url).href) || site.thumb;
+          site.editUrl = REPO + "/edit/main/" + path + "/card.json";
+        }
+      } catch {}
+    }
     return site;
   }));
 }
