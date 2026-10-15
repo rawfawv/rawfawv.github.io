@@ -16,7 +16,8 @@
   --hair: #d9d8d3;
   --muted: #6d6c67;
   --well: #f3f2ee;
-  --accent: #ef8a3c;
+  --accent: #dd4b0b;
+  --on-accent: #ffffff;
   --danger: #c2410c;
   --overlay: rgba(17,17,16,.42);
   --font: "Schibsted Grotesk", "IBM Plex Sans KR", "Apple SD Gothic Neo", system-ui, sans-serif;
@@ -31,13 +32,13 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --paper: #121211; --ink: #efeee9; --line: #4a4945; --hair: #2c2b29; --muted: #9c9b95;
-    --well: #1b1b19; --accent: #f39a52; --danger: #fb923c; --overlay: rgba(0,0,0,.6);
+    --well: #1b1b19; --accent: #ff7a33; --on-accent: #1f1206; --danger: #fb923c; --overlay: rgba(0,0,0,.6);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --paper: #121211; --ink: #efeee9; --line: #4a4945; --hair: #2c2b29; --muted: #9c9b95;
-  --well: #1b1b19; --accent: #f39a52; --danger: #fb923c; --overlay: rgba(0,0,0,.6);
+  --well: #1b1b19; --accent: #ff7a33; --on-accent: #1f1206; --danger: #fb923c; --overlay: rgba(0,0,0,.6);
   color-scheme: dark;
 }
 html, body { background: var(--paper); color: var(--ink); }
@@ -179,7 +180,7 @@ a.submit { text-decoration: none; }
 .how ol { margin: 0; padding-left: 18px; }
 .sheet-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-top: 1px solid var(--line); }
 .form-msg { font-size: var(--text-sm); color: var(--danger); margin: 0; min-height: 1em; }
-.submit { border: 1px solid var(--accent); background: var(--accent); color: #1f1206; font-weight: 500; border-radius: 999px; padding: 8px 20px; display: inline-flex; align-items: center; gap: 8px; transition: background .15s, border-color .15s; }
+.submit { border: 1px solid var(--accent); background: var(--accent); color: var(--on-accent); font-weight: 600; border-radius: 999px; padding: 8px 20px; display: inline-flex; align-items: center; gap: 8px; transition: background .15s, border-color .15s; }
 .submit:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 85%, #000); border-color: color-mix(in srgb, var(--accent) 85%, #000); }
 .submit .dot { display: none; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
