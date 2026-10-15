@@ -79,7 +79,8 @@ button { cursor: pointer; }
 .grid { display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); }
 .card, .ghost { border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); display: flex; flex-direction: column; min-width: 0; min-height: 340px; }
 .grid > :nth-child(4n) { border-right: 0; }
-.card-top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, auto); gap: 12px; padding: 12px 12px 0; align-items: baseline; }
+.card-top { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, auto); gap: 12px; padding: 12px 12px 0; align-items: baseline; align-content: start; min-height: calc(var(--text-title) * 2.6 + 12px); }
+.card-top .title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .card-top .title { font-size: var(--text-title); font-weight: 500; line-height: 1.3; overflow-wrap: anywhere; color: inherit; text-decoration: none; text-wrap: balance; }
 .card-top .title:hover { color: var(--accent); }
 .card-top .cat { font-size: var(--text-xs); letter-spacing: .06em; text-transform: uppercase; text-align: right; color: var(--muted); max-width: 12ch; overflow-wrap: anywhere; }
@@ -97,7 +98,7 @@ button { cursor: pointer; }
 :root[data-theme="dark"] .cat-2 { --cb: #2e2350; --cf: #cbb8ff; } :root[data-theme="dark"] .cat-3 { --cb: #12351f; --cf: #94ddb0; }
 :root[data-theme="dark"] .cat-4 { --cb: #3d3208; --cf: #f5d76e; } :root[data-theme="dark"] .cat-5 { --cb: #2c2c2a; --cf: #d6d5d0; }
 :root[data-theme="dark"] .cat-6 { --cb: #47182a; --cf: #ffa8c5; } :root[data-theme="dark"] .cat-7 { --cb: #0f3534; --cf: #8eddda; }
-.thumb { flex: 1; display: flex; align-items: center; justify-content: center; padding: 22px 14%; text-decoration: none; color: inherit; }
+.thumb { flex: none; display: flex; align-items: center; justify-content: center; padding: 22px 14%; text-decoration: none; color: inherit; }
 .thumb img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; object-position: top center; display: block; box-shadow: 0 1px 0 var(--hair), 0 10px 24px -14px rgba(0,0,0,.35); transition: transform .25s ease; }
 .thumb:hover img { transform: translateY(-3px); }
 /* 코드 작업 카드: 실제 페이지를 1/4 크기로 줄여 미리보기로 띄움 */
@@ -112,9 +113,9 @@ a.submit { text-decoration: none; }
 .placeholder { width: 100%; aspect-ratio: 4 / 3; background: var(--well); display: flex; flex-direction: column; justify-content: space-between; padding: 12px; overflow: hidden; }
 .placeholder .ph-domain { font-size: clamp(18px, 2.1vw, 26px); font-weight: 600; line-height: 1.05; letter-spacing: -.01em; overflow-wrap: anywhere; }
 .placeholder .ph-note { font-size: var(--text-xs); color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
-.card-bottom { display: flex; align-items: flex-end; gap: 10px; padding: 0 12px 10px; min-height: 30px; }
+.card-bottom { display: flex; align-items: flex-end; gap: 10px; padding: 0 12px 10px; min-height: 30px; margin-top: auto; }
 .meta { font-size: var(--text-xs); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.note { margin: 0 12px 6px; font-size: var(--text-sm); color: var(--muted); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.note { margin: 0 12px 6px; min-height: 3em; font-size: var(--text-sm); color: var(--muted); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .actions { display: flex; gap: 10px; justify-content: flex-end; padding: 0 12px 10px; opacity: 0; transition: opacity .15s; }
 .card:hover .actions, .card:focus-within .actions { opacity: 1; }
 @media (hover: none) { .actions { opacity: 1; } }
@@ -376,7 +377,7 @@ function card(s) {
     thumb.appendChild(img);
   }
   c.append(top, thumb);
-  if (s.note) c.appendChild(el("p", "note", s.note));
+  c.appendChild(el("p", "note", s.note || ""));
   const bottom = el("div", "card-bottom");
   bottom.append(el("span", "meta", [s.by ? "@" + s.by : "", fmtDate(s.added)].filter(Boolean).join(" · ")));
   // 수정·삭제는 GitHub 화면에서 해요. 본인이 올린 것(또는 저장소 권한이 있는 사람)만 GitHub이 허락해 줘요
